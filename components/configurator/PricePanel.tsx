@@ -39,7 +39,10 @@ export default function PricePanel({
 
       <div className="mt-3 flex justify-between border-t border-zinc-200 pt-3">
         <span className="font-semibold text-zinc-900">Total</span>
-        <span className="text-lg font-bold tabular-nums text-amber-700">
+        <span
+          data-testid="price-total"
+          className="text-lg font-bold tabular-nums text-amber-700"
+        >
           {breakdown
             ? formatCents(breakdown.totalCents, breakdown.currency)
             : '—'}

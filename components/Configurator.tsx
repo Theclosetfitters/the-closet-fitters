@@ -140,7 +140,10 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_minmax(320px,400px)]">
       {/* Left: 3D preview */}
-      <div className="order-1 h-[320px] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 lg:order-none lg:h-[560px]">
+      <div
+        data-testid="closet-viewer"
+        className="order-1 h-[320px] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 lg:order-none lg:h-[560px]"
+      >
         <ClosetViewer catalog={catalog} config={config} />
       </div>
 
