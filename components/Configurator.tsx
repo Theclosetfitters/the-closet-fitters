@@ -1,17 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type {
-  Catalog,
-  ClosetConfig,
-  Dimensions,
-  PriceBreakdown,
-} from '@/types';
-import { defaultConfig } from '@/lib/config';
-import ClosetTypePicker from '@/components/configurator/ClosetTypePicker';
-import DimensionControls from '@/components/configurator/DimensionControls';
-import OptionGroupControl from '@/components/configurator/OptionGroupControl';
+import type { Catalog, ClosetConfig, SectionConfig, PriceBreakdown } from '@/types';
+import { clampWidth, defaultConfig, defaultSection, totalWidthIn } from '@/lib/config';
+import { formatCents, formatInches } from '@/lib/format';
+import MaterialPicker from '@/components/configurator/MaterialPicker';
+import HardwarePicker from '@/components/configurator/HardwarePicker';
+import SectionRow from '@/components/configurator/SectionRow';
 import PricePanel from '@/components/configurator/PricePanel';
 
 // R3F must only run in the browser — load the viewer without SSR.
@@ -25,25 +21,11 @@ const ClosetViewer = dynamic(() => import('@/components/3d/ClosetViewer'), {
 });
 
 export default function Configurator({ catalog }: { catalog: Catalog }) {
-  const [config, setConfig] = useState<ClosetConfig>(() =>
-    defaultConfig(catalog, catalog.closetTypes[0].id)
-  );
+  const [config, setConfig] = useState<ClosetConfig>(() => defaultConfig(catalog));
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [pricing, setPricing] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const closetType = useMemo(
-    () =>
-      catalog.closetTypes.find((t) => t.id === config.closetTypeId) ??
-      catalog.closetTypes[0],
-    [catalog, config.closetTypeId]
-  );
-
-  const groupById = useMemo(
-    () => new Map(catalog.optionGroups.map((g) => [g.id, g])),
-    [catalog]
-  );
 
   // --- Live server-side pricing (debounced) -------------------------------
   useEffect(() => {
@@ -61,9 +43,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         setBreakdown((await res.json()) as PriceBreakdown);
         setError(null);
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          setError('Could not update price.');
-        }
+        if ((err as Error).name !== 'AbortError') setError('Could not update price.');
       } finally {
         setPricing(false);
       }
@@ -75,46 +55,46 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   }, [config]);
 
   // --- Mutators -----------------------------------------------------------
-  const selectClosetType = useCallback(
-    (id: string) => setConfig(defaultConfig(catalog, id)),
+  const addSection = useCallback(
+    () => setConfig((c) => ({ ...c, sections: [...c.sections, defaultSection(catalog)] })),
     [catalog]
   );
 
-  const setDimension = useCallback(
-    (key: keyof Dimensions, value: number) =>
-      setConfig((c) => ({ ...c, dimensions: { ...c.dimensions, [key]: value } })),
+  const removeSection = useCallback(
+    (id: string) =>
+      setConfig((c) =>
+        c.sections.length <= 1
+          ? c
+          : { ...c, sections: c.sections.filter((s) => s.id !== id) }
+      ),
     []
   );
 
-  const setSingle = useCallback(
-    (groupId: string, optionId: string) =>
+  const updateSection = useCallback(
+    (id: string, patch: Partial<SectionConfig>) =>
       setConfig((c) => ({
         ...c,
-        selections: { ...c.selections, [groupId]: [optionId] },
+        sections: c.sections.map((s) => {
+          if (s.id !== id) return s;
+          const next = { ...s, ...patch };
+          // Keep width valid for the (possibly new) interior.
+          next.widthIn = clampWidth(catalog, next.interior, next.widthIn);
+          return next;
+        }),
       })),
-    []
+    [catalog]
   );
 
-  const toggleMulti = useCallback(
-    (groupId: string, optionId: string) =>
-      setConfig((c) => {
-        const current = (c.selections[groupId] as string[]) ?? [];
-        const next = current.includes(optionId)
-          ? current.filter((x) => x !== optionId)
-          : [...current, optionId];
-        return { ...c, selections: { ...c.selections, [groupId]: next } };
-      }),
+  const setMaterial = useCallback(
+    (materialId: string) => setConfig((c) => ({ ...c, materialId })),
     []
   );
-
-  const setQuantity = useCallback(
-    (groupId: string, optionId: string, qty: number) =>
-      setConfig((c) => {
-        const current = { ...((c.selections[groupId] as Record<string, number>) ?? {}) };
-        if (qty <= 0) delete current[optionId];
-        else current[optionId] = qty;
-        return { ...c, selections: { ...c.selections, [groupId]: current } };
-      }),
+  const setHardware = useCallback(
+    (hardwareId: string) => setConfig((c) => ({ ...c, hardwareId })),
+    []
+  );
+  const setHeightUpgrade = useCallback(
+    (heightUpgrade: boolean) => setConfig((c) => ({ ...c, heightUpgrade })),
     []
   );
 
@@ -137,54 +117,93 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     }
   }, [config]);
 
+  const totalWidth = useMemo(() => totalWidthIn(config), [config]);
+  const heightLabel = config.heightUpgrade
+    ? formatInches(catalog.constraints.upgradedHeightIn)
+    : formatInches(catalog.constraints.standardHeightIn);
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_minmax(320px,400px)]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_minmax(340px,420px)]">
       {/* Left: 3D preview */}
       <div
         data-testid="closet-viewer"
-        className="order-1 h-[320px] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 lg:order-none lg:h-[560px]"
+        className="order-1 h-[340px] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 lg:order-none lg:h-[600px]"
       >
         <ClosetViewer catalog={catalog} config={config} />
       </div>
 
       {/* Right: controls */}
       <div className="order-2 space-y-6 lg:order-none">
+        {/* Material */}
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-800">
-            Closet type
-          </h2>
-          <ClosetTypePicker
-            closetTypes={catalog.closetTypes}
-            selectedId={config.closetTypeId}
-            onSelect={selectClosetType}
+          <h2 className="mb-2 text-sm font-semibold text-zinc-800">Material</h2>
+          <MaterialPicker
+            materials={catalog.materials}
+            selectedId={config.materialId}
+            onSelect={setMaterial}
           />
         </section>
 
+        {/* Hardware */}
         <section>
           <h2 className="mb-2 text-sm font-semibold text-zinc-800">
-            Dimensions
+            Hardware color
           </h2>
-          <DimensionControls
-            closetType={closetType}
-            dimensions={config.dimensions}
-            onChange={setDimension}
+          <HardwarePicker
+            hardware={catalog.hardware}
+            selectedId={config.hardwareId}
+            onSelect={setHardware}
           />
         </section>
 
-        {closetType.optionGroupIds.map((groupId) => {
-          const group = groupById.get(groupId);
-          if (!group) return null;
-          return (
-            <OptionGroupControl
-              key={groupId}
-              group={group}
-              selection={config.selections[groupId]}
-              onSetSingle={setSingle}
-              onToggleMulti={toggleMulti}
-              onSetQuantity={setQuantity}
+        {/* Height + depth */}
+        <section className="rounded-xl border border-zinc-200 bg-white p-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-zinc-700">
+              Height: {heightLabel}
+            </span>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
+              <input
+                data-testid="height-upgrade"
+                type="checkbox"
+                checked={config.heightUpgrade}
+                onChange={(e) => setHeightUpgrade(e.target.checked)}
+                className="accent-amber-600"
+              />
+              Raise to 8' (+{formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
+            </label>
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-400">
+            Depth fixed at {formatInches(catalog.constraints.depthIn)} · total
+            width {formatInches(totalWidth)}
+          </p>
+        </section>
+
+        {/* Sections */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-zinc-800">Sections</h2>
+            <button
+              data-testid="add-section"
+              type="button"
+              onClick={addSection}
+              className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700"
+            >
+              + Add section
+            </button>
+          </div>
+          {config.sections.map((section, i) => (
+            <SectionRow
+              key={section.id}
+              catalog={catalog}
+              section={section}
+              index={i}
+              canRemove={config.sections.length > 1}
+              onChange={updateSection}
+              onRemove={removeSection}
             />
-          );
-        })}
+          ))}
+        </section>
 
         {error && (
           <p className="rounded-lg bg-red-50 p-2 text-sm text-red-600">{error}</p>

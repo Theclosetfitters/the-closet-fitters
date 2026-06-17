@@ -1,94 +1,73 @@
 {
-  "closetTypes": [
+  "pricing": {
+    "backPerSectionCents": 20000,
+    "heightUpgradePerFootCents": 5000,
+    "currency": "usd"
+  },
+  "constraints": {
+    "minWidthIn": 6,
+    "standardMaxWidthIn": 36,
+    "drawerMaxWidthIn": 30,
+    "depthIn": 15,
+    "standardHeightIn": 84.625,
+    "upgradedHeightIn": 96.625,
+    "stepIn": 0.125
+  },
+  "interiors": [
     {
-      "id": "reach-in",
-      "label": "Reach-In Closet",
-      "description": "A standard single-wall closet, ideal for bedrooms and hallways.",
-      "basePriceCents": 49900,
-      "dimensions": {
-        "width": { "min": 90, "max": 300, "default": 180 },
-        "height": { "min": 200, "max": 260, "default": 240 },
-        "depth": { "min": 40, "max": 70, "default": 60 }
-      },
-      "optionGroupIds": ["material", "finish", "shelves", "drawers", "hanging-rods", "shoe-racks"]
+      "id": "long_hanging",
+      "code": "LH",
+      "label": "Long Hanging",
+      "description": "A single full-height rod for dresses, coats and long garments.",
+      "maxWidthIn": 36,
+      "priceCents": 50000
     },
     {
-      "id": "walk-in",
-      "label": "Walk-In Closet",
-      "description": "An L- or U-shaped closet you can walk into, with more storage.",
-      "basePriceCents": 129900,
-      "dimensions": {
-        "width": { "min": 200, "max": 500, "default": 320 },
-        "height": { "min": 200, "max": 280, "default": 250 },
-        "depth": { "min": 50, "max": 90, "default": 65 }
-      },
-      "optionGroupIds": ["material", "finish", "shelves", "drawers", "hanging-rods", "shoe-racks"]
-    }
-  ],
-  "optionGroups": [
-    {
-      "id": "material",
-      "label": "Material",
-      "selectionType": "single",
-      "pricingModel": "per_area",
-      "required": true,
-      "options": [
-        { "id": "melamine", "label": "Melamine Board", "description": "Durable, budget-friendly.", "priceCents": 8000 },
-        { "id": "plywood", "label": "Birch Plywood", "description": "Strong with a natural grain.", "priceCents": 14000 },
-        { "id": "solid-oak", "label": "Solid Oak", "description": "Premium hardwood.", "priceCents": 26000 }
-      ]
+      "id": "double_hanging",
+      "code": "DH",
+      "label": "Double Hanging",
+      "description": "Two stacked rods — twice the hanging space for shirts and pants.",
+      "maxWidthIn": 36,
+      "priceCents": 50000
     },
     {
-      "id": "finish",
-      "label": "Finish",
-      "selectionType": "single",
-      "pricingModel": "flat",
-      "required": true,
-      "options": [
-        { "id": "matte-white", "label": "Matte White", "priceCents": 0 },
-        { "id": "walnut", "label": "Walnut Stain", "priceCents": 12000 },
-        { "id": "charcoal", "label": "Charcoal", "priceCents": 12000 }
-      ]
+      "id": "shoe_shelves",
+      "code": "SS",
+      "label": "Shoe Shelves",
+      "description": "Angled shelves that display shoes front-facing.",
+      "maxWidthIn": 36,
+      "priceCents": 50000
     },
     {
-      "id": "shelves",
-      "label": "Shelves",
-      "selectionType": "quantity",
-      "pricingModel": "per_unit",
-      "options": [
-        { "id": "shelf-standard", "label": "Standard Shelf", "priceCents": 3500 },
-        { "id": "shelf-glass", "label": "Glass Shelf", "priceCents": 7000 }
-      ]
+      "id": "adjustable_shelves",
+      "code": "AS",
+      "label": "Adjustable Shelves",
+      "description": "Movable shelves for folded clothes and bins.",
+      "maxWidthIn": 36,
+      "priceCents": 50000
     },
     {
       "id": "drawers",
+      "code": "DR",
       "label": "Drawers",
-      "selectionType": "quantity",
-      "pricingModel": "per_unit",
-      "options": [
-        { "id": "drawer-standard", "label": "Standard Drawer", "priceCents": 9000 },
-        { "id": "drawer-soft-close", "label": "Soft-Close Drawer", "priceCents": 13000 }
-      ]
-    },
-    {
-      "id": "hanging-rods",
-      "label": "Hanging Rods",
-      "selectionType": "quantity",
-      "pricingModel": "per_unit",
-      "options": [
-        { "id": "rod-single", "label": "Single Rod", "priceCents": 4000 },
-        { "id": "rod-double", "label": "Double Rod", "priceCents": 6500 }
-      ]
-    },
-    {
-      "id": "shoe-racks",
-      "label": "Shoe Racks",
-      "selectionType": "quantity",
-      "pricingModel": "per_unit",
-      "options": [
-        { "id": "shoe-angled", "label": "Angled Shoe Rack", "priceCents": 5500 },
-        { "id": "shoe-cubby", "label": "Cubby Shoe Rack", "priceCents": 8500 }
-      ]
+      "description": "Four 10\" drawers with a counter shelf and two adjustable shelves above.",
+      "maxWidthIn": 30,
+      "priceCents": 150000
     }
+  ],
+  "materials": [
+    { "id": "lino-cancun", "label": "Lino Cancun", "colorHex": "#b6a98f", "texture": "woven", "note": "check out that texture!" },
+    { "id": "sheer-beauty", "label": "Sheer Beauty", "colorHex": "#c89b62", "texture": "wood", "note": "it's all in the grain" },
+    { "id": "tessuto", "label": "Tessuto", "colorHex": "#c4c2bb", "texture": "woven" },
+    { "id": "chameleon", "label": "Chameleon", "colorHex": "#9e7647", "texture": "wood", "note": "real wood energy" },
+    { "id": "fashionista", "label": "Fashionista", "colorHex": "#6f4a2e", "texture": "wood" },
+    { "id": "free-spirit", "label": "Free Spirit", "colorHex": "#ac9f8d", "texture": "wood", "note": "effortlessly cool" },
+    { "id": "rhapsody", "label": "Rhapsody", "colorHex": "#c4a268", "texture": "wood", "note": "just a little drama" },
+    { "id": "glacier-white", "label": "Glacier White", "colorHex": "#f3f2ee", "texture": "solid", "note": "always a good idea" }
+  ],
+  "hardware": [
+    { "id": "brushed-nickel", "label": "Brushed Nickel", "colorHex": "#c7c8ca" },
+    { "id": "brushed-brass", "label": "Brushed Brass", "colorHex": "#b59a5e" },
+    { "id": "black", "label": "Black", "colorHex": "#2a2a2d" }
   ]
 }

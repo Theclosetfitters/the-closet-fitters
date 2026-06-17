@@ -1,85 +1,95 @@
 // Core domain types for the closet configurator.
-// These describe the catalog shape, a customer's configuration,
-// the server-computed price breakdown, and orders.
+//
+// The product is built from a left-to-right row of vertical SECTIONS. Each
+// section has one interior layout and a customizable width (imperial inches,
+// snapped to 1/8"). Pricing is per section; drawers cost more. Material color,
+// hardware color, and height are global to the closet. Depth is fixed.
 
-export type ClosetTypeId = string;
-export type OptionGroupId = string;
-export type OptionId = string;
+export type InteriorType =
+  | 'long_hanging'
+  | 'double_hanging'
+  | 'shoe_shelves'
+  | 'adjustable_shelves'
+  | 'drawers';
 
-/** A single selectable option within an option group (e.g. a specific finish). */
-export interface CatalogOption {
-  id: OptionId;
+export type MaterialTexture = 'wood' | 'woven' | 'solid';
+
+/** One interior layout option for a section. */
+export interface InteriorOption {
+  id: InteriorType;
+  code: string; // 'LH', 'DH', 'SS', 'AS', 'DR'
   label: string;
-  description?: string;
-  /** Price contribution in cents. Interpreted according to the group's pricingModel. */
+  description: string;
+  /** Max section width (inches) for this interior. Drawers cap lower. */
+  maxWidthIn: number;
+  /** Price of a section with this interior, in cents. */
   priceCents: number;
 }
 
-/** How a group's selected option(s) contribute to the total price. */
-export type PricingModel =
-  | 'flat' // priceCents added once if selected
-  | 'per_area' // priceCents multiplied by (width * height) in chosen units
-  | 'per_unit'; // priceCents multiplied by a quantity the customer picks
-
-/** A group of related options (materials, finishes, components, ...). */
-export interface OptionGroup {
-  id: OptionGroupId;
+/** A wood/woven color the whole closet is finished in (all same price). */
+export interface MaterialOption {
+  id: string;
   label: string;
-  /** 'single' = radio (one choice), 'multi' = checkboxes (many), 'quantity' = numeric. */
-  selectionType: 'single' | 'multi' | 'quantity';
-  pricingModel: PricingModel;
-  required?: boolean;
-  options: CatalogOption[];
+  colorHex: string;
+  texture: MaterialTexture;
+  note?: string;
 }
 
-/** A closet product type the customer starts from. */
-export interface ClosetType {
-  id: ClosetTypeId;
+/** Rod + hardware color (all same price). */
+export interface HardwareOption {
+  id: string;
   label: string;
-  description?: string;
-  /** Base price in cents before any options. */
-  basePriceCents: number;
-  /** Allowed dimension ranges in centimeters. */
-  dimensions: {
-    width: { min: number; max: number; default: number };
-    height: { min: number; max: number; default: number };
-    depth: { min: number; max: number; default: number };
-  };
-  /** IDs of the option groups available for this closet type. */
-  optionGroupIds: OptionGroupId[];
+  colorHex: string;
 }
 
-/** The full catalog seed shape. */
+export interface CatalogPricing {
+  backPerSectionCents: number;
+  heightUpgradePerFootCents: number;
+  currency: string;
+}
+
+export interface CatalogConstraints {
+  minWidthIn: number;
+  standardMaxWidthIn: number;
+  drawerMaxWidthIn: number;
+  depthIn: number;
+  standardHeightIn: number;
+  upgradedHeightIn: number;
+  stepIn: number;
+}
+
 export interface Catalog {
-  closetTypes: ClosetType[];
-  optionGroups: OptionGroup[];
+  pricing: CatalogPricing;
+  constraints: CatalogConstraints;
+  interiors: InteriorOption[];
+  materials: MaterialOption[];
+  hardware: HardwareOption[];
 }
 
-/** Dimensions chosen by the customer, in centimeters. */
-export interface Dimensions {
-  width: number;
-  height: number;
-  depth: number;
+/** One vertical section of the closet. */
+export interface SectionConfig {
+  id: string; // stable client id
+  interior: InteriorType;
+  widthIn: number; // snapped to 1/8"
+  hasBack: boolean;
 }
 
 /**
- * A customer's in-progress or submitted configuration.
- * This is the ONLY thing sent to the server for pricing — never a price.
+ * A customer's configuration. This is the ONLY thing sent to the server for
+ * pricing — never a price (CLAUDE.md #1).
  */
 export interface ClosetConfig {
-  closetTypeId: ClosetTypeId;
-  dimensions: Dimensions;
-  /** groupId -> selected option id(s). For 'quantity' groups, value is { optionId: qty }. */
-  selections: Record<OptionGroupId, OptionId[] | Record<OptionId, number>>;
+  sections: SectionConfig[];
+  materialId: string;
+  hardwareId: string;
+  heightUpgrade: boolean; // false = standard height, true = +1'
 }
 
-/** One line in the itemized price breakdown. */
 export interface PriceLineItem {
   label: string;
   amountCents: number;
 }
 
-/** Server-computed price result. */
 export interface PriceBreakdown {
   lineItems: PriceLineItem[];
   subtotalCents: number;
@@ -87,16 +97,11 @@ export interface PriceBreakdown {
   currency: string;
 }
 
-export type OrderStatus =
-  | 'received'
-  | 'in_production'
-  | 'ready'
-  | 'completed';
+export type OrderStatus = 'received' | 'in_production' | 'ready' | 'completed';
 
-/** A persisted order. */
 export interface Order {
   id: string;
-  userId: string | null; // null for guest checkout
+  userId: string | null;
   config: ClosetConfig;
   priceBreakdown: PriceBreakdown;
   totalCents: number;

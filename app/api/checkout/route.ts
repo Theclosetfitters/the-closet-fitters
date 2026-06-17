@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
+import { formatInches } from '@/lib/format';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth';
 import { createPendingCheckout } from '@/lib/checkout';
@@ -41,9 +42,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const closetType = catalog.closetTypes.find(
-    (t) => t.id === config.closetTypeId
-  );
+  const totalWidthIn = config.sections.reduce((a, s) => a + s.widthIn, 0);
+  const heightIn = config.heightUpgrade
+    ? catalog.constraints.upgradedHeightIn
+    : catalog.constraints.standardHeightIn;
+  const sectionCount = config.sections.length;
   const user = await getCurrentUser();
   const origin =
     request.headers.get('origin') ?? new URL(request.url).origin;
@@ -58,8 +61,10 @@ export async function POST(request: Request) {
             currency: breakdown.currency,
             unit_amount: breakdown.totalCents,
             product_data: {
-              name: `${closetType?.label ?? 'Custom Closet'}`,
-              description: `${config.dimensions.width}×${config.dimensions.height}×${config.dimensions.depth} cm`,
+              name: `Custom Closet — ${sectionCount} section${sectionCount > 1 ? 's' : ''}`,
+              description: `${formatInches(totalWidthIn)} W × ${formatInches(
+                catalog.constraints.depthIn
+              )} D × ${formatInches(heightIn)} H`,
             },
           },
         },
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
       client_reference_id: user?.id,
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel`,
-      metadata: { closetTypeId: config.closetTypeId },
+      metadata: { sections: String(sectionCount) },
     });
 
     if (!session.url) {

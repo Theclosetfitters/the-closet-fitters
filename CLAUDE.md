@@ -10,9 +10,17 @@ This file is read at the start of every session. Follow these rules in all work 
 
 ## Product
 
-A PWA where customers configure a custom closet (type, dimensions, materials, finishes,
-components), see a live 3D render and a live itemized price, then check out and pay.
-The company fulfills orders via an internal `/admin` dashboard.
+A PWA where customers configure a custom closet, see a live 3D render and a live
+itemized price, then check out and pay. The company fulfills orders via an internal
+`/admin` dashboard.
+
+**Product model:** a closet is a left-to-right row of vertical **sections**. Each
+section has one interior (long hanging / double hanging / shoe shelves / adjustable
+shelves / drawers) and a width. Pricing: $500/section, $1,500 if drawers, +$200/section
+for a back panel, +$50 per linear foot to raise height to 8'. Depth fixed 15". Material
+color (8 options) + hardware color (3) + height are global. **Imperial units + USD only;**
+widths display as fractional inches (e.g. `1' 5 1/2"`), snapped to 1/8". The catalog
+(interiors, materials, hardware, pricing, constraints) lives in `catalog/closet-options.json`.
 
 ## Stack
 

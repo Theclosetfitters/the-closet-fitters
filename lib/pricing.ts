@@ -1,78 +1,61 @@
-// Server-side pricing logic. This is the single source of truth for prices.
-// RULE: prices are ALWAYS computed here on the server from the catalog +
-// the customer's configuration. A price submitted by the client is never trusted.
-import type {
-  Catalog,
-  ClosetConfig,
-  OptionGroup,
-  PriceBreakdown,
-  PriceLineItem,
-} from '@/types';
+// Server-side pricing logic — the single source of truth for prices.
+// RULE (CLAUDE.md #1): prices are ALWAYS computed here from the catalog + the
+// customer's configuration. A price submitted by the client is never trusted.
+import type { Catalog, ClosetConfig, PriceBreakdown, PriceLineItem } from '@/types';
+import { formatInches, roundToEighth } from '@/lib/format';
 
-const CURRENCY = 'usd';
-
-/** Square meters from centimeter dimensions (width * height of the front face). */
-function frontAreaSqMeters(widthCm: number, heightCm: number): number {
-  return (widthCm / 100) * (heightCm / 100);
+/** Total run width (inches) across all sections. */
+export function totalWidthIn(config: ClosetConfig): number {
+  return config.sections.reduce((sum, s) => sum + s.widthIn, 0);
 }
 
 /**
  * Compute the itemized price for a configuration.
+ * - Each section costs its interior's price ($500, or $1,500 for drawers).
+ * - A back panel adds a flat per-section amount.
+ * - Raising the height adds a per-linear-foot amount over the whole run.
  * Throws if the configuration references unknown catalog entries.
  */
 export function computePrice(
   catalog: Catalog,
   config: ClosetConfig
 ): PriceBreakdown {
-  const closetType = catalog.closetTypes.find(
-    (t) => t.id === config.closetTypeId
-  );
-  if (!closetType) {
-    throw new Error(`Unknown closet type: ${config.closetTypeId}`);
+  if (!config.sections || config.sections.length === 0) {
+    throw new Error('A closet needs at least one section');
   }
 
-  const groupById = new Map<string, OptionGroup>(
-    catalog.optionGroups.map((g) => [g.id, g])
-  );
+  const interiorById = new Map(catalog.interiors.map((i) => [i.id, i]));
+  const lineItems: PriceLineItem[] = [];
 
-  const lineItems: PriceLineItem[] = [
-    { label: `${closetType.label} (base)`, amountCents: closetType.basePriceCents },
-  ];
-
-  const area = frontAreaSqMeters(
-    config.dimensions.width,
-    config.dimensions.height
-  );
-
-  for (const groupId of closetType.optionGroupIds) {
-    const group = groupById.get(groupId);
-    if (!group) continue;
-
-    const selection = config.selections[groupId];
-    if (!selection) continue;
-
-    if (group.selectionType === 'quantity') {
-      const quantities = selection as Record<string, number>;
-      for (const [optionId, qty] of Object.entries(quantities)) {
-        const option = group.options.find((o) => o.id === optionId);
-        if (!option || qty <= 0) continue;
-        lineItems.push({
-          label: `${option.label} ×${qty}`,
-          amountCents: option.priceCents * qty,
-        });
-      }
-    } else {
-      const optionIds = selection as string[];
-      for (const optionId of optionIds) {
-        const option = group.options.find((o) => o.id === optionId);
-        if (!option) continue;
-        const amountCents =
-          group.pricingModel === 'per_area'
-            ? Math.round(option.priceCents * area)
-            : option.priceCents;
-        lineItems.push({ label: option.label, amountCents });
-      }
+  config.sections.forEach((section, idx) => {
+    const interior = interiorById.get(section.interior);
+    if (!interior) {
+      throw new Error(`Unknown interior: ${section.interior}`);
     }
+    lineItems.push({
+      label: `Section ${idx + 1}: ${interior.label} · ${formatInches(
+        roundToEighth(section.widthIn)
+      )}`,
+      amountCents: interior.priceCents,
+    });
+    if (section.hasBack) {
+      lineItems.push({
+        label: `   ↳ Back panel`,
+        amountCents: catalog.pricing.backPerSectionCents,
+      });
+    }
+  });
+
+  if (config.heightUpgrade) {
+    const widthIn = totalWidthIn(config);
+    const feet = widthIn / 12;
+    const amountCents = Math.round(
+      catalog.pricing.heightUpgradePerFootCents * feet
+    );
+    lineItems.push({
+      label: `Raise to 8' · over ${formatInches(widthIn)} of width`,
+      amountCents,
+    });
   }
 
   const subtotalCents = lineItems.reduce((sum, li) => sum + li.amountCents, 0);
@@ -81,6 +64,6 @@ export function computePrice(
     lineItems,
     subtotalCents,
     totalCents: subtotalCents,
-    currency: CURRENCY,
+    currency: catalog.pricing.currency,
   };
 }

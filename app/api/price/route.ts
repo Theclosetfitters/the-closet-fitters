@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!config?.closetTypeId || !config?.dimensions || !config?.selections) {
+  if (!config?.sections || !Array.isArray(config.sections) || !config?.materialId) {
     return NextResponse.json(
       { error: 'Missing required configuration fields' },
       { status: 400 }

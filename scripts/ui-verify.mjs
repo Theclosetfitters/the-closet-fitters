@@ -80,38 +80,36 @@ async function main() {
     await canvas.waitFor({ state: 'attached', timeout: 20000 }).catch(() => {});
     ok('3D viewer <canvas> is mounted', (await canvas.count()) >= 1);
 
-    // 3) Adding a shelf increases the price.
-    await page
-      .getByRole('button', { name: 'Increase Standard Shelf' })
-      .click();
-    await page.waitForFunction(
-      (prev) => {
-        const el = document.querySelector('[data-testid="price-total"]');
-        return el && el.textContent && el.textContent.trim() !== prev;
-      },
-      total1,
-      { timeout: 8000 }
-    );
+    const waitPriceChange = (prev) =>
+      page.waitForFunction(
+        (p) => {
+          const el = document.querySelector('[data-testid="price-total"]');
+          return el && el.textContent && el.textContent.trim() !== p;
+        },
+        prev,
+        { timeout: 8000 }
+      );
+
+    // 3) Adding a section increases the price (+$500).
+    await page.getByTestId('add-section').click();
+    await waitPriceChange(total1);
     const total2 = await total.textContent();
     ok(
-      'adding a shelf raises the live price',
+      'adding a section raises the live price',
       money(total2) > money(total1),
       `${total1} -> ${total2}`
     );
 
-    // 4) Switching closet type re-prices; viewer stays mounted.
-    await page.locator('button', { hasText: 'Walk-In Closet' }).first().click();
-    await page.waitForFunction(
-      (prev) => {
-        const el = document.querySelector('[data-testid="price-total"]');
-        return el && el.textContent && el.textContent.trim() !== prev;
-      },
-      total2,
-      { timeout: 8000 }
-    );
+    // 4) Switching a section to drawers re-prices upward ($500 -> $1,500).
+    await page.getByTestId('section-interior-0').selectOption('drawers');
+    await waitPriceChange(total2);
     const total3 = await total.textContent();
-    ok('switching closet type re-prices', money(total3) !== money(total2), `${total2} -> ${total3}`);
-    ok('3D viewer still mounted after type switch', (await page.locator('[data-testid="closet-viewer"] canvas').count()) >= 1);
+    ok(
+      'changing a section to drawers re-prices upward',
+      money(total3) > money(total2),
+      `${total2} -> ${total3}`
+    );
+    ok('3D viewer still mounted after edits', (await page.locator('[data-testid="closet-viewer"] canvas').count()) >= 1);
 
     ok('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | '));
   } finally {

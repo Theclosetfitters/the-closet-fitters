@@ -114,25 +114,31 @@ async function main() {
   // === A. Server-side pricing ============================================
   console.log('A. Server-side pricing');
   const config = {
-    closetTypeId: 'reach-in',
-    dimensions: { width: 200, height: 240, depth: 60 },
-    selections: {
-      material: ['melamine'], // per_area: 8000 * (2.0*2.4=4.8) = 38400
-      finish: ['matte-white'], // 0
-      shelves: { 'shelf-standard': 3 }, // 3 * 3500 = 10500
-    },
+    sections: [
+      { id: 's1', interior: 'long_hanging', widthIn: 24, hasBack: false }, // 50000
+      { id: 's2', interior: 'drawers', widthIn: 30, hasBack: true }, // 150000 + 20000
+      { id: 's3', interior: 'adjustable_shelves', widthIn: 18, hasBack: false }, // 50000
+    ],
+    materialId: 'sheer-beauty',
+    hardwareId: 'black',
+    heightUpgrade: true, // width 72in = 6ft → 5000*6 = 30000
   };
-  // base 49900 + 38400 + 0 + 10500 = 98800
-  const EXPECTED_TOTAL = 98800;
+  // 50000 + (150000+20000) + 50000 + 30000 = 300000
+  const EXPECTED_TOTAL = 300000;
   const breakdown = await priceFor(config);
   ok(
-    'reach-in total is computed server-side correctly',
+    'total is computed server-side correctly',
     breakdown.totalCents === EXPECTED_TOTAL,
     `got ${breakdown.totalCents}, expected ${EXPECTED_TOTAL}`
   );
   ok(
-    'per-area material line is correct (8000/m² × 4.8 m²)',
-    breakdown.lineItems.some((li) => li.amountCents === 38400)
+    'drawer section is $1,500 and back panel +$200',
+    breakdown.lineItems.some((li) => li.amountCents === 150000) &&
+      breakdown.lineItems.some((li) => li.amountCents === 20000)
+  );
+  ok(
+    'height upgrade is $50 × 6 linear ft = $300',
+    breakdown.lineItems.some((li) => li.amountCents === 30000)
   );
 
   // Tamper: client tries to smuggle a price — server must ignore it.
