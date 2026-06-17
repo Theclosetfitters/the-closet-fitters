@@ -26,6 +26,10 @@ interface OrderRow {
   stripe_session_id: string | null;
   paid: boolean;
   customer_email: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  quote_ref: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +46,10 @@ function rowToOrder(row: OrderRow): Order {
     stripeSessionId: row.stripe_session_id,
     paid: row.paid,
     customerEmail: row.customer_email,
+    customerName: row.customer_name ?? null,
+    customerPhone: row.customer_phone ?? null,
+    customerAddress: row.customer_address ?? null,
+    quoteRef: row.quote_ref ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

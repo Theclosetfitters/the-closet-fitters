@@ -2,7 +2,7 @@ import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { listAllOrders, ORDER_STATUSES } from '@/lib/orders';
 import { catalog } from '@/lib/catalog';
-import { formatCents, formatStatus } from '@/lib/format';
+import { formatStatus } from '@/lib/format';
 import OrderCard from '@/components/OrderCard';
 import StatusControl from '@/components/admin/StatusControl';
 
@@ -47,12 +47,27 @@ export default async function AdminPage() {
         <div className="mt-6 space-y-3">
           {orders.map((order) => (
             <OrderCard key={order.id} order={order} catalog={catalog}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400">
-                  {order.customerEmail ?? 'Guest'} ·{' '}
-                  {formatCents(order.totalCents, order.currency)}
-                </span>
-                <StatusControl orderId={order.id} status={order.status} />
+              <div className="space-y-2">
+                <div className="rounded-lg bg-zinc-50 p-2 text-xs text-zinc-600">
+                  <div className="font-medium text-zinc-800">
+                    {order.customerName ?? 'Guest'}
+                    {order.quoteRef && (
+                      <span className="ml-2 font-mono text-[10px] text-zinc-400">
+                        {order.quoteRef}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap gap-x-3">
+                    {order.customerEmail && <span>{order.customerEmail}</span>}
+                    {order.customerPhone && <span>{order.customerPhone}</span>}
+                  </div>
+                  {order.customerAddress && (
+                    <div className="mt-0.5 text-zinc-500">{order.customerAddress}</div>
+                  )}
+                </div>
+                <div className="flex items-center justify-end">
+                  <StatusControl orderId={order.id} status={order.status} />
+                </div>
               </div>
             </OrderCard>
           ))}

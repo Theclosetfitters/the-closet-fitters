@@ -110,6 +110,10 @@ export interface Order {
   stripeSessionId: string | null;
   paid: boolean;
   customerEmail: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
+  quoteRef: string | null;
   createdAt: string;
   updatedAt: string;
 }
