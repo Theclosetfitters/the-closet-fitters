@@ -9,8 +9,8 @@
     "standardMaxWidthIn": 36,
     "drawerMaxWidthIn": 30,
     "depthIn": 15,
-    "standardHeightIn": 84.625,
-    "upgradedHeightIn": 96.625,
+    "standardHeightIn": 84,
+    "upgradedHeightIn": 96,
     "stepIn": 0.125
   },
   "interiors": [

@@ -28,8 +28,11 @@ export default function MaterialPicker({
             }`}
           >
             <span
-              className="h-10 w-full rounded-md border border-black/10"
-              style={{ backgroundColor: m.colorHex }}
+              className="h-10 w-full rounded-md border border-black/10 bg-cover bg-center"
+              style={{
+                backgroundColor: m.colorHex,
+                backgroundImage: `url(/textures/${m.id}.jpg)`,
+              }}
             />
             <span className="text-[10px] leading-tight text-zinc-600">
               {m.label}

@@ -13,6 +13,7 @@ import {
   Lightformer,
   ContactShadows,
   RoundedBox,
+  useTexture,
 } from '@react-three/drei';
 import type {
   Catalog,
@@ -33,71 +34,28 @@ const DRAWER_H = 10 * IN; // each drawer is 10" tall
 
 type Orient = 'v' | 'h';
 
-// --- Procedural material textures (cached per material + orientation) -------
-const texCache = new Map<string, THREE.Texture | null>();
-function getTexture(material: MaterialOption, orient: Orient): THREE.Texture | null {
-  if (material.texture === 'solid') return null;
-  const key = `${material.id}|${material.texture === 'woven' ? 'x' : orient}`;
-  if (texCache.has(key)) return texCache.get(key)!;
-
-  const size = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = material.colorHex;
-  ctx.fillRect(0, 0, size, size);
-  const base = new THREE.Color(material.colorHex);
-
-  if (material.texture === 'woven') {
-    ctx.strokeStyle = `#${base.clone().multiplyScalar(0.82).getHexString()}`;
-    ctx.globalAlpha = 0.25;
-    for (let i = 0; i < size; i += 4) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, size); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(size, i); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  } else {
-    // Wood grain — lines run along the panel's orientation.
-    for (let i = 0; i < 80; i++) {
-      const p = Math.random() * size;
-      const shade = base.clone().multiplyScalar(0.7 + Math.random() * 0.22);
-      ctx.strokeStyle = `#${shade.getHexString()}`;
-      ctx.globalAlpha = 0.12 + Math.random() * 0.22;
-      ctx.lineWidth = 0.5 + Math.random() * 2;
-      ctx.beginPath();
-      const sway = 5;
-      if (orient === 'v') {
-        ctx.moveTo(p, 0);
-        for (let y = 0; y <= size; y += 12)
-          ctx.lineTo(p + Math.sin((y / size) * Math.PI * 2) * sway, y);
-      } else {
-        ctx.moveTo(0, p);
-        for (let x = 0; x <= size; x += 12)
-          ctx.lineTo(x, p + Math.sin((x / size) * Math.PI * 2) * sway);
-      }
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
+// Build a PBR material from a real swatch texture, oriented so the grain runs
+// along the panel ('v' = vertical components, 'h' = horizontal — rotated 90°).
+// Mirrored tiling hides the tile seams.
+function makeMat(base: THREE.Texture, orient: Orient, material: MaterialOption) {
+  const t = base.clone();
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping;
+  t.repeat.set(3, 3);
+  t.anisotropy = 8;
+  if (orient === 'h') {
+    t.center.set(0.5, 0.5);
+    t.rotation = Math.PI / 2;
   }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 4;
-  texCache.set(key, tex);
-  return tex;
-}
-
-function buildMaterial(material: MaterialOption, orient: Orient) {
-  const tex = getTexture(material, orient);
+  t.needsUpdate = true;
   return new THREE.MeshPhysicalMaterial({
-    map: tex ?? undefined,
-    color: tex ? '#ffffff' : material.colorHex,
-    roughness: material.texture === 'woven' ? 0.85 : 0.7,
-    clearcoat: material.texture === 'wood' ? 0.18 : 0.05,
+    map: t,
+    roughness: material.texture === 'woven' ? 0.85 : 0.6,
+    clearcoat:
+      material.texture === 'solid' ? 0.5 : material.texture === 'wood' ? 0.2 : 0.05,
     clearcoatRoughness: 0.4,
     metalness: 0,
-    envMapIntensity: 0.7,
+    envMapIntensity: 0.85,
   });
 }
 
@@ -273,12 +231,23 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
   const hardware =
     catalog.hardware.find((h) => h.id === config.hardwareId) ?? catalog.hardware[0];
 
-  const matV = useMemo(() => buildMaterial(material, 'v'), [material]);
-  const matH = useMemo(() => buildMaterial(material, 'h'), [material]);
+  // Load the real swatch images (suspends until ready inside <Suspense>).
+  const urls = useMemo(
+    () => catalog.materials.map((m) => `/textures/${m.id}.jpg`),
+    [catalog]
+  );
+  const loaded = useTexture(urls);
+  const baseTex =
+    loaded[catalog.materials.findIndex((m) => m.id === material.id)] ?? loaded[0];
+
+  const matV = useMemo(() => makeMat(baseTex, 'v', material), [baseTex, material]);
+  const matH = useMemo(() => makeMat(baseTex, 'h', material), [baseTex, material]);
   const metal = useMemo(() => buildMetal(hardware), [hardware]);
   useEffect(
     () => () => {
+      matV.map?.dispose();
       matV.dispose();
+      matH.map?.dispose();
       matH.dispose();
       metal.dispose();
     },
