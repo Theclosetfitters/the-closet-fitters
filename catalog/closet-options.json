@@ -1,0 +1,94 @@
+{
+  "closetTypes": [
+    {
+      "id": "reach-in",
+      "label": "Reach-In Closet",
+      "description": "A standard single-wall closet, ideal for bedrooms and hallways.",
+      "basePriceCents": 49900,
+      "dimensions": {
+        "width": { "min": 90, "max": 300, "default": 180 },
+        "height": { "min": 200, "max": 260, "default": 240 },
+        "depth": { "min": 40, "max": 70, "default": 60 }
+      },
+      "optionGroupIds": ["material", "finish", "shelves", "drawers", "hanging-rods", "shoe-racks"]
+    },
+    {
+      "id": "walk-in",
+      "label": "Walk-In Closet",
+      "description": "An L- or U-shaped closet you can walk into, with more storage.",
+      "basePriceCents": 129900,
+      "dimensions": {
+        "width": { "min": 200, "max": 500, "default": 320 },
+        "height": { "min": 200, "max": 280, "default": 250 },
+        "depth": { "min": 50, "max": 90, "default": 65 }
+      },
+      "optionGroupIds": ["material", "finish", "shelves", "drawers", "hanging-rods", "shoe-racks"]
+    }
+  ],
+  "optionGroups": [
+    {
+      "id": "material",
+      "label": "Material",
+      "selectionType": "single",
+      "pricingModel": "per_area",
+      "required": true,
+      "options": [
+        { "id": "melamine", "label": "Melamine Board", "description": "Durable, budget-friendly.", "priceCents": 8000 },
+        { "id": "plywood", "label": "Birch Plywood", "description": "Strong with a natural grain.", "priceCents": 14000 },
+        { "id": "solid-oak", "label": "Solid Oak", "description": "Premium hardwood.", "priceCents": 26000 }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish",
+      "selectionType": "single",
+      "pricingModel": "flat",
+      "required": true,
+      "options": [
+        { "id": "matte-white", "label": "Matte White", "priceCents": 0 },
+        { "id": "walnut", "label": "Walnut Stain", "priceCents": 12000 },
+        { "id": "charcoal", "label": "Charcoal", "priceCents": 12000 }
+      ]
+    },
+    {
+      "id": "shelves",
+      "label": "Shelves",
+      "selectionType": "quantity",
+      "pricingModel": "per_unit",
+      "options": [
+        { "id": "shelf-standard", "label": "Standard Shelf", "priceCents": 3500 },
+        { "id": "shelf-glass", "label": "Glass Shelf", "priceCents": 7000 }
+      ]
+    },
+    {
+      "id": "drawers",
+      "label": "Drawers",
+      "selectionType": "quantity",
+      "pricingModel": "per_unit",
+      "options": [
+        { "id": "drawer-standard", "label": "Standard Drawer", "priceCents": 9000 },
+        { "id": "drawer-soft-close", "label": "Soft-Close Drawer", "priceCents": 13000 }
+      ]
+    },
+    {
+      "id": "hanging-rods",
+      "label": "Hanging Rods",
+      "selectionType": "quantity",
+      "pricingModel": "per_unit",
+      "options": [
+        { "id": "rod-single", "label": "Single Rod", "priceCents": 4000 },
+        { "id": "rod-double", "label": "Double Rod", "priceCents": 6500 }
+      ]
+    },
+    {
+      "id": "shoe-racks",
+      "label": "Shoe Racks",
+      "selectionType": "quantity",
+      "pricingModel": "per_unit",
+      "options": [
+        { "id": "shoe-angled", "label": "Angled Shoe Rack", "priceCents": 5500 },
+        { "id": "shoe-cubby", "label": "Cubby Shoe Rack", "priceCents": 8500 }
+      ]
+    }
+  ]
+}
