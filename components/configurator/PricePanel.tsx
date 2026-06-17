@@ -1,20 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import type { PriceBreakdown } from '@/types';
 import { formatCents } from '@/lib/format';
 
 interface Props {
   breakdown: PriceBreakdown | null;
   loading: boolean;
-  onCheckout: () => void;
-  checkingOut: boolean;
+  onAddToCart: () => void;
+  added: boolean;
+  cartCount: number;
 }
 
 export default function PricePanel({
   breakdown,
   loading,
-  onCheckout,
-  checkingOut,
+  onAddToCart,
+  added,
+  cartCount,
 }: Props) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -51,12 +54,21 @@ export default function PricePanel({
 
       <button
         type="button"
-        onClick={onCheckout}
-        disabled={!breakdown || checkingOut}
+        data-testid="add-to-cart"
+        onClick={onAddToCart}
+        disabled={!breakdown}
         className="mt-4 w-full rounded-full bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {checkingOut ? 'Redirecting…' : 'Checkout'}
+        {added ? 'Added to cart ✓' : 'Add to cart'}
       </button>
+      {cartCount > 0 && (
+        <Link
+          href="/cart"
+          className="mt-2 block text-center text-sm font-medium text-amber-700 hover:underline"
+        >
+          View cart ({cartCount}) →
+        </Link>
+      )}
       <p className="mt-2 text-center text-[11px] text-zinc-400">
         Price is calculated securely on our server.
       </p>

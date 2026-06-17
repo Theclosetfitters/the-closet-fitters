@@ -130,3 +130,34 @@ export async function updateOrderStatus(
     .eq('id', orderId);
   if (error) throw error;
 }
+
+/**
+ * Store a checkout quote as one order row per closet. Call with a SERVICE-ROLE
+ * client. Payment is not collected; orders start at 'received', unpaid.
+ */
+export async function createQuoteOrders(
+  supabase: SupabaseClient,
+  input: {
+    quoteRef: string;
+    userId: string | null;
+    contact: { name: string; phone: string; email: string; address: string };
+    closets: { config: ClosetConfig; breakdown: PriceBreakdown; totalCents: number }[];
+  }
+): Promise<void> {
+  const rows = input.closets.map((c) => ({
+    user_id: input.userId,
+    config: c.config,
+    price_breakdown: c.breakdown,
+    total_cents: c.totalCents,
+    currency: c.breakdown.currency,
+    status: 'received',
+    paid: false,
+    customer_email: input.contact.email,
+    customer_name: input.contact.name,
+    customer_phone: input.contact.phone,
+    customer_address: input.contact.address,
+    quote_ref: input.quoteRef,
+  }));
+  const { error } = await supabase.from('orders').insert(rows);
+  if (error) throw error;
+}

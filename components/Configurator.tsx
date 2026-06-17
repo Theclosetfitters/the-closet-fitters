@@ -9,6 +9,7 @@ import MaterialPicker from '@/components/configurator/MaterialPicker';
 import HardwarePicker from '@/components/configurator/HardwarePicker';
 import SectionRow from '@/components/configurator/SectionRow';
 import PricePanel from '@/components/configurator/PricePanel';
+import { useCart } from '@/lib/cart-context';
 
 // R3F must only run in the browser — load the viewer without SSR.
 const ClosetViewer = dynamic(() => import('@/components/3d/ClosetViewer'), {
@@ -24,8 +25,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   const [config, setConfig] = useState<ClosetConfig>(() => defaultConfig(catalog));
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [pricing, setPricing] = useState(false);
-  const [checkingOut, setCheckingOut] = useState(false);
+  const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cart = useCart();
 
   // --- Live server-side pricing (debounced) -------------------------------
   useEffect(() => {
@@ -98,24 +100,13 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     []
   );
 
-  // --- Checkout -----------------------------------------------------------
-  const checkout = useCallback(async () => {
-    setCheckingOut(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error ?? 'Checkout failed');
-      window.location.href = data.url as string;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Checkout failed');
-      setCheckingOut(false);
-    }
-  }, [config]);
+  // --- Add to cart --------------------------------------------------------
+  const addToCart = useCallback(() => {
+    if (!breakdown) return;
+    cart.add(config, breakdown.totalCents);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 1800);
+  }, [cart, config, breakdown]);
 
   const totalWidth = useMemo(() => totalWidthIn(config), [config]);
   const heightLabel = config.heightUpgrade
@@ -212,8 +203,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         <PricePanel
           breakdown={breakdown}
           loading={pricing}
-          onCheckout={checkout}
-          checkingOut={checkingOut}
+          onAddToCart={addToCart}
+          added={added}
+          cartCount={cart.count}
         />
       </div>
     </div>

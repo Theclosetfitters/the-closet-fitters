@@ -31,6 +31,9 @@ interface ClosetViewerProps {
 const IN = 0.0254; // meters per inch
 const T = 0.75 * IN; // 3/4" panel thickness
 const DRAWER_H = 10 * IN; // each drawer is 10" tall
+const TOE_H = 2 * IN; // 2" toe kick height
+const TOE_RECESS = 0.75 * IN; // toe kick set back 3/4"
+const TOP_CUBBY = 12 * IN; // fixed shelf sits 12" down from the top
 
 type Orient = 'v' | 'h';
 
@@ -114,20 +117,24 @@ function Rod({
 }
 
 // --- Per-section interior --------------------------------------------------
+// Fills the working region between `bottomY` (top of the floor panel, above the
+// toe kick) and `topY` (underside of the per-bay fixed shelf).
 function Interior({
   section,
   cx,
   wM,
-  H,
   D,
+  bottomY,
+  topY,
   matH,
   metal,
 }: {
   section: SectionConfig;
   cx: number;
   wM: number;
-  H: number;
   D: number;
+  bottomY: number;
+  topY: number;
   matH: THREE.Material;
   metal: THREE.Material;
 }) {
@@ -135,6 +142,7 @@ function Interior({
   const sd = D - 1.6 * T; // shelf depth
   const rodLen = uw * 0.94;
   const zFront = D / 2 - 0.02;
+  const rh = topY - bottomY; // region height
 
   const shelf = (key: string, y: number, rot?: [number, number, number]) => (
     <Panel key={key} size={[uw, T, sd]} position={[cx, y, 0]} rotation={rot} material={matH} />
@@ -142,29 +150,25 @@ function Interior({
 
   switch (section.interior) {
     case 'long_hanging':
-      return (
-        <group>
-          {shelf('ls', H - 0.34)}
-          <Rod cx={cx} y={H - 0.42} length={rodLen} metal={metal} />
-        </group>
-      );
+      return <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={metal} />;
 
-    case 'double_hanging':
+    case 'double_hanging': {
+      const midY = bottomY + rh * 0.5;
       return (
         <group>
-          {shelf('ts', H - 0.34)}
-          <Rod cx={cx} y={H - 0.42} length={rodLen} metal={metal} />
-          {shelf('ms', H * 0.5)}
-          <Rod cx={cx} y={H * 0.5 - 0.08} length={rodLen} metal={metal} />
+          <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={metal} />
+          {shelf('ms', midY)}
+          <Rod cx={cx} y={midY - 0.07} length={rodLen} metal={metal} />
         </group>
       );
+    }
 
     case 'shoe_shelves': {
-      const n = Math.max(3, Math.floor((H - 0.2) / 0.2));
+      const n = Math.max(3, Math.floor(rh / 0.2));
       return (
         <group>
           {Array.from({ length: n }, (_, i) => {
-            const y = 0.16 + ((H - 0.3) * (i + 1)) / (n + 1);
+            const y = bottomY + (rh * (i + 1)) / (n + 1);
             return shelf(`shoe-${i}`, y, [-0.3, 0, 0]);
           })}
         </group>
@@ -176,7 +180,7 @@ function Interior({
       return (
         <group>
           {Array.from({ length: n }, (_, i) => {
-            const y = H * 0.14 + ((H * 0.78) * i) / (n - 1);
+            const y = bottomY + (rh * (i + 1)) / (n + 1);
             return shelf(`adj-${i}`, y);
           })}
         </group>
@@ -184,16 +188,11 @@ function Interior({
     }
 
     case 'drawers': {
-      const bottomY = T;
       const drawers = Array.from({ length: 4 }, (_, k) => {
         const y = bottomY + DRAWER_H * (k + 0.5);
         return (
           <group key={`dr-${k}`}>
-            <Panel
-              size={[uw, DRAWER_H - 0.01, 0.02]}
-              position={[cx, y, zFront]}
-              material={matH}
-            />
+            <Panel size={[uw, DRAWER_H - 0.01, 0.02]} position={[cx, y, zFront]} material={matH} />
             <mesh
               position={[cx, y, zFront + 0.02]}
               rotation={[0, 0, Math.PI / 2]}
@@ -205,12 +204,11 @@ function Interior({
           </group>
         );
       });
+      // Fixed counter shelf above the 4 drawers, then 2 adjustable shelves up to topY.
       const counterY = bottomY + 4 * DRAWER_H + T / 2;
-      const aboveTop = H - T;
-      const shelves = Array.from({ length: 2 }, (_, i) => {
-        const y = counterY + ((aboveTop - counterY) * (i + 1)) / 3;
-        return shelf(`drsh-${i}`, y);
-      });
+      const shelves = Array.from({ length: 2 }, (_, i) =>
+        shelf(`drsh-${i}`, counterY + ((topY - counterY) * (i + 1)) / 3)
+      );
       return (
         <group>
           {drawers}
@@ -280,43 +278,57 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
 
   const { H, D, W, secs, boundaries } = layout;
 
+  // Floor sits on top of the 2" toe kick; each bay's fixed shelf is 12" down
+  // from the top. The interior fills the region between them. Raising to 8'
+  // grows the lower region only (the top 12" cubby stays constant).
+  const bottomY = TOE_H + T;
+  const fixedShelfY = H - TOP_CUBBY;
+  const topY = fixedShelfY - T / 2;
+
   return (
     <group position={[0, 0, 0]}>
-      {/* Top + bottom (horizontal grain) */}
+      {/* Top + raised floor (horizontal grain) */}
       <Panel size={[W, T, D]} position={[0, H - T / 2, 0]} material={matH} />
-      <Panel size={[W, T, D]} position={[0, T / 2, 0]} material={matH} />
+      <Panel size={[W, T, D]} position={[0, TOE_H + T / 2, 0]} material={matH} />
 
       {/* Vertical partitions incl. the two ends (vertical grain) */}
       {boundaries.map((bx, i) => (
         <Panel key={`part-${i}`} size={[T, H, D]} position={[bx, H / 2, 0]} material={matV} />
       ))}
 
-      {/* Optional back panels (per section) */}
-      {secs.map(
-        ({ s, cx, wM }) =>
-          s.hasBack && (
+      {secs.map(({ s, cx, wM }) => {
+        const uw = wM - 1.6 * T;
+        return (
+          <group key={`bay-${s.id}`}>
+            {/* Recessed toe kick (horizontal grain) */}
             <Panel
-              key={`back-${s.id}`}
-              size={[wM - T, H - T, T]}
-              position={[cx, H / 2, -D / 2 + T / 2]}
-              material={matV}
+              size={[uw, TOE_H, T]}
+              position={[cx, TOE_H / 2, D / 2 - TOE_RECESS - T / 2]}
+              material={matH}
             />
-          )
-      )}
-
-      {/* Interiors */}
-      {secs.map(({ s, cx, wM }) => (
-        <Interior
-          key={`int-${s.id}`}
-          section={s}
-          cx={cx}
-          wM={wM}
-          H={H}
-          D={D}
-          matH={matH}
-          metal={metal}
-        />
-      ))}
+            {/* Per-bay fixed shelf, 12" from the top (horizontal grain) */}
+            <Panel size={[uw, T, D - 1.6 * T]} position={[cx, fixedShelfY, 0]} material={matH} />
+            {/* Optional back panel (vertical grain) */}
+            {s.hasBack && (
+              <Panel
+                size={[wM - T, H - TOE_H - T, T]}
+                position={[cx, TOE_H + (H - TOE_H) / 2, -D / 2 + T / 2]}
+                material={matV}
+              />
+            )}
+            <Interior
+              section={s}
+              cx={cx}
+              wM={wM}
+              D={D}
+              bottomY={bottomY}
+              topY={topY}
+              matH={matH}
+              metal={metal}
+            />
+          </group>
+        );
+      })}
     </group>
   );
 }

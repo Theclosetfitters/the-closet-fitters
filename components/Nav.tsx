@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import SignOutButton from '@/components/SignOutButton';
+import CartLink from '@/components/CartLink';
 
 // Server component: reflects auth state in the nav.
 export default async function Nav() {
@@ -23,6 +24,7 @@ export default async function Nav() {
           <Link href="/configure" className="text-zinc-600 hover:text-zinc-900">
             Configure
           </Link>
+          <CartLink />
           {user && (
             <Link href="/account" className="text-zinc-600 hover:text-zinc-900">
               My orders

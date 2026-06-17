@@ -16,5 +16,5 @@ export function isSupabaseConfigured(): boolean {
 
 export function isStripeConfigured(): boolean {
   const key = process.env.STRIPE_SECRET_KEY;
-  return !!key && key.startsWith('sk_');
+  return !!key && key.startsWith('sk_') && !key.includes('your-');
 }

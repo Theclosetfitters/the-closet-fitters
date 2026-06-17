@@ -17,10 +17,20 @@ itemized price, then check out and pay. The company fulfills orders via an inter
 **Product model:** a closet is a left-to-right row of vertical **sections**. Each
 section has one interior (long hanging / double hanging / shoe shelves / adjustable
 shelves / drawers) and a width. Pricing: $500/section, $1,500 if drawers, +$200/section
-for a back panel, +$50 per linear foot to raise height to 8'. Depth fixed 15". Material
+for a back panel, +$50 per linear foot to raise height 7'→8'. Depth fixed 15". Material
 color (8 options) + hardware color (3) + height are global. **Imperial units + USD only;**
-widths display as fractional inches (e.g. `1' 5 1/2"`), snapped to 1/8". The catalog
-(interiors, materials, hardware, pricing, constraints) lives in `catalog/closet-options.json`.
+widths display as fractional inches (e.g. `1' 5 1/2"`), snapped to 1/8". The catalog lives
+in `catalog/closet-options.json`. Every bay also has a 2" toe kick (recessed 0.75") and a
+fixed shelf 12" down from the top; raising to 8' adds the extra foot **below** that shelf.
+Grain runs vertically on vertical parts, horizontally on horizontal parts. Real material
+swatch images live in `public/textures/<id>.jpg`.
+
+**Checkout = quote, no payment.** Customers add closets to a **cart** (multiple closets),
+then check out by submitting name/phone/email/address. `POST /api/quote` recomputes prices
+server-side, generates an itemized written quote + a 2D elevation sketch per closet
+(`lib/sketch.ts`), emails it to the customer (Resend, gated by `isEmailConfigured()`), and
+records the quote in `orders` (gated by Supabase). No online payment. The old Stripe routes
+remain but are unused.
 
 ## Stack
 
