@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { Hanken_Grotesk, Caveat } from 'next/font/google';
+import {
+  Hanken_Grotesk,
+  Caveat,
+  Cormorant_Garamond,
+  Pinyon_Script,
+} from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
@@ -15,6 +20,19 @@ const caveat = Caveat({
   variable: '--font-caveat',
   subsets: ['latin'],
   weight: ['400', '600', '700'],
+});
+
+// Logo wordmark: elegant serif ("Closet Fitters") + script ("The").
+const cormorant = Cormorant_Garamond({
+  variable: '--font-cormorant',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+});
+
+const pinyon = Pinyon_Script({
+  variable: '--font-pinyon',
+  subsets: ['latin'],
+  weight: ['400'],
 });
 
 export const metadata: Metadata = {
@@ -48,7 +66,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${hanken.variable} ${caveat.variable} h-full antialiased`}
+      className={`${hanken.variable} ${caveat.variable} ${cormorant.variable} ${pinyon.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-paper text-ink">
         <CartProvider>
