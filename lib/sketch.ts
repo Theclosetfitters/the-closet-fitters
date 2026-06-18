@@ -15,6 +15,7 @@ const STROKE = '#3f3f46';
 const LIGHT = '#faf9f7';
 const ROD = '#52525b';
 const LABEL = '#52525b';
+const TAN = '#C7AC90'; // wall section titles (cart "by wall" mode only)
 
 function esc(s: string): string {
   return String(s ?? '')
@@ -92,23 +93,47 @@ function interiorPieces(
   return out;
 }
 
-export function closetSketchSvg(catalog: Catalog, config: ClosetConfig): string {
+export function closetSketchSvg(
+  catalog: Catalog,
+  config: ClosetConfig,
+  opts?: { byWall?: boolean }
+): string {
   const heightIn = config.heightUpgrade
     ? catalog.constraints.upgradedHeightIn
     : catalog.constraints.standardHeightIn;
   const depthIn = catalog.constraints.depthIn;
   const totalWidthIn = config.sections.reduce((a, s) => a + s.widthIn, 0);
 
-  const drawW = totalWidthIn * SCALE;
+  // Cart-only "by wall" mode: split the bays into a separate boxed run per wall
+  // — with a gap (break) between runs and a wall title centred above each run's
+  // width labels. Everywhere else the sketch stays a single continuous run.
+  const byWall = Boolean(opts?.byWall) && config.shape !== 'straight';
+  const GROUP_GAP = 26; // px break between walls
+  const onWall = (w: 'A' | 'B' | 'C') => config.sections.filter((s) => s.wall === w);
+  let runs: { title?: string; sections: ClosetConfig['sections'] }[];
+  if (byWall && config.shape === 'l_shaped') {
+    runs = [
+      { title: 'Side Wall', sections: onWall('B') },
+      { title: 'Back Wall', sections: onWall('A') },
+    ];
+  } else if (byWall) {
+    // u_shaped: right, back, left (left to right)
+    runs = [
+      { title: 'Right Wall', sections: onWall('C') },
+      { title: 'Back Wall', sections: onWall('A') },
+      { title: 'Left Wall', sections: onWall('B') },
+    ];
+  } else {
+    runs = [{ sections: config.sections }];
+  }
+  runs = runs.filter((r) => r.sections.length > 0);
+
   const drawH = heightIn * SCALE;
   const ox = MARGIN_X;
-  const oy = MARGIN_TOP;
+  const oy = MARGIN_TOP + (byWall ? 12 : 0); // extra headroom for the wall titles
   const bottom = oy + drawH;
   const toeTopY = bottom - TOE_IN * SCALE;
   const fixedShelfY = oy + TOP_CUBBY_IN * SCALE;
-
-  const svgW = drawW + MARGIN_X * 2;
-  const svgH = drawH + MARGIN_TOP + MARGIN_BOTTOM;
 
   const material =
     catalog.materials.find((m) => m.id === config.materialId)?.label ?? config.materialId;
@@ -126,48 +151,61 @@ export function closetSketchSvg(catalog: Catalog, config: ClosetConfig): string 
     )} · ${esc(material)} · ${esc(rodColor)} rods</text>`
   );
 
-  // Outer body
-  parts.push(
-    `<rect x="${ox}" y="${oy}" width="${drawW}" height="${drawH}" fill="${LIGHT}" stroke="${STROKE}" stroke-width="2"/>`
-  );
+  // Draw one boxed run of bays starting at startX; returns its pixel width.
+  const drawRun = (sections: ClosetConfig['sections'], startX: number): number => {
+    const runW = sections.reduce((a, s) => a + s.widthIn, 0) * SCALE;
+    parts.push(
+      `<rect x="${startX}" y="${oy}" width="${runW}" height="${drawH}" fill="${LIGHT}" stroke="${STROKE}" stroke-width="2"/>`
+    );
+    let cursor = startX;
+    sections.forEach((s, i) => {
+      const w = s.widthIn * SCALE;
+      const bx = cursor;
+      cursor += w;
+      if (i < sections.length - 1) {
+        parts.push(`<line x1="${cursor}" y1="${oy}" x2="${cursor}" y2="${bottom}" stroke="${STROKE}" stroke-width="2"/>`);
+      }
+      parts.push(`<line x1="${bx}" y1="${fixedShelfY}" x2="${bx + w}" y2="${fixedShelfY}" stroke="${STROKE}" stroke-width="1.6"/>`);
+      parts.push(`<line x1="${bx}" y1="${toeTopY}" x2="${bx + w}" y2="${toeTopY}" stroke="${STROKE}" stroke-width="1.6"/>`);
+      parts.push(...interiorPieces(s.interior, bx, w, fixedShelfY, toeTopY));
+      parts.push(
+        `<text x="${bx + w / 2}" y="${oy - 10}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="${LABEL}">${esc(
+          formatInches(s.widthIn)
+        )}</text>`
+      );
+      parts.push(
+        `<text x="${bx + w / 2}" y="${oy + 28}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="${LABEL}">${esc(
+          interiorLabel(s.interior)
+        )}${s.hasBack ? ' +B' : ''}</text>`
+      );
+    });
+    return runW;
+  };
 
-  let cursor = ox;
-  config.sections.forEach((s, i) => {
-    const w = s.widthIn * SCALE;
-    const bx = cursor;
-    cursor += w;
-
-    // partition on the right edge of each bay (except last shares outer)
-    if (i < config.sections.length - 1) {
-      parts.push(`<line x1="${cursor}" y1="${oy}" x2="${cursor}" y2="${bottom}" stroke="${STROKE}" stroke-width="2"/>`);
+  let x = ox;
+  runs.forEach((run, idx) => {
+    const runW = drawRun(run.sections, x);
+    if (run.title) {
+      // wall title, centred on the bays and just above the width labels
+      parts.push(
+        `<text x="${x + runW / 2}" y="${oy - 26}" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" letter-spacing="1.5" fill="${TAN}">${esc(
+          run.title.toUpperCase()
+        )}</text>`
+      );
     }
-    // fixed shelf + toe kick
-    parts.push(`<line x1="${bx}" y1="${fixedShelfY}" x2="${bx + w}" y2="${fixedShelfY}" stroke="${STROKE}" stroke-width="1.6"/>`);
-    parts.push(`<line x1="${bx}" y1="${toeTopY}" x2="${bx + w}" y2="${toeTopY}" stroke="${STROKE}" stroke-width="1.6"/>`);
-
-    // interior
-    parts.push(...interiorPieces(s.interior, bx, w, fixedShelfY, toeTopY));
-
-    // bay width label (above) + code (center)
-    parts.push(
-      `<text x="${bx + w / 2}" y="${oy - 10}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="${LABEL}">${esc(
-        formatInches(s.widthIn)
-      )}</text>`
-    );
-    parts.push(
-      `<text x="${bx + w / 2}" y="${oy + 28}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="${LABEL}">${esc(
-        interiorLabel(s.interior)
-      )}${s.hasBack ? ' +B' : ''}</text>`
-    );
+    x += runW + (idx < runs.length - 1 ? GROUP_GAP : 0);
   });
+  const contentW = x - ox;
 
   // Overall dimensions below
   parts.push(
-    `<text x="${ox + drawW / 2}" y="${bottom + 26}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="${STROKE}">Overall: ${esc(
+    `<text x="${ox + contentW / 2}" y="${bottom + 26}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="${STROKE}">Overall: ${esc(
       formatInches(totalWidthIn)
     )} W &#215; ${esc(formatInches(heightIn))} H &#215; ${esc(formatInches(depthIn))} D</text>`
   );
 
+  const svgW = contentW + MARGIN_X * 2;
+  const svgH = oy + drawH + MARGIN_BOTTOM;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">` +
     `<rect width="${svgW}" height="${svgH}" fill="#ffffff"/>` +
