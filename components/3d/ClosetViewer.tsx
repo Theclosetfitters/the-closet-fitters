@@ -13,15 +13,19 @@ import {
   Lightformer,
   ContactShadows,
   RoundedBox,
+  Html,
   useTexture,
 } from '@react-three/drei';
 import type {
   Catalog,
   ClosetConfig,
   HardwareOption,
+  HardwareStyleId,
   MaterialOption,
   SectionConfig,
+  WallId,
 } from '@/types';
+import { wallLabel, wallsForShape } from '@/lib/config';
 
 interface ClosetViewerProps {
   catalog: Catalog;
@@ -37,9 +41,6 @@ const TOP_CUBBY = 12 * IN; // fixed shelf sits 12" down from the top
 
 type Orient = 'v' | 'h';
 
-// Build a PBR material from a real swatch texture, oriented so the grain runs
-// along the panel ('v' = vertical components, 'h' = horizontal — rotated 90°).
-// Mirrored tiling hides the tile seams.
 function makeMat(base: THREE.Texture, orient: Orient, material: MaterialOption) {
   const t = base.clone();
   t.colorSpace = THREE.SRGBColorSpace;
@@ -72,7 +73,6 @@ function buildMetal(hardware: HardwareOption) {
   });
 }
 
-// --- Reusable rounded panel ------------------------------------------------
 function Panel({
   size,
   position,
@@ -116,9 +116,64 @@ function Rod({
   );
 }
 
+// Drawer-front hardware, rendered from simple primitives per selected style.
+function Pull({
+  styleId,
+  cx,
+  y,
+  zFront,
+  width,
+  metal,
+}: {
+  styleId: HardwareStyleId;
+  cx: number;
+  y: number;
+  zFront: number;
+  width: number;
+  metal: THREE.Material;
+}) {
+  const w = width * 0.34;
+  if (styleId === 'bar_pull') {
+    return (
+      <group>
+        <mesh
+          position={[cx, y, zFront + 0.028]}
+          rotation={[0, 0, Math.PI / 2]}
+          material={metal}
+          castShadow
+        >
+          <cylinderGeometry args={[0.006, 0.006, w, 12]} />
+        </mesh>
+        {[-1, 1].map((s) => (
+          <mesh key={s} position={[cx + (s * w) / 2, y, zFront + 0.014]} material={metal}>
+            <boxGeometry args={[0.012, 0.012, 0.026]} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+  if (styleId === 'edge_pull') {
+    // thin tapered bar along the top edge of the drawer front, angled out
+    return (
+      <mesh
+        position={[cx, y + DRAWER_H / 2 - 0.018, zFront + 0.012]}
+        rotation={[-0.5, 0, 0]}
+        material={metal}
+        castShadow
+      >
+        <boxGeometry args={[width * 0.82, 0.01, 0.03]} />
+      </mesh>
+    );
+  }
+  // modern_pull: recessed rectangular channel — a slim inset plate
+  return (
+    <mesh position={[cx, y, zFront + 0.006]} material={metal} castShadow>
+      <boxGeometry args={[w, 0.05, 0.014]} />
+    </mesh>
+  );
+}
+
 // --- Per-section interior --------------------------------------------------
-// Fills the working region between `bottomY` (top of the floor panel, above the
-// toe kick) and `topY` (underside of the per-bay fixed shelf).
 function Interior({
   section,
   cx,
@@ -127,7 +182,9 @@ function Interior({
   bottomY,
   topY,
   matH,
-  metal,
+  rodMetal,
+  pullMetal,
+  hardwareStyleId,
 }: {
   section: SectionConfig;
   cx: number;
@@ -136,13 +193,15 @@ function Interior({
   bottomY: number;
   topY: number;
   matH: THREE.Material;
-  metal: THREE.Material;
+  rodMetal: THREE.Material;
+  pullMetal: THREE.Material;
+  hardwareStyleId: HardwareStyleId;
 }) {
-  const uw = wM - 1.6 * T; // usable interior width
-  const sd = D - 1.6 * T; // shelf depth
+  const uw = wM - 1.6 * T;
+  const sd = D - 1.6 * T;
   const rodLen = uw * 0.94;
   const zFront = D / 2 - 0.02;
-  const rh = topY - bottomY; // region height
+  const rh = topY - bottomY;
 
   const shelf = (key: string, y: number, rot?: [number, number, number]) => (
     <Panel key={key} size={[uw, T, sd]} position={[cx, y, 0]} rotation={rot} material={matH} />
@@ -150,15 +209,15 @@ function Interior({
 
   switch (section.interior) {
     case 'long_hanging':
-      return <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={metal} />;
+      return <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={rodMetal} />;
 
     case 'double_hanging': {
       const midY = bottomY + rh * 0.5;
       return (
         <group>
-          <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={metal} />
+          <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={rodMetal} />
           {shelf('ms', midY)}
-          <Rod cx={cx} y={midY - 0.07} length={rodLen} metal={metal} />
+          <Rod cx={cx} y={midY - 0.07} length={rodLen} metal={rodMetal} />
         </group>
       );
     }
@@ -167,10 +226,9 @@ function Interior({
       const n = Math.max(3, Math.floor(rh / 0.2));
       return (
         <group>
-          {Array.from({ length: n }, (_, i) => {
-            const y = bottomY + (rh * (i + 1)) / (n + 1);
-            return shelf(`shoe-${i}`, y, [-0.3, 0, 0]);
-          })}
+          {Array.from({ length: n }, (_, i) =>
+            shelf(`shoe-${i}`, bottomY + (rh * (i + 1)) / (n + 1), [-0.3, 0, 0])
+          )}
         </group>
       );
     }
@@ -179,10 +237,9 @@ function Interior({
       const n = 5;
       return (
         <group>
-          {Array.from({ length: n }, (_, i) => {
-            const y = bottomY + (rh * (i + 1)) / (n + 1);
-            return shelf(`adj-${i}`, y);
-          })}
+          {Array.from({ length: n }, (_, i) =>
+            shelf(`adj-${i}`, bottomY + (rh * (i + 1)) / (n + 1))
+          )}
         </group>
       );
     }
@@ -193,18 +250,17 @@ function Interior({
         return (
           <group key={`dr-${k}`}>
             <Panel size={[uw, DRAWER_H - 0.01, 0.02]} position={[cx, y, zFront]} material={matH} />
-            <mesh
-              position={[cx, y, zFront + 0.02]}
-              rotation={[0, 0, Math.PI / 2]}
-              material={metal}
-              castShadow
-            >
-              <cylinderGeometry args={[0.007, 0.007, uw * 0.34, 12]} />
-            </mesh>
+            <Pull
+              styleId={hardwareStyleId}
+              cx={cx}
+              y={y}
+              zFront={zFront}
+              width={uw}
+              metal={pullMetal}
+            />
           </group>
         );
       });
-      // Fixed counter shelf above the 4 drawers, then 2 adjustable shelves up to topY.
       const counterY = bottomY + 4 * DRAWER_H + T / 2;
       const shelves = Array.from({ length: 2 }, (_, i) =>
         shelf(`drsh-${i}`, counterY + ((topY - counterY) * (i + 1)) / 3)
@@ -223,92 +279,66 @@ function Interior({
   }
 }
 
-function ClosetModel({ catalog, config }: ClosetViewerProps) {
-  const material =
-    catalog.materials.find((m) => m.id === config.materialId) ?? catalog.materials[0];
-  const hardware =
-    catalog.hardware.find((h) => h.id === config.hardwareId) ?? catalog.hardware[0];
+interface RunMaterials {
+  matV: THREE.Material;
+  matH: THREE.Material;
+  rodMetal: THREE.Material;
+  pullMetal: THREE.Material;
+  hardwareStyleId: HardwareStyleId;
+}
 
-  // Load the real swatch images (suspends until ready inside <Suspense>).
-  const urls = useMemo(
-    () => catalog.materials.map((m) => `/textures/${m.id}.jpg`),
-    [catalog]
-  );
-  const loaded = useTexture(urls);
-  const baseTex =
-    loaded[catalog.materials.findIndex((m) => m.id === material.id)] ?? loaded[0];
+// One straight run of bays, centered at the local origin (length along X).
+function WallRun({
+  sections,
+  H,
+  D,
+  mats,
+}: {
+  sections: SectionConfig[];
+  H: number;
+  D: number;
+  mats: RunMaterials;
+}) {
+  const { matV, matH, rodMetal, pullMetal, hardwareStyleId } = mats;
+  const widths = sections.map((s) => s.widthIn * IN);
+  const W = widths.reduce((a, b) => a + b, 0);
+  if (W <= 0) return null;
 
-  const matV = useMemo(() => makeMat(baseTex, 'v', material), [baseTex, material]);
-  const matH = useMemo(() => makeMat(baseTex, 'h', material), [baseTex, material]);
-  const metal = useMemo(() => buildMetal(hardware), [hardware]);
-  useEffect(
-    () => () => {
-      matV.map?.dispose();
-      matV.dispose();
-      matH.map?.dispose();
-      matH.dispose();
-      metal.dispose();
-    },
-    [matV, matH, metal]
-  );
+  let cursor = -W / 2;
+  const secs = sections.map((s, i) => {
+    const wM = widths[i];
+    const cx = cursor + wM / 2;
+    cursor += wM;
+    return { s, cx, wM };
+  });
+  const boundaries: number[] = [-W / 2];
+  let bx = -W / 2;
+  for (const wM of widths) {
+    bx += wM;
+    boundaries.push(bx);
+  }
 
-  const layout = useMemo(() => {
-    const heightIn = config.heightUpgrade
-      ? catalog.constraints.upgradedHeightIn
-      : catalog.constraints.standardHeightIn;
-    const H = heightIn * IN;
-    const D = catalog.constraints.depthIn * IN;
-    const widths = config.sections.map((s) => s.widthIn * IN);
-    const W = widths.reduce((a, b) => a + b, 0);
-    let cursor = -W / 2;
-    const secs = config.sections.map((s, i) => {
-      const wM = widths[i];
-      const cx = cursor + wM / 2;
-      cursor += wM;
-      return { s, cx, wM };
-    });
-    const boundaries: number[] = [-W / 2];
-    let bx = -W / 2;
-    for (const wM of widths) {
-      bx += wM;
-      boundaries.push(bx);
-    }
-    return { H, D, W, secs, boundaries };
-  }, [config, catalog]);
-
-  const { H, D, W, secs, boundaries } = layout;
-
-  // Floor sits on top of the 2" toe kick; each bay's fixed shelf is 12" down
-  // from the top. The interior fills the region between them. Raising to 8'
-  // grows the lower region only (the top 12" cubby stays constant).
   const bottomY = TOE_H + T;
   const fixedShelfY = H - TOP_CUBBY;
   const topY = fixedShelfY - T / 2;
 
   return (
-    <group position={[0, 0, 0]}>
-      {/* Top + raised floor (horizontal grain) */}
+    <group>
       <Panel size={[W, T, D]} position={[0, H - T / 2, 0]} material={matH} />
       <Panel size={[W, T, D]} position={[0, TOE_H + T / 2, 0]} material={matH} />
-
-      {/* Vertical partitions incl. the two ends (vertical grain) */}
-      {boundaries.map((bx, i) => (
-        <Panel key={`part-${i}`} size={[T, H, D]} position={[bx, H / 2, 0]} material={matV} />
+      {boundaries.map((b, i) => (
+        <Panel key={`part-${i}`} size={[T, H, D]} position={[b, H / 2, 0]} material={matV} />
       ))}
-
       {secs.map(({ s, cx, wM }) => {
         const uw = wM - 1.6 * T;
         return (
           <group key={`bay-${s.id}`}>
-            {/* Recessed toe kick (horizontal grain) */}
             <Panel
               size={[uw, TOE_H, T]}
               position={[cx, TOE_H / 2, D / 2 - TOE_RECESS - T / 2]}
               material={matH}
             />
-            {/* Per-bay fixed shelf, 12" from the top (horizontal grain) */}
             <Panel size={[uw, T, D - 1.6 * T]} position={[cx, fixedShelfY, 0]} material={matH} />
-            {/* Optional back panel (vertical grain) */}
             {s.hasBack && (
               <Panel
                 size={[wM - T, H - TOE_H - T, T]}
@@ -324,7 +354,9 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
               bottomY={bottomY}
               topY={topY}
               matH={matH}
-              metal={metal}
+              rodMetal={rodMetal}
+              pullMetal={pullMetal}
+              hardwareStyleId={hardwareStyleId}
             />
           </group>
         );
@@ -333,14 +365,158 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
   );
 }
 
+// --- Wall layout (straight / L / U) ----------------------------------------
+interface WallPlacement {
+  wall: WallId;
+  sections: SectionConfig[];
+  position: [number, number, number];
+  rotationY: number;
+}
+
+function planWalls(config: ClosetConfig, D: number): WallPlacement[] {
+  const walls = wallsForShape(config.shape);
+  const byWall = (w: WallId) => config.sections.filter((s) => s.wall === w);
+  const widthM = (w: WallId) =>
+    byWall(w).reduce((a, s) => a + s.widthIn * IN, 0);
+
+  if (config.shape === 'l_shaped') {
+    const Wb = widthM('B');
+    return [
+      { wall: 'A', sections: byWall('A'), position: [0, 0, 0], rotationY: 0 },
+      { wall: 'B', sections: byWall('B'), position: [-widthM('A') / 2 - D / 2, 0, Wb / 2 + D / 2], rotationY: Math.PI / 2 },
+    ];
+  }
+  if (config.shape === 'u_shaped') {
+    const Wb = widthM('B');
+    const Wc = widthM('C');
+    const half = widthM('A') / 2 + D / 2;
+    return [
+      { wall: 'A', sections: byWall('A'), position: [0, 0, 0], rotationY: 0 },
+      { wall: 'B', sections: byWall('B'), position: [-half, 0, Wb / 2 + D / 2], rotationY: Math.PI / 2 },
+      { wall: 'C', sections: byWall('C'), position: [half, 0, Wc / 2 + D / 2], rotationY: -Math.PI / 2 },
+    ];
+  }
+  return walls.map((w) => ({
+    wall: w,
+    sections: byWall(w),
+    position: [0, 0, 0] as [number, number, number],
+    rotationY: 0,
+  }));
+}
+
+/** Rough footprint center + span for camera framing. */
+function footprint(placements: WallPlacement[], D: number) {
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const p of placements) {
+    const runW = p.sections.reduce((a, s) => a + s.widthIn * IN, 0);
+    if (runW <= 0) continue;
+    const alongX = Math.abs(Math.cos(p.rotationY)) > 0.5;
+    const ex = alongX ? runW / 2 : D / 2;
+    const ez = alongX ? D / 2 : runW / 2;
+    minX = Math.min(minX, p.position[0] - ex);
+    maxX = Math.max(maxX, p.position[0] + ex);
+    minZ = Math.min(minZ, p.position[2] - ez);
+    maxZ = Math.max(maxZ, p.position[2] + ez);
+  }
+  if (!isFinite(minX)) return { center: [0, 0] as [number, number], span: 1 };
+  return {
+    center: [(minX + maxX) / 2, (minZ + maxZ) / 2] as [number, number],
+    span: Math.max(maxX - minX, maxZ - minZ),
+  };
+}
+
+function ClosetModel({ catalog, config }: ClosetViewerProps) {
+  const material =
+    catalog.materials.find((m) => m.id === config.materialId) ?? catalog.materials[0];
+  const rodColor =
+    catalog.hardware.find((h) => h.id === config.rodColorId) ?? catalog.hardware[0];
+  const pullColor =
+    catalog.hardware.find((h) => h.id === config.hardwareColorId) ?? catalog.hardware[0];
+
+  const urls = useMemo(
+    () => catalog.materials.map((m) => `/textures/${m.id}.jpg`),
+    [catalog]
+  );
+  const loaded = useTexture(urls);
+  const baseTex =
+    loaded[catalog.materials.findIndex((m) => m.id === material.id)] ?? loaded[0];
+
+  const matV = useMemo(() => makeMat(baseTex, 'v', material), [baseTex, material]);
+  const matH = useMemo(() => makeMat(baseTex, 'h', material), [baseTex, material]);
+  const rodMetal = useMemo(() => buildMetal(rodColor), [rodColor]);
+  const pullMetal = useMemo(() => buildMetal(pullColor), [pullColor]);
+  useEffect(
+    () => () => {
+      matV.map?.dispose();
+      matV.dispose();
+      matH.map?.dispose();
+      matH.dispose();
+      rodMetal.dispose();
+      pullMetal.dispose();
+    },
+    [matV, matH, rodMetal, pullMetal]
+  );
+
+  const H =
+    (config.heightUpgrade
+      ? catalog.constraints.upgradedHeightIn
+      : catalog.constraints.standardHeightIn) * IN;
+  const D = catalog.constraints.depthIn * IN;
+
+  const placements = useMemo(() => planWalls(config, D), [config, D]);
+  const { center } = useMemo(() => footprint(placements, D), [placements, D]);
+  const mats: RunMaterials = {
+    matV,
+    matH,
+    rodMetal,
+    pullMetal,
+    hardwareStyleId: config.hardwareStyleId,
+  };
+
+  return (
+    <group position={[-center[0], 0, -center[1]]}>
+      {placements.map((p) =>
+        p.sections.length === 0 ? null : (
+          <group key={p.wall} position={p.position} rotation={[0, p.rotationY, 0]}>
+            <WallRun sections={p.sections} H={H} D={D} mats={mats} />
+            <Html
+              position={[0, H + 0.16, 0]}
+              center
+              zIndexRange={[10, 0]}
+              wrapperClass="closet-wall-label"
+            >
+              <div
+                style={{
+                  padding: '2px 10px',
+                  borderRadius: 999,
+                  background: '#1f333a',
+                  color: '#eae0d5',
+                  fontFamily: 'system-ui, sans-serif',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                }}
+              >
+                {wallLabel(p.wall)}
+              </div>
+            </Html>
+          </group>
+        )
+      )}
+    </group>
+  );
+}
+
 export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
-  const heightIn = config.heightUpgrade
-    ? catalog.constraints.upgradedHeightIn
-    : catalog.constraints.standardHeightIn;
-  const H = heightIn * IN;
-  const W = config.sections.reduce((a, s) => a + s.widthIn, 0) * IN;
-  const span = Math.max(W, H);
-  const dist = span * 1.3 + 1.2;
+  const H =
+    (config.heightUpgrade
+      ? catalog.constraints.upgradedHeightIn
+      : catalog.constraints.standardHeightIn) * IN;
+  const D = catalog.constraints.depthIn * IN;
+  const { span } = footprint(planWalls(config, D), D);
+  const reach = Math.max(span, H);
+  const dist = reach * 1.25 + 1.4;
 
   return (
     <Canvas
@@ -348,7 +524,7 @@ export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
       frameloop="demand"
       dpr={[1, 2]}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
-      camera={{ position: [dist * 0.55, H * 0.6 + 0.5, dist], fov: 42 }}
+      camera={{ position: [dist * 0.55, H * 0.6 + 0.6, dist], fov: 42 }}
       onCreated={({ gl }) => {
         gl.toneMappingExposure = 1.05;
       }}
@@ -363,7 +539,7 @@ export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
       >
-        <orthographicCamera attach="shadow-camera" args={[-5, 5, 5, -5, 0.1, 25]} />
+        <orthographicCamera attach="shadow-camera" args={[-6, 6, 6, -6, 0.1, 30]} />
       </directionalLight>
       <directionalLight position={[-5, 3, -2]} intensity={0.4} />
 
@@ -374,7 +550,7 @@ export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
           <planeGeometry args={[80, 80]} />
           <meshStandardMaterial color="#e4d8c5" roughness={0.85} metalness={0.05} />
         </mesh>
-        <ContactShadows position={[0, 0.002, 0]} opacity={0.5} scale={Math.max(6, W * 2)} blur={2.4} far={5} />
+        <ContactShadows position={[0, 0.002, 0]} opacity={0.5} scale={Math.max(6, reach * 2)} blur={2.4} far={5} />
 
         <Environment resolution={256}>
           <Lightformer intensity={2.2} position={[0, 5, -3]} scale={[14, 6, 1]} />
@@ -389,7 +565,7 @@ export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
         target={[0, H / 2, 0]}
         enablePan={false}
         minDistance={1.5}
-        maxDistance={14}
+        maxDistance={16}
         maxPolarAngle={Math.PI / 2 - 0.03}
       />
     </Canvas>

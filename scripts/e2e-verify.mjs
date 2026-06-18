@@ -114,13 +114,16 @@ async function main() {
   // === A. Server-side pricing ============================================
   console.log('A. Server-side pricing');
   const config = {
+    shape: 'straight',
     sections: [
-      { id: 's1', interior: 'long_hanging', widthIn: 24, hasBack: false }, // 50000
-      { id: 's2', interior: 'drawers', widthIn: 30, hasBack: true }, // 150000 + 20000
-      { id: 's3', interior: 'adjustable_shelves', widthIn: 18, hasBack: false }, // 50000
+      { id: 's1', interior: 'long_hanging', widthIn: 24, hasBack: false, wall: 'A' }, // 50000
+      { id: 's2', interior: 'drawers', widthIn: 30, hasBack: true, wall: 'A' }, // 150000 + 20000
+      { id: 's3', interior: 'adjustable_shelves', widthIn: 18, hasBack: false, wall: 'A' }, // 50000
     ],
     materialId: 'sheer-beauty',
-    hardwareId: 'black',
+    rodColorId: 'black',
+    hardwareColorId: 'gold',
+    hardwareStyleId: 'bar_pull',
     heightUpgrade: true, // width 72in = 6ft → 5000*6 = 30000
   };
   // 50000 + (150000+20000) + 50000 + 30000 = 300000

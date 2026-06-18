@@ -18,9 +18,13 @@ export default function ClosetSummary({
   const material =
     catalog.materials.find((m) => m.id === config.materialId)?.label ??
     config.materialId;
-  const hardware =
-    catalog.hardware.find((h) => h.id === config.hardwareId)?.label ??
-    config.hardwareId;
+  const colorLabel = (id: string) =>
+    catalog.hardware.find((h) => h.id === id)?.label ?? id;
+  const shape =
+    catalog.shapes.find((s) => s.id === config.shape)?.label ?? config.shape;
+  const hardwareStyle =
+    catalog.hardwareStyles.find((s) => s.id === config.hardwareStyleId)?.label ??
+    config.hardwareStyleId;
   const heightIn = config.heightUpgrade
     ? catalog.constraints.upgradedHeightIn
     : catalog.constraints.standardHeightIn;
@@ -46,11 +50,20 @@ export default function ClosetSummary({
         dangerouslySetInnerHTML={{ __html: svg }}
       />
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">
+        Hardware &amp; Finish Details
+      </p>
+      <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <dt className="text-muted">Shape</dt>
+        <dd className="text-right text-ink">{shape}</dd>
         <dt className="text-muted">Material</dt>
         <dd className="text-right text-ink">{material}</dd>
-        <dt className="text-muted">Hardware</dt>
-        <dd className="text-right text-ink">{hardware}</dd>
+        <dt className="text-muted">Hardware style</dt>
+        <dd className="text-right text-ink">{hardwareStyle}</dd>
+        <dt className="text-muted">Rod color</dt>
+        <dd className="text-right text-ink">{colorLabel(config.rodColorId)}</dd>
+        <dt className="text-muted">Hardware color</dt>
+        <dd className="text-right text-ink">{colorLabel(config.hardwareColorId)}</dd>
         <dt className="text-muted">Dimensions</dt>
         <dd className="text-right text-ink">
           {formatInches(totalWidthIn)} W × {formatInches(catalog.constraints.depthIn)} D ×{' '}

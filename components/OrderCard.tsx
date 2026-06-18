@@ -25,6 +25,32 @@ function summarize(catalog: Catalog, config: ClosetConfig) {
   };
 }
 
+function FinishDetails({ catalog, config }: { catalog: Catalog; config: ClosetConfig }) {
+  const label = (list: { id: string; label: string }[], id: string) =>
+    list.find((x) => x.id === id)?.label ?? id;
+  const rows: [string, string][] = [
+    ['Shape', label(catalog.shapes, config.shape)],
+    ['Hardware style', label(catalog.hardwareStyles, config.hardwareStyleId)],
+    ['Rod color', label(catalog.hardware, config.rodColorId)],
+    ['Hardware color', label(catalog.hardware, config.hardwareColorId)],
+  ];
+  return (
+    <div className="rounded-lg bg-cream-50 p-2 text-xs">
+      <div className="font-semibold uppercase tracking-wide text-muted">
+        Hardware &amp; Finish Details
+      </div>
+      <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-2">
+            <dt className="text-muted">{k}</dt>
+            <dd className="text-right text-ink">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 export default function OrderCard({
   order,
   catalog,
@@ -61,6 +87,10 @@ export default function OrderCard({
         <span className="font-semibold tabular-nums text-ink">
           {formatCents(order.totalCents, order.currency)}
         </span>
+      </div>
+
+      <div className="mt-3">
+        <FinishDetails catalog={catalog} config={order.config} />
       </div>
 
       {children && <div className="mt-3">{children}</div>}

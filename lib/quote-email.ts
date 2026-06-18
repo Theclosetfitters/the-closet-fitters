@@ -1,12 +1,15 @@
 // Builds the written, itemized quote email (HTML) for a checkout.
 import type { Catalog, ClosetConfig, PriceBreakdown } from '@/types';
 import { formatCents, formatInches } from '@/lib/format';
+import { wallLabel, wallsForShape } from '@/lib/config';
 
 export interface QuoteContact {
   name: string;
   phone: string;
   email: string;
   address: string;
+  /** Optional referral. Stored with the order; never shown in the email. */
+  referralSource?: string;
 }
 
 export interface QuoteCloset {
@@ -30,8 +33,12 @@ export function buildQuoteEmailHtml(
     catalog.interiors.find((i) => i.id === id)?.label ?? id;
   const matLabel = (id: string) =>
     catalog.materials.find((m) => m.id === id)?.label ?? id;
-  const hwLabel = (id: string) =>
+  const colorLabel = (id: string) =>
     catalog.hardware.find((h) => h.id === id)?.label ?? id;
+  const shapeLabel = (id: string) =>
+    catalog.shapes.find((s) => s.id === id)?.label ?? id;
+  const styleLabel = (id: string) =>
+    catalog.hardwareStyles.find((s) => s.id === id)?.label ?? id;
 
   const blocks = closets
     .map((c, idx) => {
@@ -57,20 +64,48 @@ export function buildQuoteEmailHtml(
             idx + 1
           } sketch" style="max-width:100%;border:1px solid #e4e4e7;border-radius:8px;"/></div>`
         : '';
+
+      // Wall breakdown for L / U shapes.
+      const walls = wallsForShape(cfg.shape);
+      const wallRows =
+        walls.length > 1
+          ? walls
+              .map((w) => {
+                const ws = cfg.sections.filter((s) => s.wall === w);
+                const desc = ws.length
+                  ? ws.map((s) => interiorLabel(s.interior)).join(', ')
+                  : '—';
+                return `<li><strong>${esc(wallLabel(w))}:</strong> ${ws.length} bay${
+                  ws.length === 1 ? '' : 's'
+                } — ${esc(desc)}</li>`;
+              })
+              .join('')
+          : '';
+      const wallBlock = wallRows
+        ? `<ul style="margin:6px 0 8px;padding-left:18px;color:#3f3f46;font-size:13px;">${wallRows}</ul>`
+        : '';
+
       return `
         <div style="margin:18px 0;padding:16px;border:1px solid #e4e4e7;border-radius:10px;">
           <h3 style="margin:0 0 8px;font-size:16px;">Closet ${idx + 1} — ${esc(
         formatCents(c.breakdown.totalCents)
       )}</h3>
-          <p style="margin:2px 0;color:#3f3f46;">
-            <strong>Material:</strong> ${esc(matLabel(cfg.materialId))} ·
-            <strong>Hardware:</strong> ${esc(hwLabel(cfg.hardwareId))}
+          <p style="margin:8px 0 2px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#71717a;">
+            Hardware &amp; Finish Details
           </p>
-          <p style="margin:2px 0 8px;color:#3f3f46;">
-            <strong>Dimensions:</strong> ${esc(formatInches(widthIn))} W ×
-            ${esc(formatInches(catalog.constraints.depthIn))} D ×
-            ${esc(formatInches(heightIn))} H
-          </p>
+          <table style="font-size:14px;color:#3f3f46;">
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Shape</td><td>${esc(shapeLabel(cfg.shape))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Material</td><td>${esc(matLabel(cfg.materialId))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Hardware style</td><td>${esc(styleLabel(cfg.hardwareStyleId))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Rod color</td><td>${esc(colorLabel(cfg.rodColorId))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Hardware color</td><td>${esc(colorLabel(cfg.hardwareColorId))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Dimensions</td><td>${esc(
+              formatInches(widthIn)
+            )} W × ${esc(formatInches(catalog.constraints.depthIn))} D × ${esc(
+        formatInches(heightIn)
+      )} H</td></tr>
+          </table>
+          ${wallBlock}
           ${img}
           <table style="width:100%;border-collapse:collapse;font-size:14px;">${bays}</table>
         </div>`;

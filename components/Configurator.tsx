@@ -3,10 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { Catalog, ClosetConfig, SectionConfig, PriceBreakdown } from '@/types';
-import { clampWidth, defaultConfig, defaultSection, totalWidthIn } from '@/lib/config';
+import {
+  clampWidth,
+  defaultConfig,
+  defaultSection,
+  totalWidthIn,
+  wallsForShape,
+} from '@/lib/config';
 import { formatCents, formatInches } from '@/lib/format';
+import type { ClosetShape, HardwareStyleId } from '@/types';
 import MaterialPicker from '@/components/configurator/MaterialPicker';
 import HardwarePicker from '@/components/configurator/HardwarePicker';
+import ShapeSelector from '@/components/configurator/ShapeSelector';
+import HardwareStylePicker from '@/components/configurator/HardwareStylePicker';
 import SectionRow from '@/components/configurator/SectionRow';
 import PricePanel from '@/components/configurator/PricePanel';
 import { useCart } from '@/lib/cart-context';
@@ -87,18 +96,38 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     [catalog]
   );
 
+  const setShape = useCallback((shape: ClosetShape) => {
+    setConfig((c) => {
+      const walls = wallsForShape(shape);
+      // Spread existing bays across the shape's walls so each wall shows.
+      const sections = c.sections.map((s, i) => ({ ...s, wall: walls[i % walls.length] }));
+      return { ...c, shape, sections };
+    });
+  }, []);
+
   const setMaterial = useCallback(
     (materialId: string) => setConfig((c) => ({ ...c, materialId })),
     []
   );
-  const setHardware = useCallback(
-    (hardwareId: string) => setConfig((c) => ({ ...c, hardwareId })),
+  const setRodColor = useCallback(
+    (rodColorId: string) => setConfig((c) => ({ ...c, rodColorId })),
+    []
+  );
+  const setHardwareColor = useCallback(
+    (hardwareColorId: string) => setConfig((c) => ({ ...c, hardwareColorId })),
+    []
+  );
+  const setHardwareStyle = useCallback(
+    (hardwareStyleId: string) =>
+      setConfig((c) => ({ ...c, hardwareStyleId: hardwareStyleId as HardwareStyleId })),
     []
   );
   const setHeightUpgrade = useCallback(
     (heightUpgrade: boolean) => setConfig((c) => ({ ...c, heightUpgrade })),
     []
   );
+
+  const walls = useMemo(() => wallsForShape(config.shape), [config.shape]);
 
   // --- Add to cart --------------------------------------------------------
   const addToCart = useCallback(() => {
@@ -125,6 +154,21 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
       {/* Right: controls */}
       <div className="order-2 space-y-6 lg:order-none">
+        {/* Shape — chosen first; affects how bays are laid out */}
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-ink">Closet shape</h2>
+          <ShapeSelector
+            shapes={catalog.shapes}
+            selectedId={config.shape}
+            onSelect={(id) => setShape(id as ClosetShape)}
+          />
+          {walls.length > 1 && (
+            <p className="mt-1 text-[11px] text-faint">
+              Assign each bay to a wall below — bays are priced the same on any wall.
+            </p>
+          )}
+        </section>
+
         {/* Material */}
         <section>
           <h2 className="mb-2 text-sm font-semibold text-ink">Material</h2>
@@ -135,15 +179,33 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           />
         </section>
 
-        {/* Hardware */}
+        {/* Hardware style */}
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink">
-            Hardware color
-          </h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink">Hardware style</h2>
+          <HardwareStylePicker
+            styles={catalog.hardwareStyles}
+            selectedId={config.hardwareStyleId}
+            onSelect={setHardwareStyle}
+          />
+        </section>
+
+        {/* Rod color */}
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-ink">Rod color</h2>
           <HardwarePicker
             hardware={catalog.hardware}
-            selectedId={config.hardwareId}
-            onSelect={setHardware}
+            selectedId={config.rodColorId}
+            onSelect={setRodColor}
+          />
+        </section>
+
+        {/* Hardware color */}
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-ink">Hardware color</h2>
+          <HardwarePicker
+            hardware={catalog.hardware}
+            selectedId={config.hardwareColorId}
+            onSelect={setHardwareColor}
           />
         </section>
 
@@ -190,6 +252,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
               section={section}
               index={i}
               canRemove={config.sections.length > 1}
+              walls={walls}
               onChange={updateSection}
               onRemove={removeSection}
             />

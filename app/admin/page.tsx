@@ -64,6 +64,12 @@ export default async function AdminPage() {
                   {order.customerAddress && (
                     <div className="mt-0.5 text-muted">{order.customerAddress}</div>
                   )}
+                  {order.referralSource && (
+                    <div className="mt-1 text-muted">
+                      <span className="text-faint">Referral source:</span>{' '}
+                      {order.referralSource}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-end">
                   <StatusControl orderId={order.id} status={order.status} />

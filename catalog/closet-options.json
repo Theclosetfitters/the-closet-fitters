@@ -66,8 +66,18 @@
     { "id": "glacier-white", "label": "Glacier White", "colorHex": "#f3f2ee", "texture": "solid", "note": "always a good idea" }
   ],
   "hardware": [
-    { "id": "brushed-nickel", "label": "Brushed Nickel", "colorHex": "#c7c8ca" },
-    { "id": "brushed-brass", "label": "Brushed Brass", "colorHex": "#b59a5e" },
+    { "id": "satin-nickel", "label": "Satin Nickel", "colorHex": "#c7c8ca" },
+    { "id": "gold", "label": "Gold", "colorHex": "#b59a5e" },
     { "id": "black", "label": "Black", "colorHex": "#2a2a2d" }
+  ],
+  "shapes": [
+    { "id": "straight", "label": "Straight", "description": "A single wall of bays." },
+    { "id": "l_shaped", "label": "L-Shaped", "description": "Two walls meeting at a 90° corner." },
+    { "id": "u_shaped", "label": "U-Shaped", "description": "Three walls forming a U." }
+  ],
+  "hardwareStyles": [
+    { "id": "modern_pull", "label": "Modern Pull", "description": "Recessed rectangular pull with an angled channel." },
+    { "id": "bar_pull", "label": "Bar Pull", "description": "Straight cylindrical bar on two posts." },
+    { "id": "edge_pull", "label": "Edge Pull", "description": "Tapered angled edge-pull with a thin profile." }
   ]
 }

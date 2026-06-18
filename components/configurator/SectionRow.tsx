@@ -1,14 +1,15 @@
 'use client';
 
-import type { Catalog, SectionConfig } from '@/types';
-import { formatCents, formatInches } from '@/lib/format';
-import { maxWidthFor } from '@/lib/config';
+import type { Catalog, SectionConfig, WallId } from '@/types';
+import { formatCents, formatInches, } from '@/lib/format';
+import { maxWidthFor, wallLabel } from '@/lib/config';
 
 interface Props {
   catalog: Catalog;
   section: SectionConfig;
   index: number;
   canRemove: boolean;
+  walls: WallId[];
   onChange: (id: string, patch: Partial<SectionConfig>) => void;
   onRemove: (id: string) => void;
 }
@@ -18,6 +19,7 @@ export default function SectionRow({
   section,
   index,
   canRemove,
+  walls,
   onChange,
   onRemove,
 }: Props) {
@@ -52,6 +54,27 @@ export default function SectionRow({
           )}
         </div>
       </div>
+
+      {/* Wall (L/U shapes only) */}
+      {walls.length > 1 && (
+        <div className="mb-2">
+          <label className="block text-xs text-muted">Wall</label>
+          <select
+            data-testid={`section-wall-${index}`}
+            value={section.wall}
+            onChange={(e) =>
+              onChange(section.id, { wall: e.target.value as WallId })
+            }
+            className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm"
+          >
+            {walls.map((w) => (
+              <option key={w} value={w}>
+                {wallLabel(w)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Interior */}
       <label className="block text-xs text-muted">Inside</label>

@@ -1,6 +1,29 @@
 // Helpers for building and reading a ClosetConfig (section-based model).
-import type { Catalog, ClosetConfig, InteriorType, SectionConfig } from '@/types';
+import type {
+  Catalog,
+  ClosetConfig,
+  ClosetShape,
+  InteriorType,
+  SectionConfig,
+  WallId,
+} from '@/types';
 import { roundToEighth } from '@/lib/format';
+
+/** Which walls a shape has, in order. */
+export function wallsForShape(shape: ClosetShape): WallId[] {
+  if (shape === 'l_shaped') return ['A', 'B'];
+  if (shape === 'u_shaped') return ['A', 'B', 'C'];
+  return ['A'];
+}
+
+const WALL_LABELS: Record<WallId, string> = {
+  A: 'Wall A',
+  B: 'Wall B',
+  C: 'Wall C',
+};
+export function wallLabel(wall: WallId): string {
+  return WALL_LABELS[wall];
+}
 
 /** Generate a stable id for a section (browser or server safe). */
 export function makeSectionId(): string {
@@ -29,20 +52,27 @@ export function clampWidth(
   return roundToEighth(Math.min(max, Math.max(min, widthIn)));
 }
 
-export function defaultSection(catalog: Catalog): SectionConfig {
+export function defaultSection(
+  catalog: Catalog,
+  wall: WallId = 'A'
+): SectionConfig {
   return {
     id: makeSectionId(),
     interior: 'long_hanging',
     widthIn: Math.min(24, catalog.constraints.standardMaxWidthIn),
     hasBack: false,
+    wall,
   };
 }
 
 export function defaultConfig(catalog: Catalog): ClosetConfig {
   return {
+    shape: 'straight',
     sections: [defaultSection(catalog)],
     materialId: catalog.materials[0].id,
-    hardwareId: catalog.hardware[0].id,
+    rodColorId: catalog.hardware[0].id,
+    hardwareColorId: catalog.hardware[0].id,
+    hardwareStyleId: catalog.hardwareStyles[0].id,
     heightUpgrade: false,
   };
 }

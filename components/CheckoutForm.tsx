@@ -23,7 +23,13 @@ const FIELDS = [
 
 export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
   const { items, totalCents, clear, ready } = useCart();
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' });
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    referralSource: '',
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
@@ -146,6 +152,24 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
             placeholder="123 Main St, City, State ZIP"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
+            className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="referral-source"
+            className="block text-sm font-medium text-ink"
+          >
+            How did you hear about us?{' '}
+            <span className="font-normal text-faint">(optional)</span>
+          </label>
+          <input
+            id="referral-source"
+            data-testid="field-referral"
+            type="text"
+            placeholder="Instagram, a friend, Google…"
+            value={form.referralSource}
+            onChange={(e) => setForm({ ...form, referralSource: e.target.value })}
             className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-brand focus:outline-none"
           />
         </div>

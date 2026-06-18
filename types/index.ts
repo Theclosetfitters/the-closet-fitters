@@ -14,6 +14,26 @@ export type InteriorType =
 
 export type MaterialTexture = 'wood' | 'woven' | 'solid';
 
+/** Closet footprint. Bays are distributed across the wall(s). */
+export type ClosetShape = 'straight' | 'l_shaped' | 'u_shaped';
+
+/** Which wall a bay belongs to. Straight uses A; L uses A/B; U uses A/B/C. */
+export type WallId = 'A' | 'B' | 'C';
+
+export type HardwareStyleId = 'modern_pull' | 'bar_pull' | 'edge_pull';
+
+export interface ShapeOption {
+  id: ClosetShape;
+  label: string;
+  description: string;
+}
+
+export interface HardwareStyleOption {
+  id: HardwareStyleId;
+  label: string;
+  description: string;
+}
+
 /** One interior layout option for a section. */
 export interface InteriorOption {
   id: InteriorType;
@@ -63,7 +83,10 @@ export interface Catalog {
   constraints: CatalogConstraints;
   interiors: InteriorOption[];
   materials: MaterialOption[];
+  /** Shared finish colors used for both rods and drawer hardware. */
   hardware: HardwareOption[];
+  shapes: ShapeOption[];
+  hardwareStyles: HardwareStyleOption[];
 }
 
 /** One vertical section of the closet. */
@@ -72,16 +95,21 @@ export interface SectionConfig {
   interior: InteriorType;
   widthIn: number; // snapped to 1/8"
   hasBack: boolean;
+  wall: WallId; // which wall this bay sits on (always 'A' for straight)
 }
 
 /**
  * A customer's configuration. This is the ONLY thing sent to the server for
- * pricing — never a price (CLAUDE.md #1).
+ * pricing — never a price (CLAUDE.md #1). Shape, colors, and hardware style add
+ * no cost; pricing is per bay regardless.
  */
 export interface ClosetConfig {
+  shape: ClosetShape;
   sections: SectionConfig[];
   materialId: string;
-  hardwareId: string;
+  rodColorId: string; // hanging-rod finish color
+  hardwareColorId: string; // drawer pull/knob finish color
+  hardwareStyleId: HardwareStyleId; // drawer pull/knob style
   heightUpgrade: boolean; // false = standard height, true = +1'
 }
 
@@ -113,6 +141,7 @@ export interface Order {
   customerName: string | null;
   customerPhone: string | null;
   customerAddress: string | null;
+  referralSource: string | null;
   quoteRef: string | null;
   createdAt: string;
   updatedAt: string;

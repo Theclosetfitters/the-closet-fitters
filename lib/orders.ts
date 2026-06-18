@@ -29,6 +29,7 @@ interface OrderRow {
   customer_name: string | null;
   customer_phone: string | null;
   customer_address: string | null;
+  referral_source: string | null;
   quote_ref: string | null;
   created_at: string;
   updated_at: string;
@@ -49,6 +50,7 @@ function rowToOrder(row: OrderRow): Order {
     customerName: row.customer_name ?? null,
     customerPhone: row.customer_phone ?? null,
     customerAddress: row.customer_address ?? null,
+    referralSource: row.referral_source ?? null,
     quoteRef: row.quote_ref ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -148,10 +150,17 @@ export async function createQuoteOrders(
   input: {
     quoteRef: string;
     userId: string | null;
-    contact: { name: string; phone: string; email: string; address: string };
+    contact: {
+      name: string;
+      phone: string;
+      email: string;
+      address: string;
+      referralSource?: string;
+    };
     closets: { config: ClosetConfig; breakdown: PriceBreakdown; totalCents: number }[];
   }
 ): Promise<void> {
+  const referral = input.contact.referralSource?.trim() || null;
   const rows = input.closets.map((c) => ({
     user_id: input.userId,
     config: c.config,
@@ -164,6 +173,7 @@ export async function createQuoteOrders(
     customer_name: input.contact.name,
     customer_phone: input.contact.phone,
     customer_address: input.contact.address,
+    referral_source: referral,
     quote_ref: input.quoteRef,
   }));
   const { error } = await supabase.from('orders').insert(rows);

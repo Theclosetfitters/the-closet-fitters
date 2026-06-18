@@ -106,16 +106,18 @@ export function closetSketchSvg(catalog: Catalog, config: ClosetConfig): string 
 
   const material =
     catalog.materials.find((m) => m.id === config.materialId)?.label ?? config.materialId;
-  const hardware =
-    catalog.hardware.find((h) => h.id === config.hardwareId)?.label ?? config.hardwareId;
+  const rodColor =
+    catalog.hardware.find((h) => h.id === config.rodColorId)?.label ?? config.rodColorId;
+  const shape =
+    catalog.shapes.find((s) => s.id === config.shape)?.label ?? config.shape;
   const interiorLabel = (id: string) =>
     catalog.interiors.find((i) => i.id === id)?.code ?? id;
 
   const parts: string[] = [];
   parts.push(
     `<text x="${ox}" y="22" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="${STROKE}">${esc(
-      material
-    )} · ${esc(hardware)} hardware</text>`
+      shape
+    )} · ${esc(material)} · ${esc(rodColor)} rods</text>`
   );
 
   // Outer body
