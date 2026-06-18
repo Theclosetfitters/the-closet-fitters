@@ -46,7 +46,7 @@ const IconBuilding = () => (
 );
 
 const STEPS = [
-  { n: '01', title: 'Design', body: 'Plan your closet bay by bay in 3D and watch a live, itemized price update as you go.' },
+  { n: '01', title: 'Design', body: 'Plan your closet in 3D and watch a live, itemized price update as you go.' },
   { n: '02', title: 'Engineer', body: 'We translate your design into precise, production-ready plans — measured to the eighth-inch.' },
   { n: '03', title: 'Build & Install', body: 'Premium materials, expertly constructed and fitted seamlessly to your space.' },
 ];
@@ -59,10 +59,9 @@ const AUDIENCES = [
 ];
 
 const STATS = [
-  { n: '100%', label: 'Made to Measure' },
-  { n: '14 Days', label: 'Lead Time' },
-  { n: 'Configure in Minutes', label: 'No Sales Call Needed' },
   { n: 'Instant Quote', label: 'Online, Every Time' },
+  { n: '100%', label: 'Made to Measure' },
+  { n: '14 Day', label: 'Lead Time' },
 ];
 
 const eyebrow = 'text-xs font-semibold uppercase tracking-[0.25em]';
@@ -111,7 +110,7 @@ export default function Home() {
 
       {/* 3. Trust bar -------------------------------------------------- */}
       <section className="bg-walnut text-cream" aria-label="By the numbers">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-6 py-12 sm:grid-cols-3">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
               <div className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
