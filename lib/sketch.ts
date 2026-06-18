@@ -56,7 +56,8 @@ function interiorPieces(
       break;
     }
     case 'shoe_shelves': {
-      const n = Math.max(3, Math.floor(rh / (8 * SCALE)));
+      // 6 angled shelves: fixed center (3rd up) + 2 adjustable below, 3 above.
+      const n = 6;
       for (let i = 1; i <= n; i++) {
         const y = regionTopY + (rh * i) / (n + 1);
         out.push(
@@ -66,8 +67,10 @@ function interiorPieces(
       break;
     }
     case 'adjustable_shelves': {
-      const n = 5;
-      for (let i = 1; i <= n; i++) out.push(hline(regionTopY + (rh * i) / (n + 1), true));
+      // 4 shelves: fixed center (2nd up, drawn solid) + 1 adjustable below
+      // (dashed), 2 adjustable above (dashed).
+      const n = 4;
+      for (let i = 1; i <= n; i++) out.push(hline(regionTopY + (rh * i) / (n + 1), i !== 2));
       break;
     }
     case 'drawers': {

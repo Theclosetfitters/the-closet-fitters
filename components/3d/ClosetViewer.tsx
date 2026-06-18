@@ -241,7 +241,9 @@ function Interior({
     }
 
     case 'shoe_shelves': {
-      const n = Math.max(3, Math.floor(rh / 0.2));
+      // 6 angled shelves: a fixed shelf in the center (3rd from the bottom)
+      // with 2 adjustable below it and 3 adjustable above it, evenly spaced.
+      const n = 6;
       return (
         <group>
           {Array.from({ length: n }, (_, i) =>
@@ -252,7 +254,9 @@ function Interior({
     }
 
     case 'adjustable_shelves': {
-      const n = 5;
+      // 4 shelves: a fixed shelf in the center (2nd from the bottom) with
+      // 1 adjustable below it and 2 adjustable above it, evenly spaced.
+      const n = 4;
       return (
         <group>
           {Array.from({ length: n }, (_, i) =>
