@@ -25,7 +25,12 @@ import type {
   SectionConfig,
   WallId,
 } from '@/types';
-import { wallDisplayLabel, wallsForShape } from '@/lib/config';
+import {
+  CORNER_FILLER_IN,
+  drawerBlockedSideBayIds,
+  wallDisplayLabel,
+  wallsForShape,
+} from '@/lib/config';
 
 interface ClosetViewerProps {
   catalog: Catalog;
@@ -315,11 +320,14 @@ function WallRun({
   H,
   D,
   mats,
+  blockedIds,
 }: {
   sections: SectionConfig[];
   H: number;
   D: number;
   mats: RunMaterials;
+  /** Side-wall corner bay ids that must not render drawers. */
+  blockedIds: Set<string>;
 }) {
   const { matV, matH, rodMetal, pullMetal, hardwareStyleId } = mats;
   const widths = sections.map((s) => s.widthIn * IN);
@@ -353,6 +361,12 @@ function WallRun({
       ))}
       {secs.map(({ s, cx, wM }) => {
         const uw = wM - 1.6 * T;
+        // A blocked side-wall corner bay can't have drawers — render the
+        // default interior instead so the viewer matches the editor.
+        const eff: SectionConfig =
+          blockedIds.has(s.id) && s.interior === 'drawers'
+            ? { ...s, interior: 'long_hanging' }
+            : s;
         return (
           <group key={`bay-${s.id}`}>
             <Panel
@@ -369,7 +383,7 @@ function WallRun({
               />
             )}
             <Interior
-              section={s}
+              section={eff}
               cx={cx}
               wM={wM}
               D={D}
@@ -487,6 +501,7 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
 
   const placements = useMemo(() => planWalls(config, D), [config, D]);
   const { center } = useMemo(() => footprint(placements, D), [placements, D]);
+  const blockedIds = useMemo(() => drawerBlockedSideBayIds(config), [config]);
   const mats: RunMaterials = {
     matV,
     matH,
@@ -495,12 +510,39 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
     hardwareStyleId: config.hardwareStyleId,
   };
 
+  // 8.5" structural filler panels at each back-wall corner (L/U). They sit in
+  // the corner void at the ends of Wall A, so the side walls don't move and the
+  // wall labels stay put. Same material as the rest of the closet.
+  const fillerPanels = useMemo(() => {
+    if (config.shape !== 'l_shaped' && config.shape !== 'u_shaped') return [];
+    const widthA = config.sections
+      .filter((s) => s.wall === 'A')
+      .reduce((a, s) => a + s.widthIn * IN, 0);
+    if (widthA <= 0) return [];
+    const fw = CORNER_FILLER_IN * IN;
+    const panels: { key: string; x: number }[] = [
+      { key: 'filler-left', x: -widthA / 2 - fw / 2 },
+    ];
+    if (config.shape === 'u_shaped') {
+      panels.push({ key: 'filler-right', x: widthA / 2 + fw / 2 });
+    }
+    return panels.map((pl) => (
+      <Panel
+        key={pl.key}
+        size={[fw, H, D]}
+        position={[pl.x, H / 2, 0]}
+        material={matV}
+      />
+    ));
+  }, [config.shape, config.sections, H, D, matV]);
+
   return (
     <group position={[-center[0], 0, -center[1]]}>
+      {fillerPanels}
       {placements.map((p) =>
         p.sections.length === 0 ? null : (
           <group key={p.wall} position={p.position} rotation={[0, p.rotationY, 0]}>
-            <WallRun sections={p.sections} H={H} D={D} mats={mats} />
+            <WallRun sections={p.sections} H={H} D={D} mats={mats} blockedIds={blockedIds} />
             <Html
               position={[0, H + 0.16, 0]}
               center

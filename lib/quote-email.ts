@@ -119,6 +119,11 @@ export function buildQuoteEmailHtml(
           )
             .map((l) => `${esc(l.code)} = ${esc(l.label)}`)
             .join('&nbsp;&nbsp; ')}</p>
+          ${
+            cfg.shape === 'straight'
+              ? ''
+              : `<p style="margin:4px 0 8px;font-size:12px;color:#71717a;">Note: 8.5&quot; filler panels are included at all back wall corners to allow full hanging depth on side walls.</p>`
+          }
           <table style="width:100%;border-collapse:collapse;font-size:14px;">${bays}</table>
         </div>`;
     })

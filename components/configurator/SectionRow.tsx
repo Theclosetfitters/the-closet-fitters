@@ -11,10 +11,20 @@ interface Props {
   index: number;
   /** Display label within the wall, e.g. "Bay 1". */
   label: string;
+  /** True when this side-wall corner bay can't be drawers (back-wall corner
+   * bay at this corner already has a drawer bank). */
+  drawersBlocked?: boolean;
   onChange: (id: string, patch: Partial<SectionConfig>) => void;
 }
 
-export default function SectionRow({ catalog, section, index, label, onChange }: Props) {
+export default function SectionRow({
+  catalog,
+  section,
+  index,
+  label,
+  drawersBlocked = false,
+  onChange,
+}: Props) {
   const interior = catalog.interiors.find((i) => i.id === section.interior)!;
   const max = maxWidthFor(catalog, section.interior);
   const min = catalog.constraints.minWidthIn;
@@ -46,11 +56,17 @@ export default function SectionRow({ catalog, section, index, label, onChange }:
         className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm"
       >
         {catalog.interiors.map((i) => (
-          <option key={i.id} value={i.id}>
+          <option key={i.id} value={i.id} disabled={drawersBlocked && i.id === 'drawers'}>
             {i.label} — {formatCents(i.priceCents)}
           </option>
         ))}
       </select>
+      {drawersBlocked && (
+        <p className="mt-1 text-xs font-normal text-sand">
+          Drawers cannot be placed here when the adjacent back wall corner bay
+          has a drawer bank — they would conflict when opened.
+        </p>
+      )}
       <p className="mt-1 text-[11px] text-faint">{interior.description}</p>
 
       {/* Width */}

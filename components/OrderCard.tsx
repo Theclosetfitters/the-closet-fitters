@@ -104,6 +104,12 @@ export default function OrderCard({
           Closet Layout Diagram
         </div>
         <BirdsEyeView catalog={catalog} config={order.config} />
+        {order.config.shape !== 'straight' && (
+          <p className="mt-2 text-[11px] text-muted">
+            Note: 8.5&quot; filler panels are included at all back wall corners to
+            allow full hanging depth on side walls.
+          </p>
+        )}
       </div>
 
       {children && <div className="mt-3">{children}</div>}

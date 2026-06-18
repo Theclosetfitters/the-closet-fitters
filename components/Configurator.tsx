@@ -15,6 +15,7 @@ import {
   clampWidth,
   defaultConfig,
   defaultSection,
+  drawerBlockedSideBayIds,
   totalWidthIn,
   wallDisplayLabel,
   wallsForShape,
@@ -136,6 +137,32 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     []
   );
 
+  // Side-wall corner bays that may not be drawers (back-wall corner bay has a
+  // drawer bank). One-directional: the back wall (A) drives the restriction.
+  const blockedIds = useMemo(() => drawerBlockedSideBayIds(config), [config]);
+
+  // If a conflict gets created (e.g. the back-wall corner bay is switched to
+  // drawers while the side-wall corner bay already had them), reset that side
+  // bay to the default interior. Idempotent — converges in one pass.
+  useEffect(() => {
+    if (!config.sections.some((s) => blockedIds.has(s.id) && s.interior === 'drawers')) {
+      return;
+    }
+    setConfig((c) => ({
+      ...c,
+      sections: c.sections.map((s) =>
+        blockedIds.has(s.id) && s.interior === 'drawers'
+          ? { ...s, interior: 'long_hanging', widthIn: clampWidth(catalog, 'long_hanging', s.widthIn) }
+          : s
+      ),
+    }));
+  }, [config.sections, blockedIds, catalog]);
+
+  const backWallHasBays = useMemo(
+    () => config.sections.some((s) => s.wall === 'A'),
+    [config.sections]
+  );
+
   const walls = useMemo(() => wallsForShape(config.shape), [config.shape]);
   const wallSlots = useMemo(
     () =>
@@ -199,6 +226,8 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
               wall={w.wall}
               label={w.label}
               bays={w.bays}
+              blockedIds={blockedIds}
+              showCornerNote={w.wall !== 'A' && backWallHasBays}
               onAddBay={addBay}
               onRemoveBay={removeBay}
               onChange={updateSection}

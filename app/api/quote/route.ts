@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
+import { drawerBlockedSideBayIds } from '@/lib/config';
 import { closetSketchSvg } from '@/lib/sketch';
 import { buildQuoteEmailHtml, type QuoteContact } from '@/lib/quote-email';
 import { isEmailConfigured, sendQuoteEmail, type EmailAttachment } from '@/lib/email';
@@ -50,6 +51,24 @@ export async function POST(request: Request) {
   }
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'Your cart is empty.' }, { status: 400 });
+  }
+
+  // Corner rule (one-directional): a side-wall corner bay can't have drawers
+  // when the adjacent back-wall corner bay does — they'd collide when opened.
+  for (const it of items) {
+    const blocked = drawerBlockedSideBayIds(it.config);
+    const conflict = it.config.sections.some(
+      (s) => blocked.has(s.id) && s.interior === 'drawers'
+    );
+    if (conflict) {
+      return NextResponse.json(
+        {
+          error:
+            'Drawers can’t be on a side wall corner bay when the adjacent back wall corner bay has a drawer bank.',
+        },
+        { status: 400 }
+      );
+    }
   }
 
   // Recompute every closet's price server-side.

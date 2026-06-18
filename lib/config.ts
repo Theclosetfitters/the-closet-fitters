@@ -131,6 +131,51 @@ export function totalWidthIn(config: ClosetConfig): number {
   return config.sections.reduce((sum, s) => sum + s.widthIn, 0);
 }
 
+// --- Corner rules (L / U shapes) -------------------------------------------
+// The back wall (A) meets a perpendicular side wall at each corner. The bay
+// nearest the corner on each wall is its "corner bay". These helpers are pure
+// and isomorphic so the configurator UI, the 3D viewer, and the server-side
+// quote validation all agree on what a corner is.
+
+/** Fixed clearance gap (inches) kept at every back-wall corner so clothes can
+ * hang the full depth on the side walls. Structural filler — no cost, not a bay. */
+export const CORNER_FILLER_IN = 8.5;
+
+export interface CornerPair {
+  /** Back wall (A) corner bay id that drives the restriction. */
+  backBayId: string;
+  /** Adjacent side wall (B or C) corner bay id. */
+  sideBayId: string;
+}
+
+/** The back-wall↔side-wall corner bay pairs for the current shape.
+ * L: one corner (A[0]↔B[0]). U: two (A[0]↔B[0], A[last]↔C[0]). Straight: none. */
+export function cornerPairs(config: ClosetConfig): CornerPair[] {
+  const a = config.sections.filter((s) => s.wall === 'A');
+  const b = config.sections.filter((s) => s.wall === 'B');
+  const c = config.sections.filter((s) => s.wall === 'C');
+  const pairs: CornerPair[] = [];
+  if (config.shape === 'l_shaped') {
+    if (a[0] && b[0]) pairs.push({ backBayId: a[0].id, sideBayId: b[0].id });
+  } else if (config.shape === 'u_shaped') {
+    if (a[0] && b[0]) pairs.push({ backBayId: a[0].id, sideBayId: b[0].id });
+    const aLast = a[a.length - 1];
+    if (aLast && c[0]) pairs.push({ backBayId: aLast.id, sideBayId: c[0].id });
+  }
+  return pairs;
+}
+
+/** Side-wall corner bay ids that may NOT be drawers because their adjacent
+ * back-wall corner bay is set to drawers. One-directional: the back wall drives. */
+export function drawerBlockedSideBayIds(config: ClosetConfig): Set<string> {
+  const byId = new Map(config.sections.map((s) => [s.id, s]));
+  const blocked = new Set<string>();
+  for (const { backBayId, sideBayId } of cornerPairs(config)) {
+    if (byId.get(backBayId)?.interior === 'drawers') blocked.add(sideBayId);
+  }
+  return blocked;
+}
+
 export function heightInches(catalog: Catalog, config: ClosetConfig): number {
   return config.heightUpgrade
     ? catalog.constraints.upgradedHeightIn

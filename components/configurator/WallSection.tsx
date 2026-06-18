@@ -13,6 +13,8 @@ export default function WallSection({
   wall,
   label,
   bays,
+  blockedIds,
+  showCornerNote,
   onAddBay,
   onRemoveBay,
   onChange,
@@ -21,6 +23,10 @@ export default function WallSection({
   wall: WallId;
   label: string;
   bays: BaySlot[];
+  /** Section ids whose drawers option must be disabled (side-wall corner bays). */
+  blockedIds: Set<string>;
+  /** Show the 8.5" corner filler note (side walls of an L/U closet). */
+  showCornerNote: boolean;
   onAddBay: (wall: WallId) => void;
   onRemoveBay: (wall: WallId) => void;
   onChange: (id: string, patch: Partial<SectionConfig>) => void;
@@ -29,6 +35,13 @@ export default function WallSection({
   return (
     <section className="space-y-3" aria-label={label}>
       <h3 className="text-sm font-bold uppercase tracking-wide text-ink">{label}</h3>
+
+      {showCornerNote && (
+        <p className="rounded-lg bg-cream px-3 py-2 text-[11px] text-muted">
+          An 8.5&quot; filler panel will be added at each corner to allow full
+          hanging depth on the side walls. This is included at no extra cost.
+        </p>
+      )}
 
       {/* Bay count stepper */}
       <div className="flex items-center justify-between rounded-xl border border-line bg-card px-3 py-2">
@@ -66,6 +79,7 @@ export default function WallSection({
           section={b.section}
           index={b.index}
           label={`Bay ${i + 1}`}
+          drawersBlocked={blockedIds.has(b.section.id)}
           onChange={onChange}
         />
       ))}
