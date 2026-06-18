@@ -159,7 +159,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
                 type="checkbox"
                 checked={config.heightUpgrade}
                 onChange={(e) => setHeightUpgrade(e.target.checked)}
-                className="accent-amber-600"
+                className="accent-brand"
               />
               Raise to 8' (+{formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
             </label>

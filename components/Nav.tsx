@@ -4,6 +4,7 @@ import { getCurrentUser, isAdmin } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import SignOutButton from '@/components/SignOutButton';
 import CartLink from '@/components/CartLink';
+import Logo from '@/components/Logo';
 
 // Server component: reflects auth state in the nav.
 export default async function Nav() {
@@ -17,8 +18,8 @@ export default async function Nav() {
   return (
     <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-bold text-zinc-900">
-          <span className="text-amber-600">▢</span> Custom Closets
+        <Link href="/" aria-label="The Closet Fitters home">
+          <Logo />
         </Link>
         <div className="flex items-center gap-4 text-sm">
           <Link href="/configure" className="text-zinc-600 hover:text-zinc-900">

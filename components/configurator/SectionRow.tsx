@@ -37,7 +37,7 @@ export default function SectionRow({
           Section {index + 1}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-amber-700">
+          <span className="text-sm font-semibold text-walnut">
             {formatCents(sectionTotal)}
           </span>
           {canRemove && (
@@ -90,7 +90,7 @@ export default function SectionRow({
         onChange={(e) =>
           onChange(section.id, { widthIn: Number(e.target.value) })
         }
-        className="mt-1 w-full accent-amber-600"
+        className="mt-1 w-full accent-brand"
       />
       <div className="flex justify-between text-[10px] text-zinc-400">
         <span>{formatInches(min)}</span>
@@ -109,7 +109,7 @@ export default function SectionRow({
           type="checkbox"
           checked={section.hasBack}
           onChange={(e) => onChange(section.id, { hasBack: e.target.checked })}
-          className="accent-amber-600"
+          className="accent-brand"
         />
       </label>
     </div>

@@ -24,7 +24,7 @@ export default function MaterialPicker({
             onClick={() => onSelect(m.id)}
             title={m.note ? `${m.label} — ${m.note}` : m.label}
             className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 text-center transition ${
-              active ? 'border-amber-600 ring-1 ring-amber-600' : 'border-zinc-200 hover:border-zinc-300'
+              active ? 'border-brand ring-1 ring-brand' : 'border-zinc-200 hover:border-zinc-300'
             }`}
           >
             <span

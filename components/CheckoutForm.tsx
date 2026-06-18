@@ -56,14 +56,14 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
 
         <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
           <span className="font-semibold text-zinc-900">Grand total</span>
-          <span className="text-lg font-bold tabular-nums text-amber-700">
+          <span className="text-lg font-bold tabular-nums text-walnut">
             {formatCents(done.grandTotalCents)}
           </span>
         </div>
 
         <Link
           href="/configure"
-          className="block rounded-full bg-amber-600 px-6 py-2.5 text-center text-sm font-semibold text-white hover:bg-amber-700"
+          className="block rounded-full bg-brand px-6 py-2.5 text-center text-sm font-semibold text-white hover:bg-brand-700"
         >
           Design another closet
         </Link>
@@ -77,7 +77,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
         <p className="text-zinc-500">Your cart is empty.</p>
         <Link
           href="/configure"
-          className="mt-4 inline-block rounded-full bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+          className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
           Design a closet
         </Link>
@@ -131,7 +131,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
               placeholder={f.placeholder}
               value={form[f.name]}
               onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-600 focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
           </div>
         ))}
@@ -146,7 +146,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
             placeholder="123 Main St, City, State ZIP"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-amber-600 focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
           />
         </div>
         {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-600">{error}</p>}
@@ -167,7 +167,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
             type="submit"
             data-testid="submit-quote"
             disabled={submitting || (ready && items.length === 0)}
-            className="mt-4 w-full rounded-full bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
+            className="mt-4 w-full rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
           >
             {submitting ? 'Submitting…' : 'Request quote'}
           </button>

@@ -44,7 +44,7 @@ export default function PricePanel({
         <span className="font-semibold text-zinc-900">Total</span>
         <span
           data-testid="price-total"
-          className="text-lg font-bold tabular-nums text-amber-700"
+          className="text-lg font-bold tabular-nums text-walnut"
         >
           {breakdown
             ? formatCents(breakdown.totalCents, breakdown.currency)
@@ -57,14 +57,14 @@ export default function PricePanel({
         data-testid="add-to-cart"
         onClick={onAddToCart}
         disabled={!breakdown}
-        className="mt-4 w-full rounded-full bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-4 w-full rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {added ? 'Added to cart ✓' : 'Add to cart'}
       </button>
       {cartCount > 0 && (
         <Link
           href="/cart"
-          className="mt-2 block text-center text-sm font-medium text-amber-700 hover:underline"
+          className="mt-2 block text-center text-sm font-medium text-walnut hover:underline"
         >
           View cart ({cartCount}) →
         </Link>

@@ -23,7 +23,7 @@ export default function HardwarePicker({
             type="button"
             onClick={() => onSelect(h.id)}
             className={`flex flex-1 items-center gap-2 rounded-lg border p-2 text-left text-xs transition ${
-              active ? 'border-amber-600 ring-1 ring-amber-600' : 'border-zinc-200 hover:border-zinc-300'
+              active ? 'border-brand ring-1 ring-brand' : 'border-zinc-200 hover:border-zinc-300'
             }`}
           >
             <span

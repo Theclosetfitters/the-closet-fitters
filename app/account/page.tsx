@@ -31,7 +31,7 @@ export default async function AccountPage() {
           <p className="text-zinc-500">You don’t have any orders yet.</p>
           <Link
             href="/configure"
-            className="mt-4 inline-block rounded-full bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+            className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
           >
             Design a closet
           </Link>

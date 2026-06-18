@@ -12,7 +12,7 @@ export default function LoginPage() {
       <h1 className="mb-2 text-2xl font-bold text-zinc-900">Welcome back</h1>
       <p className="mb-8 text-sm text-zinc-500">
         Sign in to track your orders — or{' '}
-        <Link href="/configure" className="text-amber-700 underline">
+        <Link href="/configure" className="text-walnut underline">
           check out as a guest
         </Link>
         .
@@ -21,9 +21,9 @@ export default function LoginPage() {
       {configured ? (
         <AuthForm />
       ) : (
-        <div className="w-full max-w-sm rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="w-full max-w-sm rounded-lg border border-sand bg-cream-50 p-4 text-sm text-walnut">
           Authentication isn’t configured yet. Add your Supabase keys to
-          <code className="mx-1 rounded bg-amber-100 px-1">.env.local</code>
+          <code className="mx-1 rounded bg-cream px-1">.env.local</code>
           to enable sign in.
         </div>
       )}

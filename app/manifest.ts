@@ -3,16 +3,16 @@ import type { MetadataRoute } from 'next';
 // Generates /manifest.webmanifest (referenced from the root layout).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Custom Closets',
-    short_name: 'Closets',
+    name: 'The Closet Fitters',
+    short_name: 'Closet Fitters',
     description:
-      'Design a custom closet with a live 3D preview and instant pricing.',
+      'Custom, made-to-measure closet systems with a live 3D preview and instant pricing.',
     start_url: '/',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#fafafa',
-    theme_color: '#d97706',
+    background_color: '#f6f1ea',
+    theme_color: '#1f333a',
     icons: [
       {
         src: '/icons/icon-192.png',

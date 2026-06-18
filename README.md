@@ -1,4 +1,4 @@
-# Custom Closets — configurator PWA
+# The Closet Fitters — configurator PWA
 
 Design a custom closet with a live 3D preview and instant server-side pricing,
 then check out and pay. Internal `/admin` dashboard moves orders through

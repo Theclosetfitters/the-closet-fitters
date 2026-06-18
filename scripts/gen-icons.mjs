@@ -10,8 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, '..', 'public', 'icons');
 mkdirSync(OUT, { recursive: true });
 
-const AMBER = [217, 119, 6, 255]; // #d97706
-const WHITE = [255, 255, 255, 255];
+const AMBER = [31, 51, 58, 255]; // brand teal #1f333a (tile background)
+const WHITE = [234, 224, 213, 255]; // cream #eae0d5 (wardrobe mark)
 
 function crc32(buf) {
   let c = ~0;

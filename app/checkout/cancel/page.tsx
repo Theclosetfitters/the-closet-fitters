@@ -11,7 +11,7 @@ export default function CheckoutCancelPage() {
       </p>
       <Link
         href="/configure"
-        className="mt-8 rounded-full bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+        className="mt-8 rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
       >
         Back to the configurator
       </Link>

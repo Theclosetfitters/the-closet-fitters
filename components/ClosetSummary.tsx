@@ -35,7 +35,7 @@ export default function ClosetSummary({
         <h3 className="font-semibold text-zinc-900">
           {index != null ? `Closet ${index + 1}` : 'Closet'}
         </h3>
-        <span className="font-semibold tabular-nums text-amber-700">
+        <span className="font-semibold tabular-nums text-walnut">
           {formatCents(totalCents)}
         </span>
       </div>

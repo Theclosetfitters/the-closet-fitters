@@ -11,12 +11,12 @@ export default function ConfigurePage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">
           Design your closet
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Pick a type, set the dimensions, and add components. The preview and
-          price update as you go.
+          Choose your material and hardware, then build it bay by bay. The 3D
+          preview and price update as you go.
         </p>
       </header>
       <Configurator catalog={catalog} />

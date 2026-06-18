@@ -19,7 +19,7 @@ export default function CartView({ catalog }: { catalog: Catalog }) {
         <p className="text-zinc-500">Your cart is empty.</p>
         <Link
           href="/configure"
-          className="mt-4 inline-block rounded-full bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+          className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
           Design a closet
         </Link>
@@ -51,7 +51,7 @@ export default function CartView({ catalog }: { catalog: Catalog }) {
 
       <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
         <span className="font-semibold text-zinc-900">Estimated total</span>
-        <span className="text-lg font-bold tabular-nums text-amber-700">
+        <span className="text-lg font-bold tabular-nums text-walnut">
           {formatCents(totalCents)}
         </span>
       </div>
@@ -65,7 +65,7 @@ export default function CartView({ catalog }: { catalog: Catalog }) {
         </Link>
         <Link
           href="/checkout"
-          className="rounded-full bg-amber-600 px-8 py-2.5 text-center text-sm font-semibold text-white hover:bg-amber-700"
+          className="rounded-full bg-brand px-8 py-2.5 text-center text-sm font-semibold text-white hover:bg-brand-700"
         >
           Proceed to checkout
         </Link>

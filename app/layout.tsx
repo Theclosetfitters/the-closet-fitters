@@ -1,27 +1,29 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Hanken_Grotesk, Caveat } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { CartProvider } from '@/lib/cart-context';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const hanken = Hanken_Grotesk({
+  variable: '--font-hanken',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const caveat = Caveat({
+  variable: '--font-caveat',
   subsets: ['latin'],
+  weight: ['400', '600', '700'],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Custom Closets',
-    template: '%s · Custom Closets',
+    default: 'The Closet Fitters',
+    template: '%s · The Closet Fitters',
   },
   description:
-    'Design a custom closet with a live 3D preview and instant pricing, then order online.',
+    'Custom, made-to-measure closet systems — designed, engineered, and built with premium materials and a design-led approach.',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: '/icons/icon-192.png',
@@ -30,12 +32,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Custom Closets',
+    title: 'The Closet Fitters',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#d97706',
+  themeColor: '#1f333a',
 };
 
 export default function RootLayout({
@@ -46,9 +48,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${hanken.variable} ${caveat.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900">
+      <body className="flex min-h-full flex-col bg-paper text-ink">
         <CartProvider>
           <Nav />
           <div className="flex flex-1 flex-col">{children}</div>

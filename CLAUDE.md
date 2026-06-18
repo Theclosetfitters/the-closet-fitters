@@ -14,6 +14,13 @@ A PWA where customers configure a custom closet, see a live 3D render and a live
 itemized price, then check out and pay. The company fulfills orders via an internal
 `/admin` dashboard.
 
+**Brand:** The company is **The Closet Fitters**. Palette: `#1f333a` deep slate-teal
+(primary `brand`), `#5e4f3e` walnut (secondary), `#231f20` ink, `#c7ac90` sand (accent),
+`#eae0d5` cream, `#f6f1ea` paper (page bg) — defined as Tailwind tokens in
+`app/globals.css`. Fonts: **Hanken Grotesk** (UI, standing in for the brand's New Hero)
+and **Caveat** (`font-accent`, handwritten accents). Logo wordmark in `components/Logo.tsx`.
+Use `brand`/`walnut`/`sand`/`cream`/`ink` color utilities, not `amber`/`zinc` accents.
+
 **Product model:** a closet is a left-to-right row of vertical **sections**. Each
 section has one interior (long hanging / double hanging / shoe shelves / adjustable
 shelves / drawers) and a width. Pricing: $500/section, $1,500 if drawers, +$200/section

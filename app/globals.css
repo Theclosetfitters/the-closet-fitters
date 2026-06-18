@@ -1,26 +1,24 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* The Closet Fitters — brand palette */
+@theme {
+  --color-brand: #1f333a;       /* primary deep slate-teal */
+  --color-brand-700: #16252b;   /* darker, for hover */
+  --color-walnut: #5e4f3e;      /* secondary */
+  --color-ink: #231f20;         /* near-black text */
+  --color-sand: #c7ac90;        /* accent tan */
+  --color-cream: #eae0d5;       /* light */
+  --color-cream-50: #f3ece2;    /* lighter cream tint */
+  --color-paper: #f6f1ea;       /* page background */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-hanken);
+  --font-accent: var(--font-caveat);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-hanken), system-ui, sans-serif;
 }

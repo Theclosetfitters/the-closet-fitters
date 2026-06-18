@@ -3,7 +3,7 @@ import { formatCents, formatInches, formatStatus } from '@/lib/format';
 
 const STATUS_STYLES: Record<string, string> = {
   received: 'bg-blue-100 text-blue-700',
-  in_production: 'bg-amber-100 text-amber-700',
+  in_production: 'bg-cream text-walnut',
   ready: 'bg-purple-100 text-purple-700',
   completed: 'bg-green-100 text-green-700',
 };
