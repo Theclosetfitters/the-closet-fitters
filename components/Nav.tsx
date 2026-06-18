@@ -27,6 +27,9 @@ export default async function Nav() {
           <Link href="/about" className={`hidden sm:inline ${link}`}>
             About
           </Link>
+          <Link href="/gallery" className={`hidden sm:inline ${link}`}>
+            Gallery
+          </Link>
           <CartLink />
           {user && (
             <Link href="/account" className={`hidden sm:inline ${link}`}>
