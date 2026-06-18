@@ -64,6 +64,7 @@ export default function CartView({
             config={item.config}
             totalCents={item.totalCents}
             index={i}
+            layout="walls"
           />
           <div className="flex items-center justify-end gap-3">
             <Link
