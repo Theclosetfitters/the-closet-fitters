@@ -191,7 +191,7 @@ export default function Home() {
                 Recently fitted
               </h2>
             </div>
-            <Link href="#" className="text-sm font-medium text-walnut transition hover:text-ink">
+            <Link href="/gallery" className="text-sm font-medium text-walnut transition hover:text-ink">
               Full Gallery →
             </Link>
           </div>
