@@ -7,12 +7,11 @@ import { wallLabel, wallsForShape } from '@/lib/config';
 
 const LINE = '#1F333A'; // Cosmos
 const FILL = '#ffffff';
-const CORNER = '#EAE0D5'; // Cream
 const TAN = '#C7AC90';
 
 const BAY = 46; // bay cell length (along the wall)
 const DEP = 30; // closet depth (perpendicular)
-const GAP = 16; // 8.5" corner filler cell (along the back wall)
+const GAP = 16; // open 8.5" clearance notch at each corner (room width direction)
 const M = 28; // outer margin
 const PAD_TOP = 20; // room for a label above a run
 const PAD_SIDE = 26; // room for a rotated label beside a vertical run
@@ -44,22 +43,17 @@ function bayCell(x: number, y: number, w: number, h: number, code: string): stri
   );
 }
 
-function cornerPiece(x: number, y: number): string {
+// Open 8.5" clearance notch at a corner, between Wall A's end (x2) and a side
+// wall's inner face (x1). Drawn as a Tan dimension marker only — no fill, since
+// the space is empty hanging clearance.
+function gapMarker(x1: number, x2: number, yTop: number, h: number): string {
+  const cx = (x1 + x2) / 2;
+  const cy = yTop + h / 2;
   return (
-    `<rect x="${x}" y="${y}" width="${DEP}" height="${DEP}" fill="${CORNER}" stroke="${LINE}" stroke-width="1.5"/>` +
-    `<line x1="${x}" y1="${y}" x2="${x + DEP}" y2="${y + DEP}" stroke="${LINE}" stroke-width="0.75" opacity="0.5"/>`
-  );
-}
-
-// 8.5" filler/clearance gap at a back-wall corner. Tan so it reads as a gap,
-// not a bay, with the dimension labelled inside.
-function gapCell(x: number, y: number): string {
-  const cx = x + GAP / 2;
-  const cy = y + DEP / 2;
-  return (
-    `<rect x="${x}" y="${y}" width="${GAP}" height="${DEP}" fill="${TAN}" stroke="${LINE}" stroke-width="1.5"/>` +
+    `<line x1="${x1}" y1="${yTop + 3}" x2="${x2}" y2="${yTop + 3}" stroke="${TAN}" stroke-width="1.2"/>` +
+    `<line x1="${x1}" y1="${yTop + h - 3}" x2="${x2}" y2="${yTop + h - 3}" stroke="${TAN}" stroke-width="1.2"/>` +
     `<text x="${cx}" y="${cy}" transform="rotate(-90 ${cx} ${cy})" text-anchor="middle" ` +
-    `dominant-baseline="central" font-family="system-ui,sans-serif" font-size="8" font-weight="700" fill="${LINE}">8.5&quot;</text>`
+    `dominant-baseline="central" font-family="system-ui,sans-serif" font-size="8" font-weight="700" fill="${TAN}">8.5&quot;</text>`
   );
 }
 
@@ -103,34 +97,38 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
 
   if (config.shape === 'l_shaped') {
     const parts: string[] = [];
-    parts.push(cornerPiece(ox, oy));
-    parts.push(gapCell(ox + DEP, oy));
-    a.forEach((c, i) => parts.push(bayCell(ox + DEP + GAP + i * BAY, oy, BAY, DEP, c)));
-    b.forEach((c, j) => parts.push(bayCell(ox, oy + DEP + j * BAY, DEP, BAY, c)));
-    parts.push(label('Wall A', ox + DEP + GAP + (na * BAY) / 2, oy - 8));
-    parts.push(label('Wall B', ox - 9, oy + DEP + (nb * BAY) / 2, -90));
-    const W = ox + DEP + GAP + na * BAY + M;
-    const H = oy + DEP + nb * BAY + M;
+    const aStartX = ox + DEP + GAP; // Wall A starts after Wall B + the open gap
+    // Wall B runs down the left, flush to the back-wall line (top edge at oy).
+    b.forEach((c, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, c)));
+    // Wall A runs along the back wall.
+    a.forEach((c, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, c)));
+    // Open clearance notch between Wall B's inner face and Wall A's end.
+    parts.push(gapMarker(ox + DEP, aStartX, oy, DEP));
+    parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
+    parts.push(label('Wall B', ox - 9, oy + (nb * BAY) / 2, -90));
+    const W = aStartX + na * BAY + M;
+    const H = oy + Math.max(DEP, nb * BAY) + M;
     return svg(W, H, parts.join(''));
   }
 
   // u_shaped
   const c = codes('C');
   const nc = Math.max(1, c.length);
-  const aStart = ox + DEP + GAP; // back-wall bays start after the left corner + gap
-  const rightX = aStart + na * BAY + GAP; // ...then the right gap, then the right corner
+  const aStartX = ox + DEP + GAP; // Wall A after Wall B + the left clearance gap
+  const aEndX = aStartX + na * BAY; // right end of Wall A
+  const cStartX = aEndX + GAP; // Wall C inner face after the right clearance gap
   const parts: string[] = [];
-  parts.push(cornerPiece(ox, oy));
-  parts.push(cornerPiece(rightX, oy));
-  parts.push(gapCell(ox + DEP, oy));
-  parts.push(gapCell(aStart + na * BAY, oy));
-  a.forEach((cc, i) => parts.push(bayCell(aStart + i * BAY, oy, BAY, DEP, cc)));
-  b.forEach((cc, j) => parts.push(bayCell(ox, oy + DEP + j * BAY, DEP, BAY, cc)));
-  c.forEach((cc, j) => parts.push(bayCell(rightX, oy + DEP + j * BAY, DEP, BAY, cc)));
-  parts.push(label('Wall A', aStart + (na * BAY) / 2, oy - 8));
-  parts.push(label('Wall B', ox - 9, oy + DEP + (nb * BAY) / 2, -90));
-  parts.push(label('Wall C', rightX + DEP + 9, oy + DEP + (nc * BAY) / 2, 90));
-  const W = rightX + DEP + PAD_SIDE + M;
-  const H = oy + DEP + Math.max(nb, nc) * BAY + M;
+  // Side walls flush to the back-wall line (top edge at oy); Wall A along the back.
+  b.forEach((cc, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, cc)));
+  c.forEach((cc, j) => parts.push(bayCell(cStartX, oy + j * BAY, DEP, BAY, cc)));
+  a.forEach((cc, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, cc)));
+  // Open clearance notches at both corners.
+  parts.push(gapMarker(ox + DEP, aStartX, oy, DEP));
+  parts.push(gapMarker(aEndX, cStartX, oy, DEP));
+  parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
+  parts.push(label('Wall B', ox - 9, oy + (nb * BAY) / 2, -90));
+  parts.push(label('Wall C', cStartX + DEP + 9, oy + (nc * BAY) / 2, 90));
+  const W = cStartX + DEP + PAD_SIDE + M;
+  const H = oy + Math.max(DEP, nb * BAY, nc * BAY) + M;
   return svg(W, H, parts.join(''));
 }

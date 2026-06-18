@@ -38,8 +38,9 @@ export default function WallSection({
 
       {showCornerNote && (
         <p className="rounded-lg bg-cream px-3 py-2 text-[11px] text-muted">
-          An 8.5&quot; filler panel will be added at each corner to allow full
-          hanging depth on the side walls. This is included at no extra cost.
+          Side wall cabinetry runs flush to the back wall. An 8.5&quot; clearance
+          is maintained between the back wall cabinetry and the side wall
+          cabinetry at each corner to allow full hanging depth on the side walls.
         </p>
       )}
 

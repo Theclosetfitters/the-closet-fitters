@@ -26,7 +26,7 @@ import type {
   WallId,
 } from '@/types';
 import {
-  CORNER_FILLER_IN,
+  CORNER_CLEARANCE_IN,
   drawerBlockedSideBayIds,
   wallDisplayLabel,
   wallsForShape,
@@ -415,21 +415,26 @@ function planWalls(config: ClosetConfig, D: number): WallPlacement[] {
   const widthM = (w: WallId) =>
     byWall(w).reduce((a, s) => a + s.widthIn * IN, 0);
 
+  // Side walls run flush to the back wall (their innermost bay's back face is at
+  // z = -D/2, level with Wall A's back face) and their inner face sits `gap`
+  // away from Wall A's end bay — an open clearance notch, no panel.
+  const gap = CORNER_CLEARANCE_IN * IN;
   if (config.shape === 'l_shaped') {
+    const Wa = widthM('A');
     const Wb = widthM('B');
     return [
       { wall: 'A', sections: byWall('A'), position: [0, 0, 0], rotationY: 0 },
-      { wall: 'B', sections: byWall('B'), position: [-widthM('A') / 2 - D / 2, 0, Wb / 2 + D / 2], rotationY: Math.PI / 2 },
+      { wall: 'B', sections: byWall('B'), position: [-Wa / 2 - gap - D / 2, 0, Wb / 2 - D / 2], rotationY: Math.PI / 2 },
     ];
   }
   if (config.shape === 'u_shaped') {
+    const Wa = widthM('A');
     const Wb = widthM('B');
     const Wc = widthM('C');
-    const half = widthM('A') / 2 + D / 2;
     return [
       { wall: 'A', sections: byWall('A'), position: [0, 0, 0], rotationY: 0 },
-      { wall: 'B', sections: byWall('B'), position: [-half, 0, Wb / 2 + D / 2], rotationY: Math.PI / 2 },
-      { wall: 'C', sections: byWall('C'), position: [half, 0, Wc / 2 + D / 2], rotationY: -Math.PI / 2 },
+      { wall: 'B', sections: byWall('B'), position: [-Wa / 2 - gap - D / 2, 0, Wb / 2 - D / 2], rotationY: Math.PI / 2 },
+      { wall: 'C', sections: byWall('C'), position: [Wa / 2 + gap + D / 2, 0, Wc / 2 - D / 2], rotationY: -Math.PI / 2 },
     ];
   }
   return walls.map((w) => ({
@@ -510,35 +515,8 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
     hardwareStyleId: config.hardwareStyleId,
   };
 
-  // 8.5" structural filler panels at each back-wall corner (L/U). They sit in
-  // the corner void at the ends of Wall A, so the side walls don't move and the
-  // wall labels stay put. Same material as the rest of the closet.
-  const fillerPanels = useMemo(() => {
-    if (config.shape !== 'l_shaped' && config.shape !== 'u_shaped') return [];
-    const widthA = config.sections
-      .filter((s) => s.wall === 'A')
-      .reduce((a, s) => a + s.widthIn * IN, 0);
-    if (widthA <= 0) return [];
-    const fw = CORNER_FILLER_IN * IN;
-    const panels: { key: string; x: number }[] = [
-      { key: 'filler-left', x: -widthA / 2 - fw / 2 },
-    ];
-    if (config.shape === 'u_shaped') {
-      panels.push({ key: 'filler-right', x: widthA / 2 + fw / 2 });
-    }
-    return panels.map((pl) => (
-      <Panel
-        key={pl.key}
-        size={[fw, H, D]}
-        position={[pl.x, H / 2, 0]}
-        material={matV}
-      />
-    ));
-  }, [config.shape, config.sections, H, D, matV]);
-
   return (
     <group position={[-center[0], 0, -center[1]]}>
-      {fillerPanels}
       {placements.map((p) =>
         p.sections.length === 0 ? null : (
           <group key={p.wall} position={p.position} rotation={[0, p.rotationY, 0]}>

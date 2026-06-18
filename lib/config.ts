@@ -137,9 +137,11 @@ export function totalWidthIn(config: ClosetConfig): number {
 // and isomorphic so the configurator UI, the 3D viewer, and the server-side
 // quote validation all agree on what a corner is.
 
-/** Fixed clearance gap (inches) kept at every back-wall corner so clothes can
- * hang the full depth on the side walls. Structural filler — no cost, not a bay. */
-export const CORNER_FILLER_IN = 8.5;
+/** Open clearance (inches) kept at every back-wall corner, measured in the room
+ * width direction between Wall A's end bay and the side wall's inner face. The
+ * side wall cabinetry runs flush to the back wall; this gap is empty space (no
+ * panel) so clothes can hang the full depth on the side walls. */
+export const CORNER_CLEARANCE_IN = 8.5;
 
 export interface CornerPair {
   /** Back wall (A) corner bay id that drives the restriction. */

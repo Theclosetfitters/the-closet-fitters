@@ -106,8 +106,8 @@ export default function OrderCard({
         <BirdsEyeView catalog={catalog} config={order.config} />
         {order.config.shape !== 'straight' && (
           <p className="mt-2 text-[11px] text-muted">
-            Note: 8.5&quot; filler panels are included at all back wall corners to
-            allow full hanging depth on side walls.
+            Note: Side wall cabinetry runs flush to the back wall with an 8.5&quot;
+            clearance at each corner for full hanging depth on side walls.
           </p>
         )}
       </div>

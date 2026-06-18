@@ -122,7 +122,7 @@ export function buildQuoteEmailHtml(
           ${
             cfg.shape === 'straight'
               ? ''
-              : `<p style="margin:4px 0 8px;font-size:12px;color:#71717a;">Note: 8.5&quot; filler panels are included at all back wall corners to allow full hanging depth on side walls.</p>`
+              : `<p style="margin:4px 0 8px;font-size:12px;color:#71717a;">Note: Side wall cabinetry runs flush to the back wall with an 8.5&quot; clearance at each corner for full hanging depth on side walls.</p>`
           }
           <table style="width:100%;border-collapse:collapse;font-size:14px;">${bays}</table>
         </div>`;
