@@ -47,7 +47,7 @@ const IconBuilding = () => (
 
 const STEPS = [
   { n: '01', title: 'Design', body: 'Plan your closet in 3D and watch a live, itemized price update as you go.' },
-  { n: '02', title: 'Engineer', body: 'We translate your design into precise, production-ready plans — measured to the eighth-inch.' },
+  { n: '02', title: 'Engineer', body: 'We translate your design into precise, production-ready plans — measured to perfection.' },
   { n: '03', title: 'Build & Install', body: 'Premium materials, expertly constructed and fitted seamlessly to your space.' },
 ];
 
