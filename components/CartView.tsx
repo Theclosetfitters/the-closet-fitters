@@ -1,13 +1,32 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Catalog } from '@/types';
 import { useCart } from '@/lib/cart-context';
 import { formatCents } from '@/lib/format';
 import ClosetSummary from '@/components/ClosetSummary';
 
-export default function CartView({ catalog }: { catalog: Catalog }) {
+export default function CartView({
+  catalog,
+  updated = false,
+}: {
+  catalog: Catalog;
+  updated?: boolean;
+}) {
   const { items, remove, totalCents, ready } = useCart();
+  const router = useRouter();
+
+  // Brief "updated" confirmation after returning from an edit. Strip the URL
+  // param so a refresh doesn't re-show it, then auto-hide.
+  const [showUpdated, setShowUpdated] = useState(updated);
+  useEffect(() => {
+    if (!updated) return;
+    router.replace('/cart', { scroll: false });
+    const t = window.setTimeout(() => setShowUpdated(false), 3500);
+    return () => window.clearTimeout(t);
+  }, [updated, router]);
 
   if (!ready) {
     return <p className="mt-8 text-faint">Loading your cart…</p>;
@@ -29,6 +48,15 @@ export default function CartView({ catalog }: { catalog: Catalog }) {
 
   return (
     <div className="mt-6 space-y-4">
+      {showUpdated && (
+        <div
+          role="status"
+          className="rounded-xl border border-line bg-cream px-4 py-3 text-sm font-medium text-brand"
+        >
+          Your closet has been updated.
+        </div>
+      )}
+
       {items.map((item, i) => (
         <div key={item.id} className="space-y-2">
           <ClosetSummary
@@ -37,7 +65,13 @@ export default function CartView({ catalog }: { catalog: Catalog }) {
             totalCents={item.totalCents}
             index={i}
           />
-          <div className="text-right">
+          <div className="flex items-center justify-end gap-3">
+            <Link
+              href={`/configure?edit=${item.id}`}
+              className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink transition hover:bg-card"
+            >
+              Edit
+            </Link>
             <button
               type="button"
               onClick={() => remove(item.id)}

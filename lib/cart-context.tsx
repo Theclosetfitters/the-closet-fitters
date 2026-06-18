@@ -23,6 +23,7 @@ export interface CartItem {
 interface CartContextValue {
   items: CartItem[];
   add: (config: ClosetConfig, totalCents: number) => void;
+  update: (id: string, config: ClosetConfig, totalCents: number) => void;
   remove: (id: string) => void;
   clear: () => void;
   count: number;
@@ -73,6 +74,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       ]),
     []
   );
+  // Replace an existing item in place (same id + position) — used by edit mode.
+  const update = useCallback(
+    (id: string, config: ClosetConfig, totalCents: number) =>
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === id
+            ? { ...i, config: normalizeConfig(catalog, config), totalCents }
+            : i
+        )
+      ),
+    []
+  );
   const remove = useCallback(
     (id: string) => setItems((prev) => prev.filter((i) => i.id !== id)),
     []
@@ -82,6 +95,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value: CartContextValue = {
     items,
     add,
+    update,
     remove,
     clear,
     count: items.length,

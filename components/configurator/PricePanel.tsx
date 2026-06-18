@@ -10,6 +10,9 @@ interface Props {
   onAddToCart: () => void;
   added: boolean;
   cartCount: number;
+  /** When true, the CTA replaces an existing cart item instead of adding one. */
+  editMode?: boolean;
+  onUpdate?: () => void;
 }
 
 export default function PricePanel({
@@ -18,6 +21,8 @@ export default function PricePanel({
   onAddToCart,
   added,
   cartCount,
+  editMode = false,
+  onUpdate,
 }: Props) {
   return (
     <div className="rounded-xl border border-line bg-card p-4">
@@ -54,20 +59,29 @@ export default function PricePanel({
 
       <button
         type="button"
-        data-testid="add-to-cart"
-        onClick={onAddToCart}
+        data-testid={editMode ? 'update-closet' : 'add-to-cart'}
+        onClick={editMode ? onUpdate : onAddToCart}
         disabled={!breakdown}
         className="mt-4 w-full rounded-full bg-brand px-5 py-3 text-sm font-semibold text-cream transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {added ? 'Added to cart ✓' : 'Add to cart'}
+        {editMode ? 'Update Closet' : added ? 'Added to cart ✓' : 'Add to cart'}
       </button>
-      {cartCount > 0 && (
+      {editMode ? (
         <Link
           href="/cart"
-          className="mt-2 block text-center text-sm font-medium text-walnut hover:underline"
+          className="mt-3 block text-center text-sm text-muted hover:text-ink hover:underline"
         >
-          View cart ({cartCount}) →
+          Cancel — back to cart
         </Link>
+      ) : (
+        cartCount > 0 && (
+          <Link
+            href="/cart"
+            className="mt-2 block text-center text-sm font-medium text-walnut hover:underline"
+          >
+            View cart ({cartCount}) →
+          </Link>
+        )
       )}
       <p className="mt-2 text-center text-[11px] text-faint">
         Price is calculated securely on our server.

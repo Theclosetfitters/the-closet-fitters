@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import type {
   Catalog,
   ClosetConfig,
@@ -16,6 +17,7 @@ import {
   defaultConfig,
   defaultSection,
   drawerBlockedSideBayIds,
+  normalizeConfig,
   totalWidthIn,
   wallDisplayLabel,
   wallsForShape,
@@ -39,13 +41,36 @@ const ClosetViewer = dynamic(() => import('@/components/3d/ClosetViewer'), {
   ),
 });
 
-export default function Configurator({ catalog }: { catalog: Catalog }) {
+export default function Configurator({
+  catalog,
+  editId,
+}: {
+  catalog: Catalog;
+  editId?: string;
+}) {
+  const router = useRouter();
   const [config, setConfig] = useState<ClosetConfig>(() => defaultConfig(catalog));
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [pricing, setPricing] = useState(false);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cart = useCart();
+
+  // --- Edit mode: seed the config from the cart item exactly once -----------
+  const [editLoaded, setEditLoaded] = useState(false);
+  const editItem =
+    editId && cart.ready ? cart.items.find((i) => i.id === editId) : undefined;
+  const isEditing = Boolean(editId) && Boolean(editItem);
+  // True until the saved config has been applied — keeps the default closet
+  // (and its price) from flashing before the customer's saved one loads.
+  const loadingEdit = Boolean(editId) && !editLoaded;
+
+  useEffect(() => {
+    if (!editId || editLoaded || !cart.ready) return;
+    const item = cart.items.find((i) => i.id === editId);
+    if (item) setConfig(normalizeConfig(catalog, item.config));
+    setEditLoaded(true);
+  }, [editId, editLoaded, cart.ready, cart.items, catalog]);
 
   // --- Live server-side pricing (debounced) -------------------------------
   useEffect(() => {
@@ -183,10 +208,25 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     window.setTimeout(() => setAdded(false), 1800);
   }, [cart, config, breakdown]);
 
+  // Edit mode: replace the existing item in place, then return to the cart.
+  const updateCloset = useCallback(() => {
+    if (!breakdown || !editId) return;
+    cart.update(editId, config, breakdown.totalCents);
+    router.push('/cart?updated=1');
+  }, [cart, config, breakdown, editId, router]);
+
   const totalWidth = useMemo(() => totalWidthIn(config), [config]);
   const heightLabel = config.heightUpgrade
     ? formatInches(catalog.constraints.upgradedHeightIn)
     : formatInches(catalog.constraints.standardHeightIn);
+
+  if (loadingEdit) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-sm text-faint">
+        Loading your saved closet…
+      </div>
+    );
+  }
 
   return (
     <div className="lg:grid lg:grid-cols-[1fr_minmax(360px,440px)] lg:gap-8">
@@ -202,6 +242,13 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
       {/* Right: scrollable editor */}
       <div className="space-y-8 py-6 lg:py-12">
+        {isEditing && (
+          <div className="rounded-lg bg-brand px-3 py-2 text-xs font-medium text-cream">
+            Editing your saved closet — make your changes and click Update Closet
+            to save.
+          </div>
+        )}
+
         {/* Shape — chosen first; determines the walls below */}
         <section>
           <h2 className="mb-2 text-sm font-semibold text-ink">Closet shape</h2>
@@ -307,6 +354,8 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           onAddToCart={addToCart}
           added={added}
           cartCount={cart.count}
+          editMode={isEditing}
+          onUpdate={updateCloset}
         />
       </div>
     </div>
