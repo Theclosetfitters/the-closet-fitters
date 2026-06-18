@@ -132,44 +132,62 @@ function Pull({
   width: number;
   metal: THREE.Material;
 }) {
-  const w = width * 0.34;
+  // All three styles are 6" pulls, capped so they fit narrow drawers.
+  const len = Math.min(6 * IN, width * 0.9);
+
   if (styleId === 'bar_pull') {
+    // round cylindrical bar on two round posts
     return (
       <group>
         <mesh
-          position={[cx, y, zFront + 0.028]}
+          position={[cx, y, zFront + 0.03]}
           rotation={[0, 0, Math.PI / 2]}
           material={metal}
           castShadow
         >
-          <cylinderGeometry args={[0.006, 0.006, w, 12]} />
+          <cylinderGeometry args={[0.006, 0.006, len, 16]} />
         </mesh>
         {[-1, 1].map((s) => (
-          <mesh key={s} position={[cx + (s * w) / 2, y, zFront + 0.014]} material={metal}>
-            <boxGeometry args={[0.012, 0.012, 0.026]} />
+          <mesh
+            key={s}
+            position={[cx + (s * len) / 2, y, zFront + 0.016]}
+            rotation={[Math.PI / 2, 0, 0]}
+            material={metal}
+          >
+            <cylinderGeometry args={[0.005, 0.005, 0.028, 12]} />
           </mesh>
         ))}
       </group>
     );
   }
+
   if (styleId === 'edge_pull') {
-    // thin tapered bar along the top edge of the drawer front, angled out
+    // L-shape on the top edge: flat grip that sticks out + a lip on the face
+    const topEdge = y + DRAWER_H / 2;
     return (
-      <mesh
-        position={[cx, y + DRAWER_H / 2 - 0.018, zFront + 0.012]}
-        rotation={[-0.5, 0, 0]}
-        material={metal}
-        castShadow
-      >
-        <boxGeometry args={[width * 0.82, 0.01, 0.03]} />
-      </mesh>
+      <group>
+        <mesh position={[cx, topEdge, zFront + 0.014]} material={metal} castShadow>
+          <boxGeometry args={[len, 0.006, 0.032]} />
+        </mesh>
+        <mesh position={[cx, topEdge - 0.016, zFront + 0.028]} material={metal} castShadow>
+          <boxGeometry args={[len, 0.03, 0.006]} />
+        </mesh>
+      </group>
     );
   }
-  // modern_pull: recessed rectangular channel — a slim inset plate
+
+  // modern_pull: square-profile bar on two solid rectangular block posts
   return (
-    <mesh position={[cx, y, zFront + 0.006]} material={metal} castShadow>
-      <boxGeometry args={[w, 0.05, 0.014]} />
-    </mesh>
+    <group>
+      <mesh position={[cx, y, zFront + 0.03]} material={metal} castShadow>
+        <boxGeometry args={[len, 0.011, 0.011]} />
+      </mesh>
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[cx + (s * len) / 2, y, zFront + 0.016]} material={metal}>
+          <boxGeometry args={[0.014, 0.014, 0.028]} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 

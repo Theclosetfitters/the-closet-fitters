@@ -58,12 +58,12 @@ export default function ClosetSummary({
         <dd className="text-right text-ink">{shape}</dd>
         <dt className="text-muted">Material</dt>
         <dd className="text-right text-ink">{material}</dd>
-        <dt className="text-muted">Hardware style</dt>
-        <dd className="text-right text-ink">{hardwareStyle}</dd>
-        <dt className="text-muted">Rod color</dt>
+        <dt className="text-muted">Hardware</dt>
+        <dd className="text-right text-ink">
+          {hardwareStyle} in {colorLabel(config.hardwareColorId)}
+        </dd>
+        <dt className="text-muted">Rod</dt>
         <dd className="text-right text-ink">{colorLabel(config.rodColorId)}</dd>
-        <dt className="text-muted">Hardware color</dt>
-        <dd className="text-right text-ink">{colorLabel(config.hardwareColorId)}</dd>
         <dt className="text-muted">Dimensions</dt>
         <dd className="text-right text-ink">
           {formatInches(totalWidthIn)} W × {formatInches(catalog.constraints.depthIn)} D ×{' '}

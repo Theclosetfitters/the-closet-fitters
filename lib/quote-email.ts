@@ -96,9 +96,10 @@ export function buildQuoteEmailHtml(
           <table style="font-size:14px;color:#3f3f46;">
             <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Shape</td><td>${esc(shapeLabel(cfg.shape))}</td></tr>
             <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Material</td><td>${esc(matLabel(cfg.materialId))}</td></tr>
-            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Hardware style</td><td>${esc(styleLabel(cfg.hardwareStyleId))}</td></tr>
-            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Rod color</td><td>${esc(colorLabel(cfg.rodColorId))}</td></tr>
-            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Hardware color</td><td>${esc(colorLabel(cfg.hardwareColorId))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Hardware</td><td>${esc(
+              styleLabel(cfg.hardwareStyleId)
+            )} in ${esc(colorLabel(cfg.hardwareColorId))}</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Rod</td><td>${esc(colorLabel(cfg.rodColorId))}</td></tr>
             <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Dimensions</td><td>${esc(
               formatInches(widthIn)
             )} W × ${esc(formatInches(catalog.constraints.depthIn))} D × ${esc(

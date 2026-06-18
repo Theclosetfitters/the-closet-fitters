@@ -59,10 +59,10 @@ const AUDIENCES = [
 ];
 
 const STATS = [
-  { n: '12+', label: 'Years of craft' },
-  { n: '500+', label: 'Closets fitted' },
-  { n: '10 days', label: 'Avg. turnaround' },
-  { n: '100%', label: 'Made to measure' },
+  { n: '100%', label: 'Made to Measure' },
+  { n: '14 Days', label: 'Lead Time' },
+  { n: 'Configure in Minutes', label: 'No Sales Call Needed' },
+  { n: 'Instant Quote', label: 'Online, Every Time' },
 ];
 
 const eyebrow = 'text-xs font-semibold uppercase tracking-[0.25em]';
@@ -98,17 +98,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ClosetViewer 3D placeholder — the live component slots in here */}
+          {/* Hero image slot — reserved for /images/hero-closet.jpg (added later).
+              Replace this div with a Next.js <Image fill object-cover> once the
+              photo exists; the 4:3 ratio keeps the layout from shifting. */}
           <div
-            role="img"
-            aria-label="3D closet preview placeholder"
-            data-slot="closet-viewer"
-            className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl border border-dashed border-cream/30 bg-cream/5"
-          >
-            <span className="text-sm uppercase tracking-[0.2em] text-cream/40">
-              ClosetViewer 3D
-            </span>
-          </div>
+            data-slot="hero-image"
+            aria-hidden
+            className="aspect-[4/3] w-full rounded-2xl bg-cream/5"
+          />
         </div>
       </section>
 
@@ -117,7 +114,9 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
-              <div className="font-display text-4xl font-semibold sm:text-5xl">{s.n}</div>
+              <div className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
+                {s.n}
+              </div>
               <div className="mt-1 text-xs uppercase tracking-[0.18em] text-cream/70">
                 {s.label}
               </div>
@@ -168,14 +167,17 @@ export default function Home() {
                 <div className="text-sand">{a.icon}</div>
                 <h3 className="mt-4 font-display text-xl font-semibold text-cream">{a.title}</h3>
                 <p className="mt-2 text-sm font-light leading-relaxed text-cream/70">{a.body}</p>
-                <Link
-                  href="/about"
-                  className="mt-4 inline-block text-sm font-medium text-sand transition hover:text-cream"
-                >
-                  Learn More →
-                </Link>
               </article>
             ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/about"
+              className="inline-block rounded-full border border-cream/60 px-6 py-2.5 text-sm font-semibold text-cream transition hover:bg-cream hover:text-brand"
+            >
+              Learn more about who we work with
+            </Link>
           </div>
         </div>
       </section>

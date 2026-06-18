@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const eyebrow = 'text-xs font-semibold uppercase tracking-[0.25em]';
 
 const VALUES = [
-  { title: 'Precision', body: 'Every cut planned to the eighth-inch, engineered before it’s built.' },
+  { title: 'Precision', body: 'Every dimension planned and every component engineered before a single cut is made.' },
   { title: 'Speed', body: 'Reliable production that keeps your project on schedule.' },
   { title: 'Transparency', body: 'Clear, itemized quotes — no surprises, ever.' },
   { title: 'Value', body: 'Premium materials and craftsmanship, fairly priced.' },

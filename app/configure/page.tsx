@@ -15,8 +15,8 @@ export default function ConfigurePage() {
           Design your closet
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Choose your material and hardware, then build it bay by bay. The 3D
-          preview and price update as you go.
+          Choose your material and hardware, then build it. The 3D preview and
+          price update as you go.
         </p>
       </header>
       <Configurator catalog={catalog} />

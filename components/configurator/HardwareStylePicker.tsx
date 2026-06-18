@@ -16,29 +16,35 @@ function StyleIcon({ id }: { id: string }) {
     'aria-hidden': true,
   };
   if (id === 'bar_pull') {
-    // straight cylindrical bar on two posts
+    // round cylindrical T-bar on two round posts (rounded profile)
     return (
       <svg {...c}>
-        <line x1="14" y1="14" x2="58" y2="14" />
-        <path d="M20 14 v8 M52 14 v8" />
-        <line x1="10" y1="30" x2="62" y2="30" />
+        <rect x="12" y="11" width="48" height="6" rx="3" />
+        <rect x="18" y="17" width="5" height="10" rx="2.5" />
+        <rect x="49" y="17" width="5" height="10" rx="2.5" />
+        <line x1="11" y1="30" x2="61" y2="30" />
       </svg>
     );
   }
   if (id === 'edge_pull') {
-    // tapered angled edge-pull, thin profile
+    // L-shaped edge pull: flat wide grip + a vertical lip that drops to the
+    // drawer face (shown from a slight angle so the L reads).
     return (
       <svg {...c}>
-        <path d="M12 16 L60 16 L60 22 L12 26 Z" />
-        <line x1="12" y1="30" x2="60" y2="30" />
+        <path d="M14 20 L58 16 L60 19 L16 23 Z" />
+        <path d="M14 20 L16 23 L16 32 L14 29 Z" />
+        <circle cx="15" cy="28" r="1.2" />
       </svg>
     );
   }
-  // modern pull: recessed rectangular pull with an angled channel
+  // modern pull: square-profile bar on two solid rectangular block posts
   return (
     <svg {...c}>
-      <rect x="14" y="12" width="44" height="16" rx="2" />
-      <path d="M22 24 L50 16" />
+      <rect x="13" y="12" width="46" height="5" />
+      <path d="M13 12 L15 10.5 L61 10.5 L59 12" />
+      <rect x="17" y="17" width="5" height="10" />
+      <rect x="50" y="17" width="5" height="10" />
+      <line x1="11" y1="30" x2="61" y2="30" />
     </svg>
   );
 }

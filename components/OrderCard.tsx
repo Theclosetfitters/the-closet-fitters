@@ -30,9 +30,14 @@ function FinishDetails({ catalog, config }: { catalog: Catalog; config: ClosetCo
     list.find((x) => x.id === id)?.label ?? id;
   const rows: [string, string][] = [
     ['Shape', label(catalog.shapes, config.shape)],
-    ['Hardware style', label(catalog.hardwareStyles, config.hardwareStyleId)],
-    ['Rod color', label(catalog.hardware, config.rodColorId)],
-    ['Hardware color', label(catalog.hardware, config.hardwareColorId)],
+    [
+      'Hardware',
+      `${label(catalog.hardwareStyles, config.hardwareStyleId)} in ${label(
+        catalog.hardware,
+        config.hardwareColorId
+      )}`,
+    ],
+    ['Rod', label(catalog.hardware, config.rodColorId)],
   ];
   return (
     <div className="rounded-lg bg-cream-50 p-2 text-xs">
