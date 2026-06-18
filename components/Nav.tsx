@@ -16,23 +16,23 @@ export default async function Nav() {
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b border-line bg-card/80 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" aria-label="The Closet Fitters home">
           <Logo />
         </Link>
         <div className="flex items-center gap-4 text-sm">
-          <Link href="/configure" className="text-zinc-600 hover:text-zinc-900">
+          <Link href="/configure" className="text-muted hover:text-ink">
             Configure
           </Link>
           <CartLink />
           {user && (
-            <Link href="/account" className="text-zinc-600 hover:text-zinc-900">
+            <Link href="/account" className="text-muted hover:text-ink">
               My orders
             </Link>
           )}
           {admin && (
-            <Link href="/admin" className="text-zinc-600 hover:text-zinc-900">
+            <Link href="/admin" className="text-muted hover:text-ink">
               Admin
             </Link>
           )}
@@ -41,7 +41,7 @@ export default async function Nav() {
           ) : (
             <Link
               href="/login"
-              className="rounded-full bg-zinc-900 px-4 py-1.5 font-medium text-white hover:bg-zinc-700"
+              className="rounded-full bg-ink px-4 py-1.5 font-medium text-cream hover:opacity-90"
             >
               Sign in
             </Link>

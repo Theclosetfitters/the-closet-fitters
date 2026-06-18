@@ -9,7 +9,11 @@
   --color-sand: #c7ac90;        /* accent tan */
   --color-cream: #eae0d5;       /* light */
   --color-cream-50: #f3ece2;    /* lighter cream tint */
-  --color-paper: #f6f1ea;       /* page background */
+  --color-paper: #f1e9db;       /* page background (warm cream) */
+  --color-card: #fffdf8;        /* warm white — cards / section boxes */
+  --color-line: #e5dbc9;        /* warm border */
+  --color-muted: #6b6155;       /* secondary text (warm gray-brown) */
+  --color-faint: #9c8f7e;       /* tertiary text / hints */
 }
 
 @theme inline {

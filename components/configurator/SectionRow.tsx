@@ -30,10 +30,10 @@ export default function SectionRow({
   return (
     <div
       data-testid={`section-${index}`}
-      className="rounded-xl border border-zinc-200 bg-white p-3"
+      className="rounded-xl border border-line bg-card p-3"
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-zinc-800">
+        <span className="text-sm font-semibold text-ink">
           Section {index + 1}
         </span>
         <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export default function SectionRow({
               type="button"
               aria-label={`Remove section ${index + 1}`}
               onClick={() => onRemove(section.id)}
-              className="h-6 w-6 rounded-full border border-zinc-300 text-zinc-500 hover:bg-zinc-100"
+              className="h-6 w-6 rounded-full border border-line text-muted hover:bg-cream"
             >
               ×
             </button>
@@ -54,7 +54,7 @@ export default function SectionRow({
       </div>
 
       {/* Interior */}
-      <label className="block text-xs text-zinc-500">Inside</label>
+      <label className="block text-xs text-muted">Inside</label>
       <select
         data-testid={`section-interior-${index}`}
         value={section.interior}
@@ -63,7 +63,7 @@ export default function SectionRow({
             interior: e.target.value as SectionConfig['interior'],
           })
         }
-        className="mt-1 w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+        className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm"
       >
         {catalog.interiors.map((i) => (
           <option key={i.id} value={i.id}>
@@ -71,12 +71,12 @@ export default function SectionRow({
           </option>
         ))}
       </select>
-      <p className="mt-1 text-[11px] text-zinc-400">{interior.description}</p>
+      <p className="mt-1 text-[11px] text-faint">{interior.description}</p>
 
       {/* Width */}
       <div className="mt-3 flex items-center justify-between text-xs">
-        <span className="text-zinc-500">Width</span>
-        <span className="font-medium tabular-nums text-zinc-700">
+        <span className="text-muted">Width</span>
+        <span className="font-medium tabular-nums text-ink">
           {formatInches(section.widthIn)}
         </span>
       </div>
@@ -92,16 +92,16 @@ export default function SectionRow({
         }
         className="mt-1 w-full accent-brand"
       />
-      <div className="flex justify-between text-[10px] text-zinc-400">
+      <div className="flex justify-between text-[10px] text-faint">
         <span>{formatInches(min)}</span>
         <span>max {formatInches(max)}</span>
       </div>
 
       {/* Back panel */}
       <label className="mt-2 flex cursor-pointer items-center justify-between text-xs">
-        <span className="text-zinc-600">
+        <span className="text-muted">
           Add back panel{' '}
-          <span className="text-zinc-400">
+          <span className="text-faint">
             (+{formatCents(catalog.pricing.backPerSectionCents)})
           </span>
         </span>

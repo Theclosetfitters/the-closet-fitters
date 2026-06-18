@@ -31,12 +31,12 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
   if (done) {
     return (
       <div className="mt-6 space-y-4">
-        <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-600">
+        <div className="rounded-xl border border-sand bg-cream-50 p-5 text-center">
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-2xl text-cream">
             ✓
           </div>
-          <h2 className="text-xl font-bold text-zinc-900">Quote requested!</h2>
-          <p className="mt-1 text-sm text-zinc-600">
+          <h2 className="text-xl font-bold text-ink">Quote requested!</h2>
+          <p className="mt-1 text-sm text-muted">
             Reference <span className="font-mono">{done.quoteRef}</span>.{' '}
             {done.emailSent
               ? `We’ve emailed your itemized quote to ${done.contact.email}.`
@@ -54,8 +54,8 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
           />
         ))}
 
-        <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
-          <span className="font-semibold text-zinc-900">Grand total</span>
+        <div className="flex items-center justify-between rounded-xl border border-line bg-card p-4">
+          <span className="font-semibold text-ink">Grand total</span>
           <span className="text-lg font-bold tabular-nums text-walnut">
             {formatCents(done.grandTotalCents)}
           </span>
@@ -63,7 +63,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
 
         <Link
           href="/configure"
-          className="block rounded-full bg-brand px-6 py-2.5 text-center text-sm font-semibold text-white hover:bg-brand-700"
+          className="block rounded-full bg-brand px-6 py-2.5 text-center text-sm font-semibold text-cream hover:bg-brand-700"
         >
           Design another closet
         </Link>
@@ -73,11 +73,11 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
 
   if (ready && items.length === 0) {
     return (
-      <div className="mt-8 rounded-xl border border-dashed border-zinc-300 p-8 text-center">
-        <p className="text-zinc-500">Your cart is empty.</p>
+      <div className="mt-8 rounded-xl border border-dashed border-line p-8 text-center">
+        <p className="text-muted">Your cart is empty.</p>
         <Link
           href="/configure"
-          className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+          className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-cream hover:bg-brand-700"
         >
           Design a closet
         </Link>
@@ -123,7 +123,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
       <div className="space-y-4">
         {FIELDS.map((f) => (
           <div key={f.name}>
-            <label className="block text-sm font-medium text-zinc-700">{f.label}</label>
+            <label className="block text-sm font-medium text-ink">{f.label}</label>
             <input
               data-testid={`field-${f.name}`}
               type={f.type}
@@ -131,12 +131,12 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
               placeholder={f.placeholder}
               value={form[f.name]}
               onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
           </div>
         ))}
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-ink">
             Delivery address
           </label>
           <textarea
@@ -146,20 +146,20 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
             placeholder="123 Main St, City, State ZIP"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-brand focus:outline-none"
           />
         </div>
         {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-600">{error}</p>}
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <h3 className="text-sm font-semibold text-zinc-800">Order summary</h3>
+        <div className="rounded-xl border border-line bg-card p-4">
+          <h3 className="text-sm font-semibold text-ink">Order summary</h3>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-zinc-500">
+            <span className="text-muted">
               {items.length} closet{items.length === 1 ? '' : 's'}
             </span>
-            <span className="font-semibold tabular-nums text-zinc-900">
+            <span className="font-semibold tabular-nums text-ink">
               {formatCents(totalCents)}
             </span>
           </div>
@@ -167,11 +167,11 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
             type="submit"
             data-testid="submit-quote"
             disabled={submitting || (ready && items.length === 0)}
-            className="mt-4 w-full rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+            className="mt-4 w-full rounded-full bg-brand px-5 py-3 text-sm font-semibold text-cream transition hover:bg-brand-700 disabled:opacity-50"
           >
             {submitting ? 'Submitting…' : 'Request quote'}
           </button>
-          <p className="mt-2 text-center text-[11px] text-zinc-400">
+          <p className="mt-2 text-center text-[11px] text-faint">
             No payment now — you’ll receive an itemized quote by email.
           </p>
         </div>

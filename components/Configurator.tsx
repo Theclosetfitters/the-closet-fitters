@@ -15,7 +15,7 @@ import { useCart } from '@/lib/cart-context';
 const ClosetViewer = dynamic(() => import('@/components/3d/ClosetViewer'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center text-sm text-zinc-400">
+    <div className="flex h-full items-center justify-center text-sm text-faint">
       Loading 3D preview…
     </div>
   ),
@@ -118,7 +118,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
       {/* Left: 3D preview */}
       <div
         data-testid="closet-viewer"
-        className="order-1 h-[340px] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 lg:order-none lg:h-[600px]"
+        className="order-1 h-[340px] overflow-hidden rounded-2xl border border-line bg-cream lg:order-none lg:h-[600px]"
       >
         <ClosetViewer catalog={catalog} config={config} />
       </div>
@@ -127,7 +127,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
       <div className="order-2 space-y-6 lg:order-none">
         {/* Material */}
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-800">Material</h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink">Material</h2>
           <MaterialPicker
             materials={catalog.materials}
             selectedId={config.materialId}
@@ -137,7 +137,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
         {/* Hardware */}
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-800">
+          <h2 className="mb-2 text-sm font-semibold text-ink">
             Hardware color
           </h2>
           <HardwarePicker
@@ -148,12 +148,12 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         </section>
 
         {/* Height + depth */}
-        <section className="rounded-xl border border-zinc-200 bg-white p-3 text-sm">
+        <section className="rounded-xl border border-line bg-card p-3 text-sm">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-zinc-700">
+            <span className="font-medium text-ink">
               Height: {heightLabel}
             </span>
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
               <input
                 data-testid="height-upgrade"
                 type="checkbox"
@@ -164,7 +164,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
               Raise to 8' (+{formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
             </label>
           </div>
-          <p className="mt-1 text-[11px] text-zinc-400">
+          <p className="mt-1 text-[11px] text-faint">
             Depth fixed at {formatInches(catalog.constraints.depthIn)} · total
             width {formatInches(totalWidth)}
           </p>
@@ -173,12 +173,12 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         {/* Sections */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-800">Sections</h2>
+            <h2 className="text-sm font-semibold text-ink">Sections</h2>
             <button
               data-testid="add-section"
               type="button"
               onClick={addSection}
-              className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700"
+              className="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-cream hover:opacity-90"
             >
               + Add section
             </button>

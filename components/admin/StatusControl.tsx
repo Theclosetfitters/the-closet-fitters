@@ -24,7 +24,7 @@ export default function StatusControl({
       <select
         name="status"
         defaultValue={status}
-        className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+        className="rounded-lg border border-line px-2 py-1.5 text-sm"
       >
         {STATUSES.map((s) => (
           <option key={s} value={s}>
@@ -34,7 +34,7 @@ export default function StatusControl({
       </select>
       <button
         type="submit"
-        className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700"
+        className="rounded-lg bg-ink px-3 py-1.5 text-sm font-medium text-cream hover:opacity-90"
       >
         Update
       </button>

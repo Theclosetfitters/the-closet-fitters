@@ -23,14 +23,14 @@ export default function HardwarePicker({
             type="button"
             onClick={() => onSelect(h.id)}
             className={`flex flex-1 items-center gap-2 rounded-lg border p-2 text-left text-xs transition ${
-              active ? 'border-brand ring-1 ring-brand' : 'border-zinc-200 hover:border-zinc-300'
+              active ? 'border-brand ring-1 ring-brand' : 'border-line hover:border-line'
             }`}
           >
             <span
               className="h-5 w-5 shrink-0 rounded-full border border-black/10"
               style={{ backgroundColor: h.colorHex }}
             />
-            <span className="text-zinc-700">{h.label}</span>
+            <span className="text-ink">{h.label}</span>
           </button>
         );
       })}

@@ -54,14 +54,14 @@ export default function AuthForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-6 flex rounded-full bg-zinc-100 p-1 text-sm">
+      <div className="mb-6 flex rounded-full bg-cream p-1 text-sm">
         {(['signin', 'signup'] as Mode[]).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
             className={`flex-1 rounded-full py-1.5 font-medium transition ${
-              mode === m ? 'bg-white text-zinc-900 shadow' : 'text-zinc-500'
+              mode === m ? 'bg-card text-ink shadow' : 'text-muted'
             }`}
           >
             {m === 'signin' ? 'Sign in' : 'Sign up'}
@@ -76,7 +76,7 @@ export default function AuthForm() {
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-brand focus:outline-none"
         />
         <input
           type="password"
@@ -85,26 +85,26 @@ export default function AuthForm() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-brand focus:outline-none"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+          className="w-full rounded-full bg-brand py-2.5 text-sm font-semibold text-cream hover:bg-brand-700 disabled:opacity-50"
         >
           {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
         </button>
       </form>
 
-      <div className="my-4 flex items-center gap-3 text-xs text-zinc-400">
-        <span className="h-px flex-1 bg-zinc-200" /> or{' '}
-        <span className="h-px flex-1 bg-zinc-200" />
+      <div className="my-4 flex items-center gap-3 text-xs text-faint">
+        <span className="h-px flex-1 bg-line" /> or{' '}
+        <span className="h-px flex-1 bg-line" />
       </div>
 
       <button
         type="button"
         onClick={handleGoogle}
-        className="w-full rounded-full border border-zinc-300 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        className="w-full rounded-full border border-line py-2.5 text-sm font-medium text-ink hover:bg-cream-50"
       >
         Continue with Google
       </button>

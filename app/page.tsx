@@ -11,7 +11,7 @@ export default function Home() {
       <h1 className="mt-2 max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl">
         Closets, fitted to your space
       </h1>
-      <p className="mt-4 max-w-xl text-lg text-zinc-600">
+      <p className="mt-4 max-w-xl text-lg text-muted">
         The Closet Fitters designs, engineers, and builds custom, made-to-measure
         closet systems. Plan yours bay by bay, watch it take shape in 3D with a
         live price, and request your quote.
@@ -19,7 +19,7 @@ export default function Home() {
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <Link
           href="/configure"
-          className="rounded-full bg-brand px-8 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+          className="rounded-full bg-brand px-8 py-3 text-sm font-semibold text-cream transition hover:bg-brand-700"
         >
           Start designing
         </Link>

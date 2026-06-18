@@ -25,16 +25,16 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-zinc-900">Orders</h1>
+      <h1 className="text-2xl font-bold text-ink">Orders</h1>
 
       <div className="mt-4 grid grid-cols-4 gap-2">
         {counts.map((c) => (
           <div
             key={c.status}
-            className="rounded-lg border border-zinc-200 bg-white p-3 text-center"
+            className="rounded-lg border border-line bg-card p-3 text-center"
           >
-            <div className="text-lg font-bold text-zinc-900">{c.count}</div>
-            <div className="text-[11px] text-zinc-500">
+            <div className="text-lg font-bold text-ink">{c.count}</div>
+            <div className="text-[11px] text-muted">
               {formatStatus(c.status)}
             </div>
           </div>
@@ -42,17 +42,17 @@ export default async function AdminPage() {
       </div>
 
       {orders.length === 0 ? (
-        <p className="mt-8 text-zinc-500">No orders yet.</p>
+        <p className="mt-8 text-muted">No orders yet.</p>
       ) : (
         <div className="mt-6 space-y-3">
           {orders.map((order) => (
             <OrderCard key={order.id} order={order} catalog={catalog}>
               <div className="space-y-2">
-                <div className="rounded-lg bg-zinc-50 p-2 text-xs text-zinc-600">
-                  <div className="font-medium text-zinc-800">
+                <div className="rounded-lg bg-cream-50 p-2 text-xs text-muted">
+                  <div className="font-medium text-ink">
                     {order.customerName ?? 'Guest'}
                     {order.quoteRef && (
-                      <span className="ml-2 font-mono text-[10px] text-zinc-400">
+                      <span className="ml-2 font-mono text-[10px] text-faint">
                         {order.quoteRef}
                       </span>
                     )}
@@ -62,7 +62,7 @@ export default async function AdminPage() {
                     {order.customerPhone && <span>{order.customerPhone}</span>}
                   </div>
                   {order.customerAddress && (
-                    <div className="mt-0.5 text-zinc-500">{order.customerAddress}</div>
+                    <div className="mt-0.5 text-muted">{order.customerAddress}</div>
                   )}
                 </div>
                 <div className="flex items-center justify-end">

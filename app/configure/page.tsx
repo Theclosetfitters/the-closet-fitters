@@ -14,7 +14,7 @@ export default function ConfigurePage() {
         <h1 className="text-2xl font-bold tracking-tight text-ink">
           Design your closet
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted">
           Choose your material and hardware, then build it bay by bay. The 3D
           preview and price update as you go.
         </p>

@@ -2,10 +2,10 @@ import type { Catalog, ClosetConfig, Order } from '@/types';
 import { formatCents, formatInches, formatStatus } from '@/lib/format';
 
 const STATUS_STYLES: Record<string, string> = {
-  received: 'bg-blue-100 text-blue-700',
-  in_production: 'bg-cream text-walnut',
-  ready: 'bg-purple-100 text-purple-700',
-  completed: 'bg-green-100 text-green-700',
+  received: 'bg-cream text-walnut',
+  in_production: 'bg-sand/50 text-ink',
+  ready: 'bg-brand/15 text-brand',
+  completed: 'bg-brand text-cream',
 };
 
 function summarize(catalog: Catalog, config: ClosetConfig) {
@@ -36,29 +36,29 @@ export default function OrderCard({
 }) {
   const s = summarize(catalog, order.config);
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <div className="rounded-xl border border-line bg-card p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="font-semibold text-zinc-900">{s.title}</div>
-          <div className="mt-0.5 text-xs text-zinc-500">
+          <div className="font-semibold text-ink">{s.title}</div>
+          <div className="mt-0.5 text-xs text-muted">
             {s.sub} · #{order.id.slice(0, 8)}
           </div>
-          <div className="mt-0.5 text-xs text-zinc-400">
+          <div className="mt-0.5 text-xs text-faint">
             {new Date(order.createdAt).toLocaleDateString()}
           </div>
         </div>
         <span
           className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-            STATUS_STYLES[order.status] ?? 'bg-zinc-100 text-zinc-600'
+            STATUS_STYLES[order.status] ?? 'bg-cream text-muted'
           }`}
         >
           {formatStatus(order.status)}
         </span>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-3">
-        <span className="text-sm text-zinc-500">Total</span>
-        <span className="font-semibold tabular-nums text-zinc-900">
+      <div className="mt-3 flex items-center justify-between border-t border-cream pt-3">
+        <span className="text-sm text-muted">Total</span>
+        <span className="font-semibold tabular-nums text-ink">
           {formatCents(order.totalCents, order.currency)}
         </span>
       </div>

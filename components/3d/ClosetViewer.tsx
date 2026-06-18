@@ -354,7 +354,7 @@ export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
       }}
       className="h-full w-full"
     >
-      <color attach="background" args={['#eef0f2']} />
+      <color attach="background" args={['#efe7d9']} />
       <ambientLight intensity={0.35} />
       <directionalLight
         position={[4, 7, 5]}
@@ -372,7 +372,7 @@ export default function ClosetViewer({ catalog, config }: ClosetViewerProps) {
 
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
           <planeGeometry args={[80, 80]} />
-          <meshStandardMaterial color="#e6e7ea" roughness={0.85} metalness={0.05} />
+          <meshStandardMaterial color="#e4d8c5" roughness={0.85} metalness={0.05} />
         </mesh>
         <ContactShadows position={[0, 0.002, 0]} opacity={0.5} scale={Math.max(6, W * 2)} blur={2.4} far={5} />
 

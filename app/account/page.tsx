@@ -23,15 +23,15 @@ export default async function AccountPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-zinc-900">My orders</h1>
-      <p className="mt-1 text-sm text-zinc-500">{user.email}</p>
+      <h1 className="text-2xl font-bold text-ink">My orders</h1>
+      <p className="mt-1 text-sm text-muted">{user.email}</p>
 
       {orders.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-zinc-300 p-8 text-center">
-          <p className="text-zinc-500">You don’t have any orders yet.</p>
+        <div className="mt-8 rounded-xl border border-dashed border-line p-8 text-center">
+          <p className="text-muted">You don’t have any orders yet.</p>
           <Link
             href="/configure"
-            className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+            className="mt-4 inline-block rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-cream hover:bg-brand-700"
           >
             Design a closet
           </Link>

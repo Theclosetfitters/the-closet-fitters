@@ -24,7 +24,7 @@ export default function MaterialPicker({
             onClick={() => onSelect(m.id)}
             title={m.note ? `${m.label} — ${m.note}` : m.label}
             className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 text-center transition ${
-              active ? 'border-brand ring-1 ring-brand' : 'border-zinc-200 hover:border-zinc-300'
+              active ? 'border-brand ring-1 ring-brand' : 'border-line hover:border-line'
             }`}
           >
             <span
@@ -34,7 +34,7 @@ export default function MaterialPicker({
                 backgroundImage: `url(/textures/${m.id}.jpg)`,
               }}
             />
-            <span className="text-[10px] leading-tight text-zinc-600">
+            <span className="text-[10px] leading-tight text-muted">
               {m.label}
             </span>
           </button>
