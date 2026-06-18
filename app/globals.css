@@ -17,14 +17,13 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-hanken);
-  --font-accent: var(--font-caveat);
-  --font-script: var(--font-pinyon);
+  --font-sans: var(--font-inter);
+  --font-script: var(--font-dancing);
   --font-display: var(--font-cormorant);
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-family: var(--font-hanken), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
 }

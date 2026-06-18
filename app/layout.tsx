@@ -1,38 +1,31 @@
 import type { Metadata, Viewport } from 'next';
-import {
-  Hanken_Grotesk,
-  Caveat,
-  Cormorant_Garamond,
-  Pinyon_Script,
-} from 'next/font/google';
+import { Inter, Cormorant_Garamond, Dancing_Script } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { CartProvider } from '@/lib/cart-context';
 
-const hanken = Hanken_Grotesk({
-  variable: '--font-hanken',
+// Brand type system (licensed fonts stood in by Google Fonts):
+//  - New Hero  -> Inter            (body, nav, labels, CTAs)
+//  - Mogan     -> Cormorant Garamond (headings / display)
+//  - script    -> Dancing Script   (the "The" in the logo)
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['300', '400', '500', '600', '700'],
 });
 
-const caveat = Caveat({
-  variable: '--font-caveat',
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-});
-
-// Logo wordmark: elegant serif ("Closet Fitters") + script ("The").
 const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
 });
 
-const pinyon = Pinyon_Script({
-  variable: '--font-pinyon',
+const dancing = Dancing_Script({
+  variable: '--font-dancing',
   subsets: ['latin'],
-  weight: ['400'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -44,7 +37,7 @@ export const metadata: Metadata = {
     'Custom, made-to-measure closet systems — designed, engineered, and built with premium materials and a design-led approach.',
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/icons/icon-192.png',
+    icon: '/icon.svg',
     apple: '/icons/apple-touch-icon.png',
   },
   appleWebApp: {
@@ -55,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1f333a',
+  themeColor: '#1F333A',
 };
 
 export default function RootLayout({
@@ -66,7 +59,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${hanken.variable} ${caveat.variable} ${cormorant.variable} ${pinyon.variable} h-full antialiased`}
+      className={`${inter.variable} ${cormorant.variable} ${dancing.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-paper text-ink">
         <CartProvider>
