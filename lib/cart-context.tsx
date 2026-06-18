@@ -11,7 +11,8 @@ import {
   useState,
 } from 'react';
 import type { ClosetConfig } from '@/types';
-import { makeSectionId } from '@/lib/config';
+import { makeSectionId, normalizeConfig } from '@/lib/config';
+import { catalog } from '@/lib/catalog';
 
 export interface CartItem {
   id: string;
@@ -39,7 +40,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw) as CartItem[]);
+      if (raw) {
+        const stored = JSON.parse(raw) as CartItem[];
+        // Backfill any fields added since the item was saved.
+        setItems(
+          stored.map((it) => ({
+            ...it,
+            config: normalizeConfig(catalog, it.config),
+          }))
+        );
+      }
     } catch {
       // ignore corrupt storage
     }
@@ -57,7 +67,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const add = useCallback(
     (config: ClosetConfig, totalCents: number) =>
-      setItems((prev) => [...prev, { id: makeSectionId(), config, totalCents }]),
+      setItems((prev) => [
+        ...prev,
+        { id: makeSectionId(), config: normalizeConfig(catalog, config), totalCents },
+      ]),
     []
   );
   const remove = useCallback(

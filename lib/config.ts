@@ -3,11 +3,45 @@ import type {
   Catalog,
   ClosetConfig,
   ClosetShape,
+  HardwareStyleId,
   InteriorType,
   SectionConfig,
   WallId,
 } from '@/types';
 import { roundToEighth } from '@/lib/format';
+
+// A possibly-incomplete config (e.g. an older cart item from localStorage, or
+// a config saved before shape/colors/wall existed).
+type LegacyConfig = Partial<Omit<ClosetConfig, 'sections'>> & {
+  hardwareId?: string; // pre-rename rod/hardware color
+  sections?: Array<Partial<SectionConfig>>;
+};
+
+/** Fill in any missing fields with catalog defaults so a config is always valid. */
+export function normalizeConfig(
+  catalog: Catalog,
+  config: LegacyConfig
+): ClosetConfig {
+  const shape: ClosetShape = config.shape ?? 'straight';
+  const walls = wallsForShape(shape);
+  const firstColor = catalog.hardware[0].id;
+  return {
+    shape,
+    materialId: config.materialId ?? catalog.materials[0].id,
+    rodColorId: config.rodColorId ?? config.hardwareId ?? firstColor,
+    hardwareColorId: config.hardwareColorId ?? config.hardwareId ?? firstColor,
+    hardwareStyleId:
+      (config.hardwareStyleId as HardwareStyleId) ?? catalog.hardwareStyles[0].id,
+    heightUpgrade: Boolean(config.heightUpgrade),
+    sections: (config.sections ?? []).map((s) => ({
+      id: s.id ?? makeSectionId(),
+      interior: (s.interior as InteriorType) ?? 'long_hanging',
+      widthIn: typeof s.widthIn === 'number' ? s.widthIn : 24,
+      hasBack: Boolean(s.hasBack),
+      wall: s.wall && walls.includes(s.wall) ? s.wall : 'A',
+    })),
+  };
+}
 
 /** Which walls a shape has, in order. */
 export function wallsForShape(shape: ClosetShape): WallId[] {
