@@ -25,7 +25,7 @@ import type {
   SectionConfig,
   WallId,
 } from '@/types';
-import { wallLabel, wallsForShape } from '@/lib/config';
+import { wallDisplayLabel, wallsForShape } from '@/lib/config';
 
 interface ClosetViewerProps {
   catalog: Catalog;
@@ -516,7 +516,7 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
                   pointerEvents: 'none',
                 }}
               >
-                {wallLabel(p.wall)}
+                {wallDisplayLabel(config.shape, p.wall)}
               </div>
             </Html>
           </group>

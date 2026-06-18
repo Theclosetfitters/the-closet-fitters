@@ -6,6 +6,7 @@ import type { Catalog, ClosetConfig } from '@/types';
 import { useCart } from '@/lib/cart-context';
 import { formatCents } from '@/lib/format';
 import ClosetSummary from '@/components/ClosetSummary';
+import BirdsEyeView from '@/components/BirdsEyeView';
 
 interface Done {
   contact: { name: string; phone: string; email: string; address: string };
@@ -125,7 +126,26 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
   }
 
   return (
-    <form onSubmit={submit} className="mt-6 grid gap-6 md:grid-cols-[1fr_320px]">
+    <>
+      {/* Your Closet Layout — read-only top-down diagram(s) */}
+      <section className="mt-6" aria-label="Your Closet Layout">
+        <h2 className="text-lg font-semibold text-ink">Your Closet Layout</h2>
+        <p className="mt-1 text-sm text-muted">
+          This is a top-down view of your closet. Each box represents one bay.
+        </p>
+        <div className="mt-3 space-y-4">
+          {items.map((it, i) => (
+            <div key={it.id}>
+              {items.length > 1 && (
+                <div className="mb-1 text-xs font-medium text-muted">Closet {i + 1}</div>
+              )}
+              <BirdsEyeView catalog={catalog} config={it.config} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <form onSubmit={submit} className="mt-8 grid gap-6 md:grid-cols-[1fr_320px]">
       <div className="space-y-4">
         {FIELDS.map((f) => (
           <div key={f.name}>
@@ -200,6 +220,7 @@ export default function CheckoutForm({ catalog }: { catalog: Catalog }) {
           </p>
         </div>
       </div>
-    </form>
+      </form>
+    </>
   );
 }

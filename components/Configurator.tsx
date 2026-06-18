@@ -2,21 +2,29 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { Catalog, ClosetConfig, SectionConfig, PriceBreakdown } from '@/types';
+import type {
+  Catalog,
+  ClosetConfig,
+  ClosetShape,
+  HardwareStyleId,
+  PriceBreakdown,
+  SectionConfig,
+  WallId,
+} from '@/types';
 import {
   clampWidth,
   defaultConfig,
   defaultSection,
   totalWidthIn,
+  wallDisplayLabel,
   wallsForShape,
 } from '@/lib/config';
 import { formatCents, formatInches } from '@/lib/format';
-import type { ClosetShape, HardwareStyleId } from '@/types';
 import MaterialPicker from '@/components/configurator/MaterialPicker';
 import HardwarePicker from '@/components/configurator/HardwarePicker';
 import ShapeSelector from '@/components/configurator/ShapeSelector';
 import HardwareStylePicker from '@/components/configurator/HardwareStylePicker';
-import SectionRow from '@/components/configurator/SectionRow';
+import WallSection from '@/components/configurator/WallSection';
 import PricePanel from '@/components/configurator/PricePanel';
 import { useCart } from '@/lib/cart-context';
 
@@ -66,21 +74,6 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   }, [config]);
 
   // --- Mutators -----------------------------------------------------------
-  const addSection = useCallback(
-    () => setConfig((c) => ({ ...c, sections: [...c.sections, defaultSection(catalog)] })),
-    [catalog]
-  );
-
-  const removeSection = useCallback(
-    (id: string) =>
-      setConfig((c) =>
-        c.sections.length <= 1
-          ? c
-          : { ...c, sections: c.sections.filter((s) => s.id !== id) }
-      ),
-    []
-  );
-
   const updateSection = useCallback(
     (id: string, patch: Partial<SectionConfig>) =>
       setConfig((c) => ({
@@ -88,7 +81,6 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         sections: c.sections.map((s) => {
           if (s.id !== id) return s;
           const next = { ...s, ...patch };
-          // Keep width valid for the (possibly new) interior.
           next.widthIn = clampWidth(catalog, next.interior, next.widthIn);
           return next;
         }),
@@ -96,23 +88,40 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     [catalog]
   );
 
-  const setShape = useCallback((shape: ClosetShape) => {
+  const addBay = useCallback(
+    (wall: WallId) =>
+      setConfig((c) => ({ ...c, sections: [...c.sections, defaultSection(catalog, wall)] })),
+    [catalog]
+  );
+
+  const removeBay = useCallback((wall: WallId) => {
     setConfig((c) => {
-      const walls = wallsForShape(shape);
-      // Spread existing bays across the shape's walls so each wall shows.
-      const sections = c.sections.map((s, i) => ({ ...s, wall: walls[i % walls.length] }));
-      return { ...c, shape, sections };
+      const onWall = c.sections.filter((s) => s.wall === wall);
+      if (onWall.length <= 1) return c; // min 1 bay per wall
+      const lastId = onWall[onWall.length - 1].id;
+      return { ...c, sections: c.sections.filter((s) => s.id !== lastId) };
     });
   }, []);
 
-  const setMaterial = useCallback(
-    (materialId: string) => setConfig((c) => ({ ...c, materialId })),
-    []
+  const setShape = useCallback(
+    (shape: ClosetShape) => {
+      setConfig((c) => {
+        const ws = wallsForShape(shape);
+        let sections = c.sections.map((s, i) => ({ ...s, wall: ws[i % ws.length] }));
+        // Guarantee at least one bay on every wall of the new shape.
+        for (const w of ws) {
+          if (!sections.some((s) => s.wall === w)) {
+            sections = [...sections, defaultSection(catalog, w)];
+          }
+        }
+        return { ...c, shape, sections };
+      });
+    },
+    [catalog]
   );
-  const setRodColor = useCallback(
-    (rodColorId: string) => setConfig((c) => ({ ...c, rodColorId })),
-    []
-  );
+
+  const setMaterial = useCallback((materialId: string) => setConfig((c) => ({ ...c, materialId })), []);
+  const setRodColor = useCallback((rodColorId: string) => setConfig((c) => ({ ...c, rodColorId })), []);
   const setHardwareColor = useCallback(
     (hardwareColorId: string) => setConfig((c) => ({ ...c, hardwareColorId })),
     []
@@ -128,8 +137,18 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   );
 
   const walls = useMemo(() => wallsForShape(config.shape), [config.shape]);
+  const wallSlots = useMemo(
+    () =>
+      walls.map((w) => ({
+        wall: w,
+        label: wallDisplayLabel(config.shape, w),
+        bays: config.sections
+          .map((section, index) => ({ section, index }))
+          .filter((b) => b.section.wall === w),
+      })),
+    [walls, config.shape, config.sections]
+  );
 
-  // --- Add to cart --------------------------------------------------------
   const addToCart = useCallback(() => {
     if (!breakdown) return;
     cart.add(config, breakdown.totalCents);
@@ -143,18 +162,20 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     : formatInches(catalog.constraints.standardHeightIn);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_minmax(340px,420px)]">
-      {/* Left: 3D preview */}
-      <div
-        data-testid="closet-viewer"
-        className="order-1 h-[340px] overflow-hidden rounded-2xl border border-line bg-cream lg:order-none lg:h-[600px]"
-      >
-        <ClosetViewer catalog={catalog} config={config} />
+    <div className="lg:grid lg:grid-cols-[1fr_minmax(360px,440px)] lg:gap-8">
+      {/* Left: sticky 3D viewer (full viewport height on desktop) */}
+      <div className="lg:sticky lg:top-16 lg:flex lg:h-[calc(100svh-4rem)] lg:items-center lg:self-start">
+        <div
+          data-testid="closet-viewer"
+          className="h-[340px] w-full overflow-hidden rounded-2xl border border-line bg-cream lg:h-[86%]"
+        >
+          <ClosetViewer catalog={catalog} config={config} />
+        </div>
       </div>
 
-      {/* Right: controls */}
-      <div className="order-2 space-y-6 lg:order-none">
-        {/* Shape — chosen first; affects how bays are laid out */}
+      {/* Right: scrollable editor */}
+      <div className="space-y-8 py-6 lg:py-12">
+        {/* Shape — chosen first; determines the walls below */}
         <section>
           <h2 className="mb-2 text-sm font-semibold text-ink">Closet shape</h2>
           <ShapeSelector
@@ -164,57 +185,74 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           />
           {walls.length > 1 && (
             <p className="mt-1 text-[11px] text-faint">
-              Assign each bay to a wall below — bays are priced the same on any wall.
+              Configure each wall’s bays separately below.
             </p>
           )}
         </section>
 
-        {/* Material */}
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink">Material</h2>
-          <MaterialPicker
-            materials={catalog.materials}
-            selectedId={config.materialId}
-            onSelect={setMaterial}
-          />
+        {/* One section per wall */}
+        {wallSlots.map((w, idx) => (
+          <div key={w.wall}>
+            {idx > 0 && <hr className="mb-8 border-line" />}
+            <WallSection
+              catalog={catalog}
+              wall={w.wall}
+              label={w.label}
+              bays={w.bays}
+              onAddBay={addBay}
+              onRemoveBay={removeBay}
+              onChange={updateSection}
+            />
+          </div>
+        ))}
+
+        {/* Global selections */}
+        <section className="space-y-6 border-t border-line pt-8">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-ink">
+            Finishes &amp; Hardware
+          </h2>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-ink">Material</h3>
+            <MaterialPicker
+              materials={catalog.materials}
+              selectedId={config.materialId}
+              onSelect={setMaterial}
+            />
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-ink">Hardware style</h3>
+            <HardwareStylePicker
+              styles={catalog.hardwareStyles}
+              selectedId={config.hardwareStyleId}
+              onSelect={setHardwareStyle}
+            />
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-ink">Rod color</h3>
+            <HardwarePicker
+              hardware={catalog.hardware}
+              selectedId={config.rodColorId}
+              onSelect={setRodColor}
+            />
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-ink">Hardware color</h3>
+            <HardwarePicker
+              hardware={catalog.hardware}
+              selectedId={config.hardwareColorId}
+              onSelect={setHardwareColor}
+            />
+          </div>
         </section>
 
-        {/* Hardware style */}
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink">Hardware style</h2>
-          <HardwareStylePicker
-            styles={catalog.hardwareStyles}
-            selectedId={config.hardwareStyleId}
-            onSelect={setHardwareStyle}
-          />
-        </section>
-
-        {/* Rod color */}
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink">Rod color</h2>
-          <HardwarePicker
-            hardware={catalog.hardware}
-            selectedId={config.rodColorId}
-            onSelect={setRodColor}
-          />
-        </section>
-
-        {/* Hardware color */}
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-ink">Hardware color</h2>
-          <HardwarePicker
-            hardware={catalog.hardware}
-            selectedId={config.hardwareColorId}
-            onSelect={setHardwareColor}
-          />
-        </section>
-
-        {/* Height + depth */}
+        {/* Height (global) */}
         <section className="rounded-xl border border-line bg-card p-3 text-sm">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-ink">
-              Height: {heightLabel}
-            </span>
+            <span className="font-medium text-ink">Height: {heightLabel}</span>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
               <input
                 data-testid="height-upgrade"
@@ -227,41 +265,12 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             </label>
           </div>
           <p className="mt-1 text-[11px] text-faint">
-            Depth fixed at {formatInches(catalog.constraints.depthIn)} · total
-            width {formatInches(totalWidth)}
+            Depth fixed at {formatInches(catalog.constraints.depthIn)} · total width{' '}
+            {formatInches(totalWidth)}
           </p>
         </section>
 
-        {/* Sections */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Sections</h2>
-            <button
-              data-testid="add-section"
-              type="button"
-              onClick={addSection}
-              className="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-cream hover:opacity-90"
-            >
-              + Add section
-            </button>
-          </div>
-          {config.sections.map((section, i) => (
-            <SectionRow
-              key={section.id}
-              catalog={catalog}
-              section={section}
-              index={i}
-              canRemove={config.sections.length > 1}
-              walls={walls}
-              onChange={updateSection}
-              onRemove={removeSection}
-            />
-          ))}
-        </section>
-
-        {error && (
-          <p className="rounded-lg bg-red-50 p-2 text-sm text-red-600">{error}</p>
-        )}
+        {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-600">{error}</p>}
 
         <PricePanel
           breakdown={breakdown}

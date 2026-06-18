@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function ConfigurePage() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <header className="mb-6">
+    <main className="mx-auto w-full max-w-6xl px-4 pt-6">
+      <header className="mb-2">
         <h1 className="text-2xl font-bold tracking-tight text-ink">
           Design your closet
         </h1>

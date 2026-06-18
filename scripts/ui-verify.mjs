@@ -91,7 +91,7 @@ async function main() {
       );
 
     // 3) Adding a section increases the price (+$500).
-    await page.getByTestId('add-section').click();
+    await page.getByTestId('add-bay-A').click();
     await waitPriceChange(total1);
     const total2 = await total.textContent();
     ok(

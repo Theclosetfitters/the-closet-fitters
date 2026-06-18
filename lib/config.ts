@@ -59,6 +59,21 @@ export function wallLabel(wall: WallId): string {
   return WALL_LABELS[wall];
 }
 
+/** Wall label with a position hint for U-shaped closets. Used in both the
+ * editor and the 3D viewer so they always read the same. */
+export function wallDisplayLabel(shape: ClosetShape, wall: WallId): string {
+  if (shape === 'u_shaped') {
+    const pos: Record<WallId, string> = { A: 'Back', B: 'Left', C: 'Right' };
+    return `${WALL_LABELS[wall]} (${pos[wall]})`;
+  }
+  return WALL_LABELS[wall];
+}
+
+/** Number of bays currently on a given wall. */
+export function bayCountForWall(config: ClosetConfig, wall: WallId): number {
+  return config.sections.filter((s) => s.wall === wall).length;
+}
+
 /** Generate a stable id for a section (browser or server safe). */
 export function makeSectionId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

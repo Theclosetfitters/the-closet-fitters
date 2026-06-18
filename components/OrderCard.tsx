@@ -1,5 +1,6 @@
 import type { Catalog, ClosetConfig, Order } from '@/types';
 import { formatCents, formatInches, formatStatus } from '@/lib/format';
+import BirdsEyeView from '@/components/BirdsEyeView';
 
 const STATUS_STYLES: Record<string, string> = {
   received: 'bg-cream text-walnut',
@@ -96,6 +97,13 @@ export default function OrderCard({
 
       <div className="mt-3">
         <FinishDetails catalog={catalog} config={order.config} />
+      </div>
+
+      <div className="mt-3">
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+          Closet Layout Diagram
+        </div>
+        <BirdsEyeView catalog={catalog} config={order.config} />
       </div>
 
       {children && <div className="mt-3">{children}</div>}

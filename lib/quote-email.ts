@@ -2,6 +2,7 @@
 import type { Catalog, ClosetConfig, PriceBreakdown } from '@/types';
 import { formatCents, formatInches } from '@/lib/format';
 import { wallLabel, wallsForShape } from '@/lib/config';
+import { birdsEyeLegend, birdsEyeSvg } from '@/lib/birdseye';
 
 export interface QuoteContact {
   name: string;
@@ -108,6 +109,16 @@ export function buildQuoteEmailHtml(
           </table>
           ${wallBlock}
           ${img}
+          <p style="margin:14px 0 4px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#71717a;">
+            Your Closet Layout
+          </p>
+          <div style="margin:4px 0;">${birdsEyeSvg(catalog, cfg)}</div>
+          <p style="margin:4px 0 8px;font-size:12px;color:#71717a;">${birdsEyeLegend(
+            catalog,
+            cfg
+          )
+            .map((l) => `${esc(l.code)} = ${esc(l.label)}`)
+            .join('&nbsp;&nbsp; ')}</p>
           <table style="width:100%;border-collapse:collapse;font-size:14px;">${bays}</table>
         </div>`;
     })

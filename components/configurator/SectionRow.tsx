@@ -1,28 +1,20 @@
 'use client';
 
-import type { Catalog, SectionConfig, WallId } from '@/types';
-import { formatCents, formatInches, } from '@/lib/format';
-import { maxWidthFor, wallLabel } from '@/lib/config';
+import type { Catalog, SectionConfig } from '@/types';
+import { formatCents, formatInches } from '@/lib/format';
+import { maxWidthFor } from '@/lib/config';
 
 interface Props {
   catalog: Catalog;
   section: SectionConfig;
+  /** Global index in config.sections — used for stable test ids. */
   index: number;
-  canRemove: boolean;
-  walls: WallId[];
+  /** Display label within the wall, e.g. "Bay 1". */
+  label: string;
   onChange: (id: string, patch: Partial<SectionConfig>) => void;
-  onRemove: (id: string) => void;
 }
 
-export default function SectionRow({
-  catalog,
-  section,
-  index,
-  canRemove,
-  walls,
-  onChange,
-  onRemove,
-}: Props) {
+export default function SectionRow({ catalog, section, index, label, onChange }: Props) {
   const interior = catalog.interiors.find((i) => i.id === section.interior)!;
   const max = maxWidthFor(catalog, section.interior);
   const min = catalog.constraints.minWidthIn;
@@ -35,46 +27,11 @@ export default function SectionRow({
       className="rounded-xl border border-line bg-card p-3"
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-ink">
-          Section {index + 1}
+        <span className="text-sm font-semibold text-ink">{label}</span>
+        <span className="text-sm font-semibold text-walnut">
+          {formatCents(sectionTotal)}
         </span>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-walnut">
-            {formatCents(sectionTotal)}
-          </span>
-          {canRemove && (
-            <button
-              type="button"
-              aria-label={`Remove section ${index + 1}`}
-              onClick={() => onRemove(section.id)}
-              className="h-6 w-6 rounded-full border border-line text-muted hover:bg-cream"
-            >
-              ×
-            </button>
-          )}
-        </div>
       </div>
-
-      {/* Wall (L/U shapes only) */}
-      {walls.length > 1 && (
-        <div className="mb-2">
-          <label className="block text-xs text-muted">Wall</label>
-          <select
-            data-testid={`section-wall-${index}`}
-            value={section.wall}
-            onChange={(e) =>
-              onChange(section.id, { wall: e.target.value as WallId })
-            }
-            className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm"
-          >
-            {walls.map((w) => (
-              <option key={w} value={w}>
-                {wallLabel(w)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       {/* Interior */}
       <label className="block text-xs text-muted">Inside</label>
@@ -110,9 +67,7 @@ export default function SectionRow({
         max={max}
         step={catalog.constraints.stepIn}
         value={section.widthIn}
-        onChange={(e) =>
-          onChange(section.id, { widthIn: Number(e.target.value) })
-        }
+        onChange={(e) => onChange(section.id, { widthIn: Number(e.target.value) })}
         className="mt-1 w-full accent-brand"
       />
       <div className="flex justify-between text-[10px] text-faint">
