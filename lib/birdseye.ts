@@ -140,8 +140,8 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
 // what checkout / email / admin keep using.
 const CREAM = '#EAE0D5';
 const ROW_H = 30; // bay rectangle height
-const TITLE_H = 15; // space reserved above a row for its title
-const SECT_GAP = 18; // vertical gap between wall sections
+const TITLE_H = 24; // space reserved above a row for its title (room to breathe)
+const SECT_GAP = 26; // vertical gap between wall sections
 const CPAD = 4; // outer padding
 
 function cartBay(x: number, y: number, code: string): string {
@@ -192,7 +192,7 @@ export function cartLayoutSvg(catalog: Catalog, config: ClosetConfig): string {
   } else {
     // u_shaped: right wall, back wall, left wall (top to bottom)
     sections = [
-      { title: 'Right Wall', codes: codes('C'), side: true, anchor: 'end' },
+      { title: 'Right Wall', codes: codes('C'), side: true, anchor: 'start' },
       { title: 'Back Wall', codes: codes('A'), side: false, anchor: 'start' },
       { title: 'Left Wall', codes: codes('B'), side: true, anchor: 'start' },
     ];
@@ -209,7 +209,7 @@ export function cartLayoutSvg(catalog: Catalog, config: ClosetConfig): string {
     const rowY = y + TITLE_H;
     const startX = CPAD + (sec.side ? GAP : 0);
     const titleX = sec.anchor === 'end' ? CPAD + rowWidth(sec) : CPAD;
-    parts.push(sectionTitle(sec.title, titleX, y + 10, sec.anchor));
+    parts.push(sectionTitle(sec.title, titleX, y + 13, sec.anchor));
     if (sec.side) parts.push(cornerGap(CPAD, rowY));
     sec.codes.forEach((c, i) => parts.push(cartBay(startX + i * BAY, rowY, c)));
     y = rowY + ROW_H;
