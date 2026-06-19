@@ -16,9 +16,9 @@ import {
   clampWidth,
   defaultConfig,
   defaultSection,
-  drawerBlockedSideBayIds,
   finishedHeightLabel,
   normalizeConfig,
+  restrictedDrawerBayIds,
   totalWidthIn,
   wallDisplayLabel,
   wallsForShape,
@@ -163,13 +163,14 @@ export default function Configurator({
     []
   );
 
-  // Side-wall corner bays that may not be drawers (back-wall corner bay has a
-  // drawer bank). One-directional: the back wall (A) drives the restriction.
-  const blockedIds = useMemo(() => drawerBlockedSideBayIds(config), [config]);
+  // Side-wall corner bays (Wall B[0] / Wall C[0]) never allow drawers — the back
+  // wall would block them from opening. Re-derived from config, so it tracks the
+  // corner bay as bay counts change.
+  const blockedIds = useMemo(() => restrictedDrawerBayIds(config), [config]);
 
-  // If a conflict gets created (e.g. the back-wall corner bay is switched to
-  // drawers while the side-wall corner bay already had them), reset that side
-  // bay to the default interior. Idempotent — converges in one pass.
+  // If a restricted corner bay ever holds drawers (e.g. it just became the
+  // corner bay, or a stale config), reset it to the default interior.
+  // Idempotent — converges in one pass.
   useEffect(() => {
     if (!config.sections.some((s) => blockedIds.has(s.id) && s.interior === 'drawers')) {
       return;

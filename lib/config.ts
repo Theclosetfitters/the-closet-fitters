@@ -143,39 +143,22 @@ export function totalWidthIn(config: ClosetConfig): number {
  * panel) so clothes can hang the full depth on the side walls. */
 export const CORNER_CLEARANCE_IN = 8.5;
 
-export interface CornerPair {
-  /** Back wall (A) corner bay id that drives the restriction. */
-  backBayId: string;
-  /** Adjacent side wall (B or C) corner bay id. */
-  sideBayId: string;
-}
-
-/** The back-wall↔side-wall corner bay pairs for the current shape.
- * L: one corner (A[0]↔B[0]). U: two (A[0]↔B[0], A[last]↔C[0]). Straight: none. */
-export function cornerPairs(config: ClosetConfig): CornerPair[] {
-  const a = config.sections.filter((s) => s.wall === 'A');
-  const b = config.sections.filter((s) => s.wall === 'B');
-  const c = config.sections.filter((s) => s.wall === 'C');
-  const pairs: CornerPair[] = [];
-  if (config.shape === 'l_shaped') {
-    if (a[0] && b[0]) pairs.push({ backBayId: a[0].id, sideBayId: b[0].id });
-  } else if (config.shape === 'u_shaped') {
-    if (a[0] && b[0]) pairs.push({ backBayId: a[0].id, sideBayId: b[0].id });
-    const aLast = a[a.length - 1];
-    if (aLast && c[0]) pairs.push({ backBayId: aLast.id, sideBayId: c[0].id });
-  }
-  return pairs;
-}
-
-/** Side-wall corner bay ids that may NOT be drawers because their adjacent
- * back-wall corner bay is set to drawers. One-directional: the back wall drives. */
-export function drawerBlockedSideBayIds(config: ClosetConfig): Set<string> {
-  const byId = new Map(config.sections.map((s) => [s.id, s]));
-  const blocked = new Set<string>();
-  for (const { backBayId, sideBayId } of cornerPairs(config)) {
-    if (byId.get(backBayId)?.interior === 'drawers') blocked.add(sideBayId);
-  }
-  return blocked;
+/** Bay ids where drawers are NEVER allowed: the bay closest to the back-wall
+ * corner on each side wall (index 0 of Wall B and Wall C). On L/U closets that
+ * bay's drawer would be blocked from opening by the back wall cabinetry.
+ *
+ * Positional, not indexed by bay number — re-derived from `config` every call,
+ * so it always tracks whichever bay currently sits at the corner. Straight
+ * closets have no side walls, so the set is empty. */
+export function restrictedDrawerBayIds(config: ClosetConfig): Set<string> {
+  const ids = new Set<string>();
+  if (config.shape !== 'l_shaped' && config.shape !== 'u_shaped') return ids;
+  const cornerBay = (wall: WallId) => config.sections.find((s) => s.wall === wall);
+  const b = cornerBay('B');
+  if (b) ids.add(b.id);
+  const c = cornerBay('C');
+  if (c) ids.add(c.id);
+  return ids;
 }
 
 export function heightInches(catalog: Catalog, config: ClosetConfig): number {

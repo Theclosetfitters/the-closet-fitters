@@ -63,8 +63,7 @@ export default function SectionRow({
       </select>
       {drawersBlocked && (
         <p className="mt-1 text-xs font-normal text-sand">
-          Drawers cannot be placed here when the adjacent back wall corner bay
-          has a drawer bank — they would conflict when opened.
+          Drawers cannot be placed in this bay.
         </p>
       )}
       <p className="mt-1 text-[11px] text-faint">{interior.description}</p>

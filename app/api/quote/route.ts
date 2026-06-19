@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
-import { drawerBlockedSideBayIds } from '@/lib/config';
+import { restrictedDrawerBayIds } from '@/lib/config';
 import { closetSketchSvg } from '@/lib/sketch';
 import { buildQuoteEmailHtml, type QuoteContact } from '@/lib/quote-email';
 import { isEmailConfigured, sendQuoteEmail, type EmailAttachment } from '@/lib/email';
@@ -53,18 +53,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Your cart is empty.' }, { status: 400 });
   }
 
-  // Corner rule (one-directional): a side-wall corner bay can't have drawers
-  // when the adjacent back-wall corner bay does — they'd collide when opened.
+  // Corner rule: the side-wall bay nearest the back-wall corner (Wall B[0] /
+  // Wall C[0]) can never have drawers — the back wall would block them opening.
   for (const it of items) {
-    const blocked = drawerBlockedSideBayIds(it.config);
-    const conflict = it.config.sections.some(
-      (s) => blocked.has(s.id) && s.interior === 'drawers'
+    const blocked = restrictedDrawerBayIds(it.config);
+    const conflictWalls = new Set(
+      it.config.sections
+        .filter((s) => blocked.has(s.id) && s.interior === 'drawers')
+        .map((s) => s.wall)
     );
-    if (conflict) {
+    if (conflictWalls.size > 0) {
+      const walls = [...conflictWalls].sort().join(' and ');
       return NextResponse.json(
         {
-          error:
-            'Drawers can’t be on a side wall corner bay when the adjacent back wall corner bay has a drawer bank.',
+          error: `Drawers can’t be placed in the corner bay of Wall ${walls} (next to the back wall) — they would be blocked from opening.`,
         },
         { status: 400 }
       );

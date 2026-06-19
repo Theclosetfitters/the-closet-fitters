@@ -27,7 +27,7 @@ import type {
 } from '@/types';
 import {
   CORNER_CLEARANCE_IN,
-  drawerBlockedSideBayIds,
+  restrictedDrawerBayIds,
   wallDisplayLabel,
   wallsForShape,
 } from '@/lib/config';
@@ -506,7 +506,7 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
 
   const placements = useMemo(() => planWalls(config, D), [config, D]);
   const { center } = useMemo(() => footprint(placements, D), [placements, D]);
-  const blockedIds = useMemo(() => drawerBlockedSideBayIds(config), [config]);
+  const blockedIds = useMemo(() => restrictedDrawerBayIds(config), [config]);
   const mats: RunMaterials = {
     matV,
     matH,
