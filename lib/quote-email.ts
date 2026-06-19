@@ -1,7 +1,7 @@
 // Builds the written, itemized quote email (HTML) for a checkout.
 import type { Catalog, ClosetConfig, PriceBreakdown } from '@/types';
 import { formatCents, formatInches } from '@/lib/format';
-import { wallLabel, wallsForShape } from '@/lib/config';
+import { finishedHeightLabel, wallLabel, wallsForShape } from '@/lib/config';
 import { birdsEyeLegend, birdsEyeSvg } from '@/lib/birdseye';
 
 export interface QuoteContact {
@@ -44,9 +44,6 @@ export function buildQuoteEmailHtml(
   const blocks = closets
     .map((c, idx) => {
       const cfg = c.config;
-      const heightIn = cfg.heightUpgrade
-        ? catalog.constraints.upgradedHeightIn
-        : catalog.constraints.standardHeightIn;
       const widthIn = cfg.sections.reduce((a, s) => a + s.widthIn, 0);
       const bays = cfg.sections
         .map(
@@ -104,8 +101,9 @@ export function buildQuoteEmailHtml(
             <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Dimensions</td><td>${esc(
               formatInches(widthIn)
             )} W × ${esc(formatInches(catalog.constraints.depthIn))} D × ${esc(
-        formatInches(heightIn)
+        finishedHeightLabel(catalog, cfg)
       )} H</td></tr>
+            <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Top cap</td><td>Included — 0.75&quot; × 15.5&quot;, 0.5&quot; front overhang, matching finish, spanning full width including corners</td></tr>
           </table>
           ${wallBlock}
           ${img}

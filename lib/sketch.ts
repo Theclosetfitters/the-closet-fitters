@@ -3,6 +3,7 @@
 // it is rasterized to PNG) and the client (rendered inline on the confirmation).
 import type { Catalog, ClosetConfig } from '@/types';
 import { formatInches } from '@/lib/format';
+import { finishedHeightLabel } from '@/lib/config';
 
 const SCALE = 5; // px per inch
 const MARGIN_X = 28;
@@ -201,7 +202,7 @@ export function closetSketchSvg(
   parts.push(
     `<text x="${ox + contentW / 2}" y="${bottom + 26}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="${STROKE}">Overall: ${esc(
       formatInches(totalWidthIn)
-    )} W &#215; ${esc(formatInches(heightIn))} H &#215; ${esc(formatInches(depthIn))} D</text>`
+    )} W &#215; ${esc(finishedHeightLabel(catalog, config))} H &#215; ${esc(formatInches(depthIn))} D</text>`
   );
 
   const svgW = contentW + MARGIN_X * 2;

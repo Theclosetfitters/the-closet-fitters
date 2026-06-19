@@ -43,20 +43,6 @@ function bayCell(x: number, y: number, w: number, h: number, code: string): stri
   );
 }
 
-// Open 8.5" clearance notch at a corner, between Wall A's end (x2) and a side
-// wall's inner face (x1). Drawn as a Tan dimension marker only — no fill, since
-// the space is empty hanging clearance.
-function gapMarker(x1: number, x2: number, yTop: number, h: number): string {
-  const cx = (x1 + x2) / 2;
-  const cy = yTop + h / 2;
-  return (
-    `<line x1="${x1}" y1="${yTop + 3}" x2="${x2}" y2="${yTop + 3}" stroke="${TAN}" stroke-width="1.2"/>` +
-    `<line x1="${x1}" y1="${yTop + h - 3}" x2="${x2}" y2="${yTop + h - 3}" stroke="${TAN}" stroke-width="1.2"/>` +
-    `<text x="${cx}" y="${cy}" transform="rotate(-90 ${cx} ${cy})" text-anchor="middle" ` +
-    `dominant-baseline="central" font-family="system-ui,sans-serif" font-size="8" font-weight="700" fill="${TAN}">8.5&quot;</text>`
-  );
-}
-
 function label(text: string, x: number, y: number, rotate = 0): string {
   const t = rotate ? ` transform="rotate(${rotate} ${x} ${y})"` : '';
   return (
@@ -74,6 +60,21 @@ function svg(W: number, H: number, body: string): string {
   );
 }
 
+// Standard top cap, drawn BEHIND the bays: a Tan/Cosmos band that follows the
+// back perimeter, overhangs the front slightly, and bridges the corner gaps so
+// the unit reads as one capped piece. CAP_OVER is exaggerated a few px so the
+// 0.5" overhang is visible at this scale.
+const CAP_OVER = 4;
+function capRect(x: number, y: number, w: number, h: number): string {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${TAN}" stroke="${LINE}" stroke-width="1.2"/>`;
+}
+function capCaption(cx: number, y: number): string {
+  return (
+    `<text x="${cx}" y="${y}" text-anchor="middle" font-family="Inter,system-ui,sans-serif" ` +
+    `font-size="9" fill="${LINE}">Top cap panel included — 0.75&quot; &#215; 15.5&quot; full width</text>`
+  );
+}
+
 export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
   const walls = wallsForShape(config.shape);
   const byWall = (w: WallId) => config.sections.filter((s) => s.wall === w);
@@ -82,10 +83,15 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
   if (config.shape === 'straight') {
     const a = codes('A');
     const n = Math.max(1, a.length);
-    const parts = a.map((c, i) => bayCell(M + i * BAY, M, BAY, DEP, c)).join('');
-    const W = M * 2 + n * BAY;
-    const H = M + DEP + 26;
-    return svg(W, H, parts + label('Wall A', M + (n * BAY) / 2, M + DEP + 14));
+    const w = n * BAY;
+    const parts: string[] = [];
+    parts.push(capRect(M, M, w, DEP + CAP_OVER)); // cap behind the bays
+    a.forEach((c, i) => parts.push(bayCell(M + i * BAY, M, BAY, DEP, c)));
+    parts.push(label('Wall A', M + w / 2, M + DEP + CAP_OVER + 14));
+    const W = M * 2 + w;
+    const H = M + DEP + CAP_OVER + 40;
+    parts.push(capCaption(W / 2, H - 10));
+    return svg(W, H, parts.join(''));
   }
 
   const ox = M + PAD_SIDE;
@@ -98,16 +104,19 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
   if (config.shape === 'l_shaped') {
     const parts: string[] = [];
     const aStartX = ox + DEP + GAP; // Wall A starts after Wall B + the open gap
+    // Top cap (behind): Wall A run, Wall B run, and the corner-gap bridge.
+    parts.push(capRect(aStartX, oy, na * BAY, DEP + CAP_OVER));
+    parts.push(capRect(ox, oy, DEP + CAP_OVER, nb * BAY));
+    parts.push(capRect(ox + DEP, oy, GAP, DEP + CAP_OVER));
     // Wall B runs down the left, flush to the back-wall line (top edge at oy).
     b.forEach((c, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, c)));
     // Wall A runs along the back wall.
     a.forEach((c, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, c)));
-    // Open clearance notch between Wall B's inner face and Wall A's end.
-    parts.push(gapMarker(ox + DEP, aStartX, oy, DEP));
     parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
     parts.push(label('Wall B', ox - 9, oy + (nb * BAY) / 2, -90));
     const W = aStartX + na * BAY + M;
-    const H = oy + Math.max(DEP, nb * BAY) + M;
+    const H = oy + Math.max(DEP + CAP_OVER, nb * BAY) + 28;
+    parts.push(capCaption(W / 2, H - 10));
     return svg(W, H, parts.join(''));
   }
 
@@ -118,17 +127,21 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
   const aEndX = aStartX + na * BAY; // right end of Wall A
   const cStartX = aEndX + GAP; // Wall C inner face after the right clearance gap
   const parts: string[] = [];
+  // Top cap (behind): Wall A / B / C runs + both corner-gap bridges.
+  parts.push(capRect(aStartX, oy, na * BAY, DEP + CAP_OVER));
+  parts.push(capRect(ox, oy, DEP + CAP_OVER, nb * BAY));
+  parts.push(capRect(cStartX - CAP_OVER, oy, DEP + CAP_OVER, nc * BAY));
+  parts.push(capRect(ox + DEP, oy, GAP, DEP + CAP_OVER));
+  parts.push(capRect(aEndX, oy, GAP, DEP + CAP_OVER));
   // Side walls flush to the back-wall line (top edge at oy); Wall A along the back.
   b.forEach((cc, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, cc)));
   c.forEach((cc, j) => parts.push(bayCell(cStartX, oy + j * BAY, DEP, BAY, cc)));
   a.forEach((cc, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, cc)));
-  // Open clearance notches at both corners.
-  parts.push(gapMarker(ox + DEP, aStartX, oy, DEP));
-  parts.push(gapMarker(aEndX, cStartX, oy, DEP));
   parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
   parts.push(label('Wall B', ox - 9, oy + (nb * BAY) / 2, -90));
   parts.push(label('Wall C', cStartX + DEP + 9, oy + (nc * BAY) / 2, 90));
   const W = cStartX + DEP + PAD_SIDE + M;
-  const H = oy + Math.max(DEP, nb * BAY, nc * BAY) + M;
+  const H = oy + Math.max(DEP + CAP_OVER, nb * BAY, nc * BAY) + 28;
+  parts.push(capCaption(W / 2, H - 10));
   return svg(W, H, parts.join(''));
 }

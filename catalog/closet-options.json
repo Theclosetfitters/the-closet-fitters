@@ -11,7 +11,10 @@
     "depthIn": 15,
     "standardHeightIn": 84,
     "upgradedHeightIn": 96,
-    "stepIn": 0.125
+    "stepIn": 0.125,
+    "topCapIn": 0.75,
+    "topCapDepthIn": 15.5,
+    "topCapOverhangIn": 0.5
   },
   "interiors": [
     {

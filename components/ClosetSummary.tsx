@@ -1,5 +1,6 @@
 import type { Catalog, ClosetConfig } from '@/types';
 import { formatCents, formatInches } from '@/lib/format';
+import { finishedHeightLabel } from '@/lib/config';
 import { closetSketchSvg } from '@/lib/sketch';
 import { birdsEyeLegend } from '@/lib/birdseye';
 
@@ -32,9 +33,7 @@ export default function ClosetSummary({
   const hardwareStyle =
     catalog.hardwareStyles.find((s) => s.id === config.hardwareStyleId)?.label ??
     config.hardwareStyleId;
-  const heightIn = config.heightUpgrade
-    ? catalog.constraints.upgradedHeightIn
-    : catalog.constraints.standardHeightIn;
+  const heightLabel = finishedHeightLabel(catalog, config);
   const totalWidthIn = config.sections.reduce((a, s) => a + s.widthIn, 0);
   const interiorLabel = (id: string) =>
     catalog.interiors.find((i) => i.id === id)?.label ?? id;
@@ -83,9 +82,13 @@ export default function ClosetSummary({
         <dt className="text-muted">Dimensions</dt>
         <dd className="text-right text-ink">
           {formatInches(totalWidthIn)} W × {formatInches(catalog.constraints.depthIn)} D ×{' '}
-          {formatInches(heightIn)} H
+          {heightLabel} H
         </dd>
       </dl>
+      <p className="mt-1 text-[11px] text-muted">
+        Top cap panel: Included — 0.75&quot; × 15.5&quot; full width, 0.5&quot; front
+        overhang, matching finish
+      </p>
 
       <ol className="mt-3 space-y-1 text-sm">
         {config.sections.map((s, i) => (

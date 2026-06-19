@@ -17,6 +17,7 @@ import {
   defaultConfig,
   defaultSection,
   drawerBlockedSideBayIds,
+  finishedHeightLabel,
   normalizeConfig,
   totalWidthIn,
   wallDisplayLabel,
@@ -216,9 +217,8 @@ export default function Configurator({
   }, [cart, config, breakdown, editId, router]);
 
   const totalWidth = useMemo(() => totalWidthIn(config), [config]);
-  const heightLabel = config.heightUpgrade
-    ? formatInches(catalog.constraints.upgradedHeightIn)
-    : formatInches(catalog.constraints.standardHeightIn);
+  const heightLabel = finishedHeightLabel(catalog, config);
+  const upgradedHeightLabel = finishedHeightLabel(catalog, { ...config, heightUpgrade: true });
 
   if (loadingEdit) {
     return (
@@ -328,7 +328,7 @@ export default function Configurator({
         {/* Height (global) */}
         <section className="rounded-xl border border-line bg-card p-3 text-sm">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-ink">Height: {heightLabel}</span>
+            <span className="font-medium text-ink">Total height: {heightLabel}</span>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
               <input
                 data-testid="height-upgrade"
@@ -337,9 +337,13 @@ export default function Configurator({
                 onChange={(e) => setHeightUpgrade(e.target.checked)}
                 className="accent-brand"
               />
-              Raise to 8' (+{formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
+              Raise to {upgradedHeightLabel} (+
+              {formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
             </label>
           </div>
+          <p className="mt-1 text-[11px] text-sand">
+            Includes standard 0.75&quot; top cap panel with 0.5&quot; front overhang
+          </p>
           <p className="mt-1 text-[11px] text-faint">
             Depth fixed at {formatInches(catalog.constraints.depthIn)} · total width{' '}
             {formatInches(totalWidth)}

@@ -515,8 +515,49 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
     hardwareStyleId: config.hardwareStyleId,
   };
 
+  // Standard top cap: a continuous 0.75"-thick flat panel sitting on top of the
+  // cabinetry (H..H+0.75), 15.5" deep (0.5" front overhang), running the full
+  // width and bridging the 8.5" corner gaps so it reads as one crown panel.
+  const topCap = useMemo(() => {
+    const widthM = (w: WallId) =>
+      config.sections.filter((s) => s.wall === w).reduce((a, s) => a + s.widthIn * IN, 0);
+    const cap = catalog.constraints.topCapIn * IN;
+    const capD = catalog.constraints.topCapDepthIn * IN;
+    const over = catalog.constraints.topCapOverhangIn * IN;
+    const gap = CORNER_CLEARANCE_IN * IN;
+    const y = H + cap / 2;
+    const backZ = -D / 2 + capD / 2; // back flush at -D/2, extends capD forward
+    const panel = (key: string, size: [number, number, number], pos: [number, number, number]) => (
+      <Panel key={key} size={size} position={pos} material={matH} />
+    );
+    const Wa = widthM('A');
+    if (config.shape === 'straight') {
+      return [panel('cap-A', [Wa, cap, capD], [0, y, backZ])];
+    }
+    const Wb = widthM('B');
+    const sideZ = (Wside: number) => Wside / 2 - D / 2; // side run centre (flush to back)
+    // side run depth runs along X: back-flush, 0.5" overhang past the inner face
+    const sideX = (innerX: number) => innerX - (D - over) / 2;
+    if (config.shape === 'l_shaped') {
+      return [
+        // Wall A + left corner-gap bridge (one back panel)
+        panel('cap-A', [Wa + gap, cap, capD], [-gap / 2, y, backZ]),
+        // Wall B (runs along Z; depth capD in X, inner face at -Wa/2-gap)
+        panel('cap-B', [capD, cap, Wb], [sideX(-Wa / 2 - gap), y, sideZ(Wb)]),
+      ];
+    }
+    // u_shaped
+    const Wc = widthM('C');
+    return [
+      panel('cap-A', [Wa + 2 * gap, cap, capD], [0, y, backZ]),
+      panel('cap-B', [capD, cap, Wb], [sideX(-Wa / 2 - gap), y, sideZ(Wb)]),
+      panel('cap-C', [capD, cap, Wc], [-sideX(-Wa / 2 - gap), y, sideZ(Wc)]),
+    ];
+  }, [config.shape, config.sections, catalog.constraints, H, D, matH]);
+
   return (
     <group position={[-center[0], 0, -center[1]]}>
+      {topCap}
       {placements.map((p) =>
         p.sections.length === 0 ? null : (
           <group key={p.wall} position={p.position} rotation={[0, p.rotationY, 0]}>

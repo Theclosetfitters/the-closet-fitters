@@ -183,3 +183,31 @@ export function heightInches(catalog: Catalog, config: ClosetConfig): number {
     ? catalog.constraints.upgradedHeightIn
     : catalog.constraints.standardHeightIn;
 }
+
+/** Total finished height incl. the standard top cap panel (base + 0.75").
+ * The base height drives geometry + pricing; the cap is added for display. */
+export function finishedHeightIn(catalog: Catalog, config: ClosetConfig): number {
+  return heightInches(catalog, config) + catalog.constraints.topCapIn;
+}
+
+/** Finished height as feet + fractional inches, dropping a 0 whole-inch:
+ * 84.75 -> `7' 3/4"`, 96.75 -> `8' 3/4"`. This is what the customer sees. */
+export function finishedHeightLabel(catalog: Catalog, config: ClosetConfig): string {
+  const total = roundToEighth(finishedHeightIn(catalog, config));
+  const feet = Math.floor(total / 12);
+  const remIn = total - feet * 12;
+  const whole = Math.floor(remIn);
+  const eighths = Math.round((remIn - whole) * 8);
+  let frac = '';
+  if (eighths > 0) {
+    const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+    const g = gcd(eighths, 8);
+    frac = `${eighths / g}/${8 / g}`;
+  }
+  const inchParts: string[] = [];
+  if (whole > 0) inchParts.push(String(whole));
+  if (frac) inchParts.push(frac);
+  const inchStr = inchParts.length ? `${inchParts.join(' ')}"` : '';
+  if (feet > 0) return inchStr ? `${feet}' ${inchStr}` : `${feet}'`;
+  return inchStr || `0"`;
+}

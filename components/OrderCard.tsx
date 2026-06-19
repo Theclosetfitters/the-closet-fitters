@@ -1,5 +1,6 @@
 import type { Catalog, ClosetConfig, Order } from '@/types';
 import { formatCents, formatInches, formatStatus } from '@/lib/format';
+import { finishedHeightLabel } from '@/lib/config';
 import BirdsEyeView from '@/components/BirdsEyeView';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -14,15 +15,12 @@ function summarize(catalog: Catalog, config: ClosetConfig) {
   const material =
     catalog.materials.find((m) => m.id === config.materialId)?.label ??
     config.materialId;
-  const heightIn = config.heightUpgrade
-    ? catalog.constraints.upgradedHeightIn
-    : catalog.constraints.standardHeightIn;
   const n = config.sections.length;
   return {
     title: `${n} section${n > 1 ? 's' : ''} · ${material}`,
     sub: `${formatInches(totalW)} W × ${formatInches(
       catalog.constraints.depthIn
-    )} D × ${formatInches(heightIn)} H`,
+    )} D × ${finishedHeightLabel(catalog, config)} H`,
   };
 }
 
@@ -53,6 +51,10 @@ function FinishDetails({ catalog, config }: { catalog: Catalog; config: ClosetCo
           </div>
         ))}
       </dl>
+      <p className="mt-1 text-muted">
+        Top cap panel: Included — 0.75&quot; × 15.5&quot;, 0.5&quot; front overhang,
+        matching finish
+      </p>
     </div>
   );
 }
@@ -105,10 +107,15 @@ export default function OrderCard({
         </div>
         <BirdsEyeView catalog={catalog} config={order.config} />
         {order.config.shape !== 'straight' && (
-          <p className="mt-2 text-[11px] text-muted">
-            Note: Side wall cabinetry runs flush to the back wall with an 8.5&quot;
-            clearance at each corner for full hanging depth on side walls.
-          </p>
+          <>
+            <p className="mt-2 text-[11px] text-muted">
+              Note: Side wall cabinetry runs flush to the back wall with an 8.5&quot;
+              clearance at each corner for full hanging depth on side walls.
+            </p>
+            <p className="mt-1 text-[11px] text-muted">
+              Top cap spans 8.5&quot; corner gap — continuous panel across full unit.
+            </p>
+          </>
         )}
       </div>
 

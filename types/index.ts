@@ -76,6 +76,10 @@ export interface CatalogConstraints {
   standardHeightIn: number;
   upgradedHeightIn: number;
   stepIn: number;
+  /** Standard top cap panel (fixed construction detail, no cost). */
+  topCapIn: number;
+  topCapDepthIn: number;
+  topCapOverhangIn: number;
 }
 
 export interface Catalog {
