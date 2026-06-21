@@ -1,11 +1,16 @@
 // Display helpers. Units are imperial (inches/feet); money is USD.
 
-/** Format an integer number of cents as a localized USD string. */
+/** Format cents as USD, rounded UP to the nearest whole dollar (ceiling) and
+ * shown without cents — e.g. 12401 -> "$125". Display-only: pricing
+ * calculations and stored values stay at full precision. */
 export function formatCents(cents: number, currency = 'usd'): string {
+  const dollars = Math.ceil(cents / 100);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency.toUpperCase(),
-  }).format(cents / 100);
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(dollars);
 }
 
 /** Snap a measurement (inches) to the nearest 1/8". */
