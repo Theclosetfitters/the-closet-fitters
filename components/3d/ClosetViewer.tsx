@@ -52,7 +52,10 @@ function makeMat(base: THREE.Texture, orient: Orient, material: MaterialOption) 
   t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping;
   t.repeat.set(3, 3);
   t.anisotropy = 8;
-  if (orient === 'h') {
+  // Source grain runs horizontally (along the texture's U axis). Horizontal
+  // panels keep it (rotation 0 → grain left-to-right across the width); vertical
+  // panels rotate it 90° so the grain runs top-to-bottom along the height.
+  if (orient === 'v') {
     t.center.set(0.5, 0.5);
     t.rotation = Math.PI / 2;
   }
