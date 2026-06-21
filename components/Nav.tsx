@@ -6,6 +6,48 @@ import SignOutButton from '@/components/SignOutButton';
 import CartLink from '@/components/CartLink';
 import Logo from '@/components/Logo';
 
+// Tabler outline icons (22px) for the nav links — inline SVG, the same approach
+// the rest of the app uses (no icon library added).
+const iconProps = {
+  width: 22,
+  height: 22,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.75,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+};
+const IconInfoCircle = () => (
+  <svg {...iconProps}>
+    <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+    <path d="M12 9h.01" />
+    <path d="M11 12h1v4h1" />
+  </svg>
+);
+const IconPhoto = () => (
+  <svg {...iconProps}>
+    <path d="M15 8h.01" />
+    <path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" />
+    <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+    <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+  </svg>
+);
+const IconUser = () => (
+  <svg {...iconProps}>
+    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+  </svg>
+);
+const IconUserCircle = () => (
+  <svg {...iconProps}>
+    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+    <path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+    <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" />
+  </svg>
+);
+
 // Sticky brand nav on a Cosmos (dark teal) background.
 export default async function Nav() {
   const user = await getCurrentUser();
@@ -16,6 +58,7 @@ export default async function Nav() {
   }
 
   const link = 'text-cream/80 transition hover:text-cream';
+  const iconLink = 'text-cream/72 transition hover:text-cream';
 
   return (
     <header className="sticky top-0 z-20 bg-brand">
@@ -24,16 +67,31 @@ export default async function Nav() {
           <Logo tone="light" />
         </Link>
         <div className="flex items-center gap-4 text-sm sm:gap-5">
-          <Link href="/about" className={`hidden sm:inline ${link}`}>
-            About
+          <Link
+            href="/about"
+            title="About"
+            aria-label="About"
+            className={`hidden sm:inline ${iconLink}`}
+          >
+            <IconInfoCircle />
           </Link>
-          <Link href="/gallery" className={`hidden sm:inline ${link}`}>
-            Gallery
+          <Link
+            href="/gallery"
+            title="Gallery"
+            aria-label="Gallery"
+            className={`hidden sm:inline ${iconLink}`}
+          >
+            <IconPhoto />
           </Link>
           <CartLink />
           {user && (
-            <Link href="/account" className={`hidden sm:inline ${link}`}>
-              My orders
+            <Link
+              href="/account"
+              title="My account"
+              aria-label="My account"
+              className={`hidden sm:inline ${iconLink}`}
+            >
+              <IconUserCircle />
             </Link>
           )}
           {admin && (
@@ -44,8 +102,13 @@ export default async function Nav() {
           {user ? (
             <SignOutButton />
           ) : (
-            <Link href="/login" className={`hidden sm:inline ${link}`}>
-              Sign in
+            <Link
+              href="/login"
+              title="Sign In"
+              aria-label="Sign In"
+              className={`hidden sm:inline ${iconLink}`}
+            >
+              <IconUser />
             </Link>
           )}
           <Link
