@@ -37,7 +37,7 @@ export default function SectionRow({
       className="rounded-xl border border-line bg-card p-3"
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="font-display text-base font-semibold text-brand">{label}</span>
+        <span className="text-base font-semibold text-brand">{label}</span>
         <span className="text-sm font-semibold text-walnut">
           {formatCents(sectionTotal)}
         </span>
