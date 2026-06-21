@@ -245,6 +245,21 @@ function Interior({
       );
     }
 
+    case 'full_hanging': {
+      // Short rod at the top (no shelf above), one fixed shelf below it, then
+      // two adjustable shelves evenly spaced between the fixed shelf and floor.
+      const fixedY = bottomY + rh * 0.55;
+      const lower = fixedY - bottomY;
+      return (
+        <group>
+          <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={rodMetal} />
+          {shelf('fh-fixed', fixedY)}
+          {shelf('fh-adj-0', bottomY + lower / 3)}
+          {shelf('fh-adj-1', bottomY + (2 * lower) / 3)}
+        </group>
+      );
+    }
+
     case 'shoe_shelves': {
       // 6 angled shelves: a fixed shelf in the center (3rd from the bottom)
       // with 2 adjustable below it and 3 adjustable above it, evenly spaced.
@@ -351,6 +366,9 @@ function WallRun({
   const bottomY = TOE_H + T;
   const fixedShelfY = H - TOP_CUBBY;
   const topY = fixedShelfY - T / 2;
+  // Double Hang and Full Hanging have no top shelf — their rod runs to the top,
+  // so they skip the 12" fixed cubby shelf and their interior reaches near H.
+  const fullHeightTopY = H - T - 0.02;
 
   return (
     <group>
@@ -367,6 +385,8 @@ function WallRun({
           blockedIds.has(s.id) && s.interior === 'drawers'
             ? { ...s, interior: 'long_hanging' }
             : s;
+        const noTopShelf =
+          eff.interior === 'double_hanging' || eff.interior === 'full_hanging';
         return (
           <group key={`bay-${s.id}`}>
             <Panel
@@ -374,7 +394,9 @@ function WallRun({
               position={[cx, TOE_H / 2, D / 2 - TOE_RECESS - T / 2]}
               material={matH}
             />
-            <Panel size={[uw, T, D - 1.6 * T]} position={[cx, fixedShelfY, 0]} material={matH} />
+            {!noTopShelf && (
+              <Panel size={[uw, T, D - 1.6 * T]} position={[cx, fixedShelfY, 0]} material={matH} />
+            )}
             {s.hasBack && (
               <Panel
                 size={[wM - T, H - TOE_H - T, T]}
@@ -388,7 +410,7 @@ function WallRun({
               wM={wM}
               D={D}
               bottomY={bottomY}
-              topY={topY}
+              topY={noTopShelf ? fullHeightTopY : topY}
               matH={matH}
               rodMetal={rodMetal}
               pullMetal={pullMetal}

@@ -10,7 +10,7 @@ export default function BirdsEyeView({
   config: ClosetConfig;
 }) {
   const svg = birdsEyeSvg(catalog, config);
-  const legend = birdsEyeLegend(catalog, config);
+  const legend = birdsEyeLegend(catalog);
   return (
     <div>
       <div

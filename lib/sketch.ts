@@ -57,6 +57,17 @@ function interiorPieces(
       out.push(rod(mid + 10));
       break;
     }
+    case 'full_hanging': {
+      // top rod, one fixed shelf (solid), two adjustable shelves (dashed)
+      // evenly spaced between the fixed shelf and the floor.
+      out.push(rod(regionTopY + 10));
+      const fixedY = regionTopY + rh * 0.55;
+      out.push(hline(fixedY));
+      const lower = regionBotY - fixedY;
+      out.push(hline(fixedY + lower / 3, true));
+      out.push(hline(fixedY + (2 * lower) / 3, true));
+      break;
+    }
     case 'shoe_shelves': {
       // 6 angled shelves: fixed center (3rd up) + 2 adjustable below, 3 above.
       const n = 6;

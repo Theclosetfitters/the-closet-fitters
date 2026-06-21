@@ -24,15 +24,15 @@ function codeFor(catalog: Catalog, interior: string): string {
   return catalog.interiors.find((i) => i.id === interior)?.code ?? '?';
 }
 
-/** Distinct {code,label} for the interiors used in this config, in catalog order. */
-export function birdsEyeLegend(
-  catalog: Catalog,
-  config: ClosetConfig
-): { code: string; label: string }[] {
-  const used = new Set(config.sections.map((s) => s.interior));
-  return catalog.interiors
-    .filter((i) => used.has(i.id))
-    .map((i) => ({ code: i.code, label: i.label }));
+// Fixed legend order for the bird's-eye / diagram key (every bay type).
+const LEGEND_ORDER = ['FH', 'LH', 'SH', 'DR', 'SS', 'DH'];
+
+/** The full {code,label} key for all bay types, in a fixed order — shown under
+ * every diagram so the acronyms always read the same everywhere. */
+export function birdsEyeLegend(catalog: Catalog): { code: string; label: string }[] {
+  return [...catalog.interiors]
+    .map((i) => ({ code: i.code, label: i.label }))
+    .sort((a, b) => LEGEND_ORDER.indexOf(a.code) - LEGEND_ORDER.indexOf(b.code));
 }
 
 function bayCell(x: number, y: number, w: number, h: number, code: string): string {

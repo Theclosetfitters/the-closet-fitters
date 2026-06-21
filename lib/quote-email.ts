@@ -112,8 +112,7 @@ export function buildQuoteEmailHtml(
           </p>
           <div style="margin:4px 0;">${birdsEyeSvg(catalog, cfg)}</div>
           <p style="margin:4px 0 8px;font-size:12px;color:#71717a;">${birdsEyeLegend(
-            catalog,
-            cfg
+            catalog
           )
             .map((l) => `${esc(l.code)} = ${esc(l.label)}`)
             .join('&nbsp;&nbsp; ')}</p>

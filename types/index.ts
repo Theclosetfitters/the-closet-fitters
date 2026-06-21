@@ -7,6 +7,7 @@
 
 export type InteriorType =
   | 'long_hanging'
+  | 'full_hanging'
   | 'double_hanging'
   | 'shoe_shelves'
   | 'adjustable_shelves'

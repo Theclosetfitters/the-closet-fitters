@@ -41,7 +41,7 @@ export default function ClosetSummary({
   // closets show it split into a boxed run per wall (titled, with breaks).
   const useWalls = layout === 'walls' && config.shape !== 'straight';
   const sketchSvg = closetSketchSvg(catalog, config, { byWall: useWalls });
-  const legend = useWalls ? birdsEyeLegend(catalog, config) : [];
+  const legend = useWalls ? birdsEyeLegend(catalog) : [];
 
   return (
     <div className="rounded-xl border border-line bg-card p-4">
