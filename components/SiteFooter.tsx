@@ -32,9 +32,8 @@ export default function SiteFooter() {
             Contact
           </h2>
           <ul className="mt-4 space-y-2 text-sm text-cream/70">
-            <li><a href="mailto:hello@theclosetfitters.com" className={link}>hello@theclosetfitters.com</a></li>
-            <li><a href="tel:+15555550100" className={link}>(555) 555-0100</a></li>
-            <li>By appointment · Nationwide</li>
+            <li><a href="mailto:Sales@theclosetfitters.com" className={link}>Sales@theclosetfitters.com</a></li>
+            <li><a href="tel:+19545893233" className={link}>(954) 589-3233</a></li>
           </ul>
         </div>
       </div>
