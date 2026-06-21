@@ -378,7 +378,10 @@ function WallRun({
       <Panel size={[W, T, D]} position={[0, H - T / 2, 0]} material={matH} />
       <Panel size={[W, T, D]} position={[0, TOE_H + T / 2, 0]} material={matH} />
       {boundaries.map((b, i) => (
-        <Panel key={`part-${i}`} size={[T, H, D]} position={[b, H / 2, 0]} material={matV} />
+        // Case-side / divider panels face ±X — opposite to the back panel's ±Z
+        // face — so they need the rotation turned 90° (matH's mapping) for the
+        // grain to read top-to-bottom along the height.
+        <Panel key={`part-${i}`} size={[T, H, D]} position={[b, H / 2, 0]} material={matH} />
       ))}
       {secs.map(({ s, cx, wM }) => {
         const uw = wM - 1.6 * T;
