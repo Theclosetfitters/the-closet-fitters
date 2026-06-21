@@ -19,13 +19,6 @@ const iconProps = {
   strokeLinejoin: 'round' as const,
   'aria-hidden': true,
 };
-const IconInfoCircle = () => (
-  <svg {...iconProps}>
-    <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
-    <path d="M12 9h.01" />
-    <path d="M11 12h1v4h1" />
-  </svg>
-);
 const IconPhoto = () => (
   <svg {...iconProps}>
     <path d="M15 8h.01" />
@@ -67,14 +60,6 @@ export default async function Nav() {
           <Logo tone="light" />
         </Link>
         <div className="flex items-center gap-4 text-sm sm:gap-5">
-          <Link
-            href="/about"
-            title="About"
-            aria-label="About"
-            className={`hidden sm:inline ${iconLink}`}
-          >
-            <IconInfoCircle />
-          </Link>
           <Link
             href="/gallery"
             title="Gallery"
