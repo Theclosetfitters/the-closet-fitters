@@ -45,12 +45,6 @@ const IconBuilding = () => (
   </svg>
 );
 
-const STEPS = [
-  { n: '01', title: 'Design', body: 'Plan your closet in 3D and watch a live, itemized price update as you go.' },
-  { n: '02', title: 'Engineer', body: 'We translate your design into precise, production-ready plans — measured to perfection.' },
-  { n: '03', title: 'Build & Install', body: 'Premium materials, expertly constructed and fitted seamlessly to your space.' },
-];
-
 const AUDIENCES = [
   { icon: <IconHome />, title: 'Homeowners', body: 'Storage that elevates everyday living, made to measure for your home.' },
   { icon: <IconDesign />, title: 'Interior Designers', body: 'Custom solutions that realize your vision, down to the last detail.' },
@@ -77,10 +71,6 @@ export default function Home() {
             <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.05] text-cream sm:text-6xl">
               Closets, fitted to your space.
             </h1>
-            <p className="mt-6 max-w-md text-lg font-light leading-relaxed text-cream/70">
-              The Closet Fitters designs, engineers, and builds custom closet
-              systems — precision-planned, premium materials, seamless execution.
-            </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/configure"
@@ -124,32 +114,37 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. How It Works ----------------------------------------------- */}
-      <section id="how" className="bg-cream">
+      {/* Gallery ------------------------------------------------------- */}
+      <section className="bg-white">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className={`${eyebrow} text-walnut`}>The process</p>
-          <h2 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">
-            From idea to installed, in three steps
-          </h2>
+          <div className="flex items-end justify-between">
+            <div>
+              <p className={`${eyebrow} text-walnut`}>Our work</p>
+              <h2 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">
+                Recently fitted
+              </h2>
+            </div>
+            <Link href="/gallery" className="text-sm font-medium text-walnut transition hover:text-ink">
+              Full Gallery →
+            </Link>
+          </div>
 
-          <div className="mt-10 grid gap-[2px] overflow-hidden rounded-xl bg-brand sm:grid-cols-3">
-            {STEPS.map((step) => (
-              <article key={step.n} className="relative border-t-2 border-brand bg-card p-8">
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute right-5 top-3 font-display text-[50px] font-semibold leading-none text-brand/10"
-                >
-                  {step.n}
-                </span>
-                <h3 className="font-display text-2xl font-semibold text-ink">{step.title}</h3>
-                <p className="mt-3 text-sm font-light leading-relaxed text-muted">{step.body}</p>
-              </article>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                role="img"
+                aria-label={`Closet project photo ${i} placeholder`}
+                className="flex aspect-[4/5] items-center justify-center rounded-xl bg-cream-50 text-xs uppercase tracking-[0.2em] text-faint"
+              >
+                Photo
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 5. Who We Serve ----------------------------------------------- */}
+      {/* Who We Serve -------------------------------------------------- */}
       <section id="serve" className="bg-brand text-cream">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <p className={`${eyebrow} text-sand`}>Who we serve</p>
@@ -177,36 +172,6 @@ export default function Home() {
             >
               Learn more about who we work with
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Gallery ---------------------------------------------------- */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className={`${eyebrow} text-walnut`}>Our work</p>
-              <h2 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">
-                Recently fitted
-              </h2>
-            </div>
-            <Link href="/gallery" className="text-sm font-medium text-walnut transition hover:text-ink">
-              Full Gallery →
-            </Link>
-          </div>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                role="img"
-                aria-label={`Closet project photo ${i} placeholder`}
-                className="flex aspect-[4/5] items-center justify-center rounded-xl bg-cream-50 text-xs uppercase tracking-[0.2em] text-faint"
-              >
-                Photo
-              </div>
-            ))}
           </div>
         </div>
       </section>
