@@ -163,10 +163,27 @@ export default function Configurator({
     []
   );
 
-  // Side-wall corner bays (Wall B[0] / Wall C[0]) never allow drawers — the back
-  // wall would block them from opening. Re-derived from config, so it tracks the
+  // Side-wall corner bay never allows drawers — the back wall would block it
+  // opening. Mirrored layout: Wall B corner = last bay, Wall C corner = first
+  // bay (see restrictedDrawerBayIds). Re-derived from config, so it tracks the
   // corner bay as bay counts change.
   const blockedIds = useMemo(() => restrictedDrawerBayIds(config), [config]);
+
+  // TEMP diagnostic — confirms the correct corner bay is identified as bays are
+  // added/removed. Remove once the fix is confirmed working.
+  useEffect(() => {
+    (['B', 'C'] as const).forEach((wall) => {
+      const wallBays = config.sections.filter((s) => s.wall === wall);
+      if (wallBays.length === 0) return;
+      const corner = wallBays.find((s) => blockedIds.has(s.id));
+      console.log(
+        `[drawer-restriction] Wall ${wall}: ${wallBays.length} bay(s); ` +
+          `restricted corner bay id=${corner?.id ?? 'none'} ` +
+          `(position ${corner ? wallBays.indexOf(corner) : -1} of ${wallBays.length}); ` +
+          `hasDrawers=${corner?.interior === 'drawers'}`
+      );
+    });
+  }, [config.sections, blockedIds]);
 
   // If a restricted corner bay ever holds drawers (e.g. it just became the
   // corner bay, or a stale config), reset it to the default interior.

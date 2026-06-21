@@ -143,21 +143,29 @@ export function totalWidthIn(config: ClosetConfig): number {
  * panel) so clothes can hang the full depth on the side walls. */
 export const CORNER_CLEARANCE_IN = 8.5;
 
-/** Bay ids where drawers are NEVER allowed: the bay closest to the back-wall
- * corner on each side wall (index 0 of Wall B and Wall C). On L/U closets that
- * bay's drawer would be blocked from opening by the back wall cabinetry.
+/** Bay id where drawers are NEVER allowed on each side wall: the bay physically
+ * at the back-wall corner (its drawer would be blocked from opening by the back
+ * wall cabinetry). Returns the corner bay of Wall B and Wall C on L/U closets;
+ * straight closets have no side walls so the set is empty.
  *
- * Positional, not indexed by bay number — re-derived from `config` every call,
- * so it always tracks whichever bay currently sits at the corner. Straight
- * closets have no side walls, so the set is empty. */
+ * IMPORTANT — the two side walls are MIRRORED in the 3D layout (ClosetViewer
+ * `planWalls`): Wall B is rotated +90° and Wall C −90°, while each wall's bays
+ * are laid out in the same array order. So the array→corner mapping is opposite:
+ *   - Wall B (left):  corner bay = the LAST bay in the array
+ *   - Wall C (right): corner bay = the FIRST bay in the array
+ * Verified against the 3D render — a drawers bay appended to Wall B sits against
+ * the back wall. New side bays are appended (end of array), so on Wall B the new
+ * bay becomes the corner. Do NOT "symmetrize" this to index 0 for both — that is
+ * the bug this rewrite fixes. Re-derived from `config` every call (no stored
+ * index), so it always tracks the current corner bay as bay counts change. */
 export function restrictedDrawerBayIds(config: ClosetConfig): Set<string> {
   const ids = new Set<string>();
   if (config.shape !== 'l_shaped' && config.shape !== 'u_shaped') return ids;
-  const cornerBay = (wall: WallId) => config.sections.find((s) => s.wall === wall);
-  const b = cornerBay('B');
-  if (b) ids.add(b.id);
-  const c = cornerBay('C');
-  if (c) ids.add(c.id);
+  const bays = (wall: WallId) => config.sections.filter((s) => s.wall === wall);
+  const b = bays('B');
+  if (b.length) ids.add(b[b.length - 1].id); // Wall B corner = last bay
+  const c = bays('C');
+  if (c.length) ids.add(c[0].id); // Wall C corner = first bay
   return ids;
 }
 
