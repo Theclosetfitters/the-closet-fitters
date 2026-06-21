@@ -32,6 +32,12 @@ export default function WallSection({
   onChange: (id: string, patch: Partial<SectionConfig>) => void;
 }) {
   const count = bays.length;
+  // Display bays corner-first so "Bay 1" is always the bay at the back-wall
+  // corner. Wall A / Wall C already come in that order (A[0] = leftmost,
+  // C[0] = corner); Wall B is mirrored in the 3D layout (its corner bay is the
+  // LAST in the array — same convention as the drawer-corner rule), so reverse
+  // it. Then number sequentially: "Wall A — Bay 1", "Wall A — Bay 2", ...
+  const orderedBays = wall === 'B' ? [...bays].reverse() : bays;
   return (
     <section className="space-y-3" aria-label={label}>
       <h3 className="text-sm font-bold uppercase tracking-wide text-ink">{label}</h3>
@@ -73,13 +79,13 @@ export default function WallSection({
         </div>
       </div>
 
-      {bays.map((b, i) => (
+      {orderedBays.map((b, i) => (
         <SectionRow
           key={b.section.id}
           catalog={catalog}
           section={b.section}
           index={b.index}
-          label={`Bay ${i + 1}`}
+          label={`Wall ${wall} — Bay ${i + 1}`}
           drawersBlocked={blockedIds.has(b.section.id)}
           onChange={onChange}
         />

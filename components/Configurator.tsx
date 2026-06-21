@@ -282,6 +282,16 @@ export default function Configurator({
           )}
         </section>
 
+        {/* Material — placed directly below the closet type */}
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-ink">Material</h2>
+          <MaterialPicker
+            materials={catalog.materials}
+            selectedId={config.materialId}
+            onSelect={setMaterial}
+          />
+        </section>
+
         {/* One section per wall */}
         {wallSlots.map((w, idx) => (
           <div key={w.wall}>
@@ -305,15 +315,6 @@ export default function Configurator({
           <h2 className="text-sm font-bold uppercase tracking-wide text-ink">
             Finishes &amp; Hardware
           </h2>
-
-          <div>
-            <h3 className="mb-2 text-sm font-semibold text-ink">Material</h3>
-            <MaterialPicker
-              materials={catalog.materials}
-              selectedId={config.materialId}
-              onSelect={setMaterial}
-            />
-          </div>
 
           <div>
             <h3 className="mb-2 text-sm font-semibold text-ink">Hardware style</h3>
@@ -343,27 +344,31 @@ export default function Configurator({
           </div>
         </section>
 
-        {/* Height (global) */}
-        <section className="rounded-xl border border-line bg-card p-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-ink">Total height: {heightLabel}</span>
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
-              <input
-                data-testid="height-upgrade"
-                type="checkbox"
-                checked={config.heightUpgrade}
-                onChange={(e) => setHeightUpgrade(e.target.checked)}
-                className="accent-brand"
-              />
-              Raise to {upgradedHeightLabel} (+
-              {formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
-            </label>
-          </div>
-          <p className="mt-1 text-[11px] text-sand">
-            Includes standard 0.75&quot; top cap panel with 0.5&quot; front overhang
-          </p>
-          <p className="mt-1 text-[11px] text-faint">
-            Depth fixed at {formatInches(catalog.constraints.depthIn)} · total width{' '}
+        {/* Height (global) — highlighted upgrade option */}
+        <section className="rounded-xl border border-brand/30 bg-cream p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              data-testid="height-upgrade"
+              type="checkbox"
+              checked={config.heightUpgrade}
+              onChange={(e) => setHeightUpgrade(e.target.checked)}
+              className="mt-0.5 h-5 w-5 accent-brand"
+            />
+            <span className="min-w-0">
+              <span className="block text-base font-semibold text-ink">
+                Raise height to {upgradedHeightLabel}{' '}
+                <span className="font-normal text-muted">
+                  (+{formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
+                </span>
+              </span>
+              <span className="mt-1 block text-xs text-sand">
+                Increases total closet height to 96.75&quot; including top cap
+              </span>
+            </span>
+          </label>
+          <p className="mt-2 text-[11px] text-faint">
+            Current total height: {heightLabel} · depth{' '}
+            {formatInches(catalog.constraints.depthIn)} · total width{' '}
             {formatInches(totalWidth)}
           </p>
         </section>
