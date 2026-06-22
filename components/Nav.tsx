@@ -4,6 +4,7 @@ import { getCurrentUser, isAdmin } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import SignOutButton from '@/components/SignOutButton';
 import CartLink from '@/components/CartLink';
+import Logo from '@/components/Logo';
 
 // Tabler outline icons (22px) for the nav links — inline SVG, the same approach
 // the rest of the app uses (no icon library added).
@@ -56,14 +57,7 @@ export default async function Nav() {
     <header className="sticky top-0 z-20 bg-brand">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" aria-label="The Closet Fitters home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {/* monogram.svg is dark teal — invisible on the Cosmos nav without the
-              white filter, so we render it white like the wordmark. */}
-          <img
-            src="/images/logos/monogram.svg"
-            alt="The Closet Fitters"
-            style={{ height: 44, width: 'auto', filter: 'brightness(0) invert(1)' }}
-          />
+          <Logo tone="light" />
         </Link>
         <div className="flex items-center gap-4 text-sm sm:gap-5">
           <Link
@@ -114,12 +108,6 @@ export default async function Nav() {
           >
             Free Consultation
           </Link>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/logos/monogram.svg"
-            alt="The Closet Fitters"
-            style={{ height: '44px', width: 'auto', filter: 'brightness(0) invert(1)' }}
-          />
         </div>
       </nav>
     </header>

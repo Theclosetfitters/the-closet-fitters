@@ -37,10 +37,8 @@ export const metadata: Metadata = {
     'Custom, made-to-measure closet systems — designed, engineered, and built with premium materials and a design-led approach.',
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: [
-      { url: '/images/logos/hanger.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: '32x32' },
-    ],
+    icon: '/icon.svg',
+    apple: '/icons/apple-touch-icon.png',
   },
   appleWebApp: {
     capable: true,

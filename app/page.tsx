@@ -67,19 +67,6 @@ export default function Home() {
       <section className="bg-brand text-cream">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-20 md:grid-cols-2 md:py-28">
           <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/logos/wordmark.svg"
-              alt="The Closet Fitters"
-              style={{
-                height: '48px',
-                width: 'auto',
-                filter: 'brightness(0) invert(1)',
-                opacity: 0.95,
-                marginBottom: '12px',
-                display: 'block',
-              }}
-            />
             <p className={`${eyebrow} text-sand`}>Made-to-measure storage</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.05] text-cream sm:text-6xl">
               Closets, fitted to your space.
