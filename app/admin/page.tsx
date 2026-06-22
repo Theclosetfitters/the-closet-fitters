@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { listAllOrders, ORDER_STATUSES } from '@/lib/orders';
@@ -25,6 +26,13 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
+      <Image
+        src="/images/CF_Secondary_Logo_.jpeg"
+        alt="The Closet Fitters"
+        width={1156}
+        height={1114}
+        className="mb-4 h-12 w-auto"
+      />
       <h1 className="text-2xl font-bold text-ink">Orders</h1>
 
       <div className="mt-4 grid grid-cols-4 gap-2">

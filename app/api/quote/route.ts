@@ -114,7 +114,8 @@ export async function POST(request: Request) {
   let emailSent = false;
   if (isEmailConfigured()) {
     try {
-      const html = buildQuoteEmailHtml(catalog, contact, emailClosets, grandTotalCents);
+      const baseUrl = request.headers.get('origin') ?? new URL(request.url).origin;
+      const html = buildQuoteEmailHtml(catalog, contact, emailClosets, grandTotalCents, baseUrl);
       await sendQuoteEmail({
         to: contact.email,
         subject: `Your custom closet quote (${ref})`,

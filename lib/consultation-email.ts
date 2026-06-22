@@ -107,9 +107,10 @@ function configBlock(
     </tr></table>`;
 }
 
-function shell(title: string, inner: string): string {
+function shell(title: string, inner: string, baseUrl: string): string {
   return `<div style="background:#f6f1ea;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;">
+      <div style="text-align:center;padding:20px 24px 4px;"><img src="${baseUrl}/images/CF_Main_Logo_.jpeg" alt="The Closet Fitters" width="200" style="display:inline-block;max-width:200px;width:100%;height:auto;" /></div>
       <div style="background:${COSMOS};color:${CREAM};padding:18px 24px;">
         <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${TAN};">The Closet Fitters</div>
         <div style="font-size:20px;font-weight:700;margin-top:3px;">${esc(title)}</div>
@@ -125,7 +126,8 @@ export function buildCompanyConsultationHtml(
   contact: ConsultationContact,
   flow: ConsultationFlow,
   closets: ConsultationCloset[],
-  grandTotalCents: number
+  grandTotalCents: number,
+  baseUrl: string = ''
 ): string {
   const config =
     flow === 'checkout' && closets.length ? configBlock(catalog, closets, grandTotalCents) : '';
@@ -133,7 +135,8 @@ export function buildCompanyConsultationHtml(
     'New Consultation Request',
     `<p style="margin:0 0 12px;font-size:14px;">The following client is requesting a free design consultation.</p>
      ${contactTable(contact)}
-     ${config}`
+     ${config}`,
+    baseUrl
   );
 }
 
@@ -143,7 +146,8 @@ export function buildCustomerConsultationHtml(
   contact: ConsultationContact,
   flow: ConsultationFlow,
   closets: ConsultationCloset[],
-  grandTotalCents: number
+  grandTotalCents: number,
+  baseUrl: string = ''
 ): string {
   const config =
     flow === 'checkout' && closets.length
@@ -161,6 +165,7 @@ export function buildCustomerConsultationHtml(
      <p style="margin:18px 0 0;font-size:14px;color:${INK};">The Closet Fitters team<br/>
        (954) 589-3233<br/>
        <a href="mailto:Sales@theclosetfitters.com" style="color:${COSMOS};">Sales@theclosetfitters.com</a>
-     </p>`
+     </p>`,
+    baseUrl
   );
 }

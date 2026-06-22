@@ -37,8 +37,9 @@ export const metadata: Metadata = {
     'Custom, made-to-measure closet systems — designed, engineered, and built with premium materials and a design-led approach.',
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/icon.svg',
-    apple: '/icons/apple-touch-icon.png',
+    icon: '/images/CF_Hanger_logo_small_.jpeg',
+    shortcut: '/images/CF_Hanger_logo_small_.jpeg',
+    apple: '/images/CF_Hanger_logo_small_.jpeg',
   },
   appleWebApp: {
     capable: true,

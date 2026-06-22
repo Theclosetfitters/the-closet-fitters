@@ -28,7 +28,8 @@ export function buildQuoteEmailHtml(
   catalog: Catalog,
   contact: QuoteContact,
   closets: QuoteCloset[],
-  grandTotalCents: number
+  grandTotalCents: number,
+  baseUrl: string = ''
 ): string {
   const interiorLabel = (id: string) =>
     catalog.interiors.find((i) => i.id === id)?.label ?? id;
@@ -128,6 +129,7 @@ export function buildQuoteEmailHtml(
 
   return `<!doctype html><html><body style="margin:0;background:#fafafa;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#18181b;">
     <div style="max-width:640px;margin:0 auto;padding:24px;">
+      <div style="text-align:center;margin:0 0 20px;"><img src="${baseUrl}/images/CF_Main_Logo_.jpeg" alt="The Closet Fitters" width="200" style="display:inline-block;max-width:200px;width:100%;height:auto;" /></div>
       <h1 style="font-size:20px;margin:0 0 4px;">Your custom closet quote</h1>
       <p style="margin:0 0 16px;color:#52525b;">Hi ${esc(
         contact.name

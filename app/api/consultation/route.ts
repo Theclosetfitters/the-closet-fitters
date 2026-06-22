@@ -65,15 +65,16 @@ export async function POST(request: Request) {
   let emailSent = false;
   if (isEmailConfigured()) {
     try {
+      const baseUrl = request.headers.get('origin') ?? new URL(request.url).origin;
       await sendQuoteEmail({
         to: COMPANY_EMAIL,
         subject: `New Consultation Request — ${contact.firstName} ${contact.lastName}`,
-        html: buildCompanyConsultationHtml(catalog, contact, flow, closets, grandTotalCents),
+        html: buildCompanyConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
       });
       await sendQuoteEmail({
         to: contact.email,
         subject: 'Your consultation request has been received — The Closet Fitters',
-        html: buildCustomerConsultationHtml(catalog, contact, flow, closets, grandTotalCents),
+        html: buildCustomerConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
       });
       emailSent = true;
     } catch (err) {
