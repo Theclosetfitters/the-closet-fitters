@@ -9,9 +9,9 @@ export default function SiteFooter() {
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/logos/wordmark.svg"
+            src="/images/logos/monogram.svg"
             alt="The Closet Fitters"
-            style={{ height: 32, width: 'auto', filter: 'brightness(0) invert(1)', marginBottom: 8 }}
+            style={{ height: '48px', width: 'auto', filter: 'brightness(0) invert(1)', marginBottom: '8px' }}
           />
           <p className="mt-4 max-w-xs text-sm font-light text-cream/60">
             Custom, made-to-measure closet systems — designed, engineered, and

@@ -114,6 +114,12 @@ export default async function Nav() {
           >
             Free Consultation
           </Link>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logos/monogram.svg"
+            alt="The Closet Fitters"
+            style={{ height: '44px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+          />
         </div>
       </nav>
     </header>
