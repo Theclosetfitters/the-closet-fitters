@@ -114,7 +114,10 @@ export async function POST(request: Request) {
   let emailSent = false;
   if (isEmailConfigured()) {
     try {
-      const baseUrl = request.headers.get('origin') ?? new URL(request.url).origin;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        request.headers.get('origin') ??
+        new URL(request.url).origin;
       const html = buildQuoteEmailHtml(catalog, contact, emailClosets, grandTotalCents, baseUrl);
       await sendQuoteEmail({
         to: contact.email,

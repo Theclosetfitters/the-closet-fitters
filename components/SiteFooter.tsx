@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 
 // Footer on a Utility Black background, cream at reduced opacity.
 export default function SiteFooter() {
@@ -8,12 +7,11 @@ export default function SiteFooter() {
     <footer className="bg-ink text-cream">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-3">
         <div>
-          <Image
-            src="/images/CF_wordmark_light.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logos/wordmark.svg"
             alt="The Closet Fitters"
-            width={1875}
-            height={836}
-            className="h-9 w-auto"
+            style={{ height: 32, width: 'auto', filter: 'brightness(0) invert(1)' }}
           />
           <p className="mt-4 max-w-xs text-sm font-light text-cream/60">
             Custom, made-to-measure closet systems — designed, engineered, and

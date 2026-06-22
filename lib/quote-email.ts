@@ -129,7 +129,7 @@ export function buildQuoteEmailHtml(
 
   return `<!doctype html><html><body style="margin:0;background:#fafafa;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#18181b;">
     <div style="max-width:640px;margin:0 auto;padding:24px;">
-      <div style="text-align:center;margin:0 0 20px;"><img src="${baseUrl}/images/CF_Main_Logo_.jpeg" alt="The Closet Fitters" width="200" style="display:inline-block;max-width:200px;width:100%;height:auto;" /></div>
+      <div style="background:#1f333a;text-align:center;padding:24px;border-radius:10px;margin:0 0 20px;"><img src="${baseUrl}/images/logos/logo-full-transparent.png" alt="The Closet Fitters" style="height:64px;width:auto;display:block;margin:0 auto;" /></div>
       <h1 style="font-size:20px;margin:0 0 4px;">Your custom closet quote</h1>
       <p style="margin:0 0 16px;color:#52525b;">Hi ${esc(
         contact.name

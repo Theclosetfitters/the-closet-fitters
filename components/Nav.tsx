@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -57,13 +56,11 @@ export default async function Nav() {
     <header className="sticky top-0 z-20 bg-brand">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" aria-label="The Closet Fitters home">
-          <Image
-            src="/images/CF_wordmark_light.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logos/wordmark.svg"
             alt="The Closet Fitters"
-            width={1875}
-            height={836}
-            priority
-            className="h-10 w-auto"
+            style={{ height: 36, width: 'auto', filter: 'brightness(0) invert(1)' }}
           />
         </Link>
         <div className="flex items-center gap-4 text-sm sm:gap-5">

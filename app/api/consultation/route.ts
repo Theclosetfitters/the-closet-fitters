@@ -65,7 +65,10 @@ export async function POST(request: Request) {
   let emailSent = false;
   if (isEmailConfigured()) {
     try {
-      const baseUrl = request.headers.get('origin') ?? new URL(request.url).origin;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        request.headers.get('origin') ??
+        new URL(request.url).origin;
       await sendQuoteEmail({
         to: COMPANY_EMAIL,
         subject: `New Consultation Request — ${contact.firstName} ${contact.lastName}`,
