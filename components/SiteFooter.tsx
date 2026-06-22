@@ -9,11 +9,11 @@ export default function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-3">
         <div>
           <Image
-            src="/images/CF_tect_only_logo_.jpeg"
+            src="/images/CF_wordmark_light.png"
             alt="The Closet Fitters"
-            width={1876}
-            height={838}
-            className="h-9 w-auto mix-blend-multiply"
+            width={1875}
+            height={836}
+            className="h-9 w-auto"
           />
           <p className="mt-4 max-w-xs text-sm font-light text-cream/60">
             Custom, made-to-measure closet systems — designed, engineered, and

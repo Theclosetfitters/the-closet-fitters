@@ -58,12 +58,12 @@ export default async function Nav() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" aria-label="The Closet Fitters home">
           <Image
-            src="/images/CF_tect_only_logo_.jpeg"
+            src="/images/CF_wordmark_light.png"
             alt="The Closet Fitters"
-            width={1876}
-            height={838}
+            width={1875}
+            height={836}
             priority
-            className="h-10 w-auto mix-blend-multiply"
+            className="h-10 w-auto"
           />
         </Link>
         <div className="flex items-center gap-4 text-sm sm:gap-5">
