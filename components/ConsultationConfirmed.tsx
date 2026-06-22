@@ -14,8 +14,12 @@ interface Stored {
   flow: 'standalone' | 'checkout';
 }
 
-export default function ConsultationConfirmed() {
+export default function ConsultationConfirmed({ source }: { source?: string }) {
   const [data, setData] = useState<Stored | null>(null);
+
+  // Hide the Start Designing prompt only for the cart flow (they already
+  // designed a closet). Any other / missing value defaults to showing it.
+  const showStartDesigning = source !== 'cart';
 
   useEffect(() => {
     try {
@@ -63,15 +67,19 @@ export default function ConsultationConfirmed() {
         </dl>
       )}
 
-      <p className="mt-10 text-sm text-brand">
-        In the meantime, start designing your custom closet.
-      </p>
-      <Link
-        href="/configure"
-        className="mt-3 inline-block rounded-full border border-brand px-6 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand hover:text-cream"
-      >
-        Start Designing →
-      </Link>
+      {showStartDesigning && (
+        <>
+          <p className="mt-10 text-sm text-brand">
+            In the meantime, start designing your custom closet.
+          </p>
+          <Link
+            href="/configure"
+            className="mt-3 inline-block rounded-full border border-brand px-6 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand hover:text-cream"
+          >
+            Start Designing →
+          </Link>
+        </>
+      )}
     </div>
   );
 }

@@ -6,13 +6,18 @@ export const metadata: Metadata = {
   title: 'Request Received',
 };
 
-export default function ConsultationConfirmedPage() {
+export default async function ConsultationConfirmedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ source?: string }>;
+}) {
+  const { source } = await searchParams;
   return (
     <ConsultationLayout
       photoSrc="/images/consultation-confirmed.jpg"
       photoAlt="A custom closet by The Closet Fitters"
     >
-      <ConsultationConfirmed />
+      <ConsultationConfirmed source={source} />
     </ConsultationLayout>
   );
 }

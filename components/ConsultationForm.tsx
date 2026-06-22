@@ -78,7 +78,8 @@ export default function ConsultationForm({ flow }: { flow: 'standalone' | 'check
       } catch {
         // ignore storage failures
       }
-      router.push('/consultation/confirmed');
+      const source = flow === 'checkout' ? 'cart' : 'standalone';
+      router.push(`/consultation/confirmed?source=${source}`);
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Could not submit your request');
       setSubmitting(false);
