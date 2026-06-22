@@ -57,10 +57,12 @@ export default async function Nav() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" aria-label="The Closet Fitters home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* monogram.svg is dark teal — invisible on the Cosmos nav without the
+              white filter, so we render it white like the wordmark. */}
           <img
-            src="/images/logos/wordmark.svg"
+            src="/images/logos/monogram.svg"
             alt="The Closet Fitters"
-            style={{ height: 36, width: 'auto', filter: 'brightness(0) invert(1)' }}
+            style={{ height: 44, width: 'auto', filter: 'brightness(0) invert(1)' }}
           />
         </Link>
         <div className="flex items-center gap-4 text-sm sm:gap-5">

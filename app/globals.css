@@ -27,3 +27,22 @@ body {
   color: var(--color-ink);
   font-family: var(--font-inter), system-ui, sans-serif;
 }
+
+@layer base {
+  /* Headings render in Cormorant Garamond (light); body/UI in Inter. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
+    font-weight: 300;
+  }
+
+  /* Form controls don't inherit font-family by default — keep them on Inter. */
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+}

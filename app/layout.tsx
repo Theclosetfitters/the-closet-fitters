@@ -18,7 +18,7 @@ const inter = Inter({
 const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700'],
   style: ['normal', 'italic'],
 });
 
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/images/logos/hanger.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
     ],
   },
   appleWebApp: {

@@ -29,8 +29,7 @@ export default async function AdminPage() {
       <img
         src="/images/logos/monogram.svg"
         alt="CF"
-        className="mb-4"
-        style={{ height: 56, width: 'auto' }}
+        style={{ height: '56px', width: 'auto', display: 'block', margin: '0 auto 16px' }}
       />
       <h1 className="text-2xl font-bold text-ink">Orders</h1>
 

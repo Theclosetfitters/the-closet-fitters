@@ -96,6 +96,27 @@ export default function Home() {
             className="aspect-[4/3] w-full rounded-2xl bg-cream/5"
           />
         </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            paddingBottom: '32px',
+            paddingTop: '16px',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logos/wordmark.svg"
+            alt="The Closet Fitters"
+            style={{
+              height: '52px',
+              width: 'auto',
+              filter: 'brightness(0) invert(1)',
+              opacity: 0.92,
+            }}
+          />
+        </div>
       </section>
 
       {/* 3. Trust bar -------------------------------------------------- */}

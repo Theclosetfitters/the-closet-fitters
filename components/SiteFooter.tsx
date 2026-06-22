@@ -11,7 +11,7 @@ export default function SiteFooter() {
           <img
             src="/images/logos/wordmark.svg"
             alt="The Closet Fitters"
-            style={{ height: 32, width: 'auto', filter: 'brightness(0) invert(1)' }}
+            style={{ height: 32, width: 'auto', filter: 'brightness(0) invert(1)', marginBottom: 8 }}
           />
           <p className="mt-4 max-w-xs text-sm font-light text-cream/60">
             Custom, made-to-measure closet systems — designed, engineered, and
