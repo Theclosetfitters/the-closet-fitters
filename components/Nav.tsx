@@ -104,7 +104,7 @@ export default async function Nav() {
           </Link>
           <Link
             href="/consultation"
-            className="rounded-full border border-cream/45 bg-brand px-4 py-1.5 font-medium uppercase tracking-wide text-cream transition hover:border-cream"
+            className="rounded-full border border-cream/60 px-4 py-1.5 font-medium text-cream transition hover:bg-cream hover:text-brand"
           >
             Free Consultation
           </Link>
