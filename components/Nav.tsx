@@ -102,6 +102,12 @@ export default async function Nav() {
           >
             Start Designing
           </Link>
+          <Link
+            href="/consultation"
+            className="rounded-full border border-cream/45 bg-brand px-4 py-1.5 font-medium uppercase tracking-wide text-cream transition hover:border-cream"
+          >
+            Free Consultation
+          </Link>
         </div>
       </nav>
     </header>

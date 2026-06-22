@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import ConsultationLayout from '@/components/ConsultationLayout';
 import ConsultationForm from '@/components/ConsultationForm';
 
-export const metadata: Metadata = { title: 'Request a Consultation' };
+export const metadata: Metadata = {
+  title: 'Free Consultation',
+  description: 'Schedule your free custom-closet design consultation with The Closet Fitters.',
+};
 
-// Checkout is now a consultation request (no payment / quote diagram). It reuses
-// the shared consultation form in "checkout" mode, which attaches the cart's
-// closet configuration to the request.
-export default function CheckoutPage() {
+export default function ConsultationPage() {
   return (
     <ConsultationLayout
       photoSrc="/images/consultation-hero.jpg"
@@ -17,7 +17,7 @@ export default function CheckoutPage() {
         Let&apos;s schedule your free design consultation.
       </h1>
       <div className="mt-8">
-        <ConsultationForm flow="checkout" />
+        <ConsultationForm flow="standalone" />
       </div>
     </ConsultationLayout>
   );

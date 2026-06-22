@@ -102,7 +102,7 @@ export default function CartView({
           href="/checkout"
           className="rounded-full bg-brand px-8 py-2.5 text-center text-sm font-semibold text-cream hover:bg-brand-700"
         >
-          Proceed to checkout
+          Request Consultation
         </Link>
       </div>
     </div>
