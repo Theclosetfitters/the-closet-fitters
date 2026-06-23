@@ -102,13 +102,15 @@ export default function CartView({
     background: '#F0EBE4',
     border: `0.5px solid ${TAN}`,
     borderRadius: 9999,
-    padding: '3px 11px',
-    fontSize: 11,
+    padding: '5px 14px',
+    fontSize: 13,
     color: KABUL,
   } as const;
 
   return (
     <div className="mx-auto w-full max-w-5xl">
+      {/* warm gap between the site nav and the cart header */}
+      <div style={{ height: 24, background: '#F8F4F0' }} />
       {/* Cosmos header strip */}
       <div
         style={{
@@ -117,6 +119,10 @@ export default function CartView({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
+          borderTop: '2px solid #C7AC90',
+          borderRadius: '12px 12px 0 0',
+          marginLeft: 16,
+          marginRight: 16,
         }}
       >
         <div>
@@ -169,16 +175,16 @@ export default function CartView({
             ];
 
             return (
-              <div key={item.id} style={{ background: '#fff', borderRadius: 12, border: `0.5px solid ${CARD_BORDER}`, padding: 20 }}>
+              <div key={item.id} style={{ background: '#fff', borderRadius: 12, border: `0.5px solid ${CARD_BORDER}`, padding: 32 }}>
                 {/* item header */}
                 <div style={{ marginBottom: 14 }}>
-                  <span style={{ fontFamily: CORMORANT, fontSize: 22, color: COSMOS, fontWeight: 400, float: 'right', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                  <span style={{ fontFamily: CORMORANT, fontSize: 30, color: COSMOS, fontWeight: 400, float: 'right', whiteSpace: 'nowrap', marginLeft: 12 }}>
                     {formatCents(item.totalCents)}
                   </span>
-                  <div style={{ fontFamily: CORMORANT, fontSize: 20, color: COSMOS, fontWeight: 400 }}>
+                  <div style={{ fontFamily: CORMORANT, fontSize: 30, color: COSMOS, fontWeight: 400 }}>
                     Closet {i + 1}
                   </div>
-                  <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+                  <div style={{ fontSize: 14, color: MUTED, marginTop: 2 }}>
                     {shapeLabel(cfg.shape)} · {nWalls} wall{nWalls === 1 ? '' : 's'} · {nBays} bay{nBays === 1 ? '' : 's'} · {finishedHeightLabel(catalog, cfg)} · {matLabel(cfg.materialId)}
                   </div>
                 </div>
@@ -191,7 +197,7 @@ export default function CartView({
                 </div>
 
                 {/* floor plan */}
-                <div style={{ fontSize: 10, color: TAN, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: TAN, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
                   Floor Plan
                 </div>
                 <div
@@ -202,7 +208,7 @@ export default function CartView({
                 />
 
                 {/* configuration */}
-                <div style={{ fontSize: 10, color: TAN, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: TAN, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>
                   Configuration
                 </div>
                 {wallsForShape(cfg.shape).map((w) => {
@@ -210,22 +216,22 @@ export default function CartView({
                   if (wallBays.length === 0) return null;
                   const ordered = w === 'B' ? [...wallBays].reverse() : wallBays;
                   return (
-                    <div key={w} style={{ marginBottom: 14 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1px solid ${TAN}`, paddingBottom: 3, marginBottom: 8 }}>
-                        <span style={{ fontFamily: CORMORANT, fontSize: 13, fontWeight: 600, color: COSMOS, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    <div key={w} style={{ marginBottom: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1px solid ${TAN}`, paddingBottom: 5, marginBottom: 12 }}>
+                        <span style={{ fontFamily: CORMORANT, fontSize: 18, fontWeight: 600, color: COSMOS, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                           {wallHeading(cfg.shape, w)}
                         </span>
-                        <span style={{ fontSize: 11, color: MUTED }}>
+                        <span style={{ fontSize: 13, color: MUTED }}>
                           {ordered.length} bay{ordered.length === 1 ? '' : 's'}
                         </span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 6 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
                         {ordered.map((s, bi) => (
-                          <div key={s.id} style={{ background: OFFWHITE, borderRadius: 6, border: `0.5px solid ${CARD_BORDER}`, padding: '7px 8px' }}>
-                            <div style={{ fontSize: 9, color: TAN, marginBottom: 2 }}>
+                          <div key={s.id} style={{ background: OFFWHITE, borderRadius: 6, border: `0.5px solid ${CARD_BORDER}`, padding: '12px 11px' }}>
+                            <div style={{ fontSize: 11, color: TAN, marginBottom: 4 }}>
                               Bay {bi + 1}{cornerIds.has(s.id) ? ' · corner' : ''}
                             </div>
-                            <div style={{ fontSize: 11, color: COSMOS, fontWeight: 500 }}>
+                            <div style={{ fontSize: 15, color: COSMOS, fontWeight: 500 }}>
                               {interiorLabel(s.interior)}
                             </div>
                           </div>
@@ -265,7 +271,7 @@ export default function CartView({
         </div>
 
         {/* RIGHT: order summary */}
-        <div style={{ background: '#fff', borderRadius: 12, border: `0.5px solid ${CARD_BORDER}`, padding: 18 }}>
+        <div style={{ position: 'sticky', top: 24, background: '#fff', borderRadius: 12, border: `0.5px solid ${CARD_BORDER}`, padding: 18 }}>
           <div style={{ fontSize: 10, color: TAN, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14 }}>
             Order Summary
           </div>

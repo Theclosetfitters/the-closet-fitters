@@ -41,7 +41,7 @@ export default async function Nav() {
   const iconLink = 'text-cream/72 transition hover:text-cream';
 
   return (
-    <header className="sticky top-0 z-20 bg-brand">
+    <header className="sticky top-0 z-20 bg-brand" style={{ borderBottom: '1px solid rgba(199, 172, 144, 0.25)' }}>
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" aria-label="The Closet Fitters home">
           <Logo tone="light" />
