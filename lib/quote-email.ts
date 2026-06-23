@@ -74,9 +74,9 @@ export function buildQuoteEmailHtml(
                 const desc = ws.length
                   ? ws.map((s) => interiorLabel(s.interior)).join(', ')
                   : '—';
-                return `<li><strong>${esc(wallLabel(w))}:</strong> ${ws.length} bay${
-                  ws.length === 1 ? '' : 's'
-                } — ${esc(desc)}</li>`;
+                return `<li style="list-style:none;"><span style="font-family:Georgia,serif;font-size:16px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#1F333A;border-bottom:2px solid #C7AC90;padding-bottom:6px;margin-bottom:10px;display:block;">${esc(
+                  wallLabel(w)
+                )}</span>${ws.length} bay${ws.length === 1 ? '' : 's'} — ${esc(desc)}</li>`;
               })
               .join('')
           : '';

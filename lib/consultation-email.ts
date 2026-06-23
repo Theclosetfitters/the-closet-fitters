@@ -70,7 +70,7 @@ function configBlock(
         .map((w) => {
           const bays = cfg.sections.filter((s) => s.wall === w);
           const list = bays.map((b, i) => `Bay ${i + 1}: ${interiorLabel(b.interior)}`).join('; ');
-          return `<li style="margin:2px 0;"><strong>${esc(wallLabel(w))}:</strong> ${esc(list)}</li>`;
+          return `<li style="margin:2px 0;list-style:none;"><span style="font-family:Georgia,serif;font-size:16px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#1F333A;border-bottom:2px solid #C7AC90;padding-bottom:6px;margin-bottom:10px;display:block;">${esc(wallLabel(w))}</span>${esc(list)}</li>`;
         })
         .join('');
       return `

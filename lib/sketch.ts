@@ -198,11 +198,19 @@ export function closetSketchSvg(
   runs.forEach((run, idx) => {
     const runW = drawRun(run.sections, x);
     if (run.title) {
-      // wall title, centred on the bays and just above the width labels
+      // wall title — Cormorant, uppercase, with a thin tan underline beneath.
+      // Centred on the bays, just above the width labels (positions unchanged).
+      const tcx = x + runW / 2;
+      const tty = oy - 26;
+      const tfs = 13; // ~30% up from 10
       parts.push(
-        `<text x="${x + runW / 2}" y="${oy - 26}" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" letter-spacing="1.5" fill="${TAN}">${esc(
+        `<text x="${tcx}" y="${tty}" text-anchor="middle" style="font-family:var(--font-cormorant),'Cormorant Garamond',Georgia,serif" font-size="${tfs}" font-weight="600" letter-spacing="0.78" fill="#1F333A">${esc(
           run.title.toUpperCase()
         )}</text>`
+      );
+      const tuw = Math.max(28, run.title.length * tfs * 0.62);
+      parts.push(
+        `<line x1="${tcx - tuw / 2}" y1="${tty + 4}" x2="${tcx + tuw / 2}" y2="${tty + 4}" stroke="${TAN}" stroke-width="1.5"/>`
       );
     }
     x += runW + (idx < runs.length - 1 ? GROUP_GAP : 0);
