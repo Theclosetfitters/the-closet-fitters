@@ -10,11 +10,7 @@ export default async function CartPage({
 }) {
   const { updated } = await searchParams;
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-ink">Your cart</h1>
-      <p className="mt-1 text-sm text-muted">
-        Review your closets, then continue to request your quote.
-      </p>
+    <main className="w-full flex-1" style={{ background: '#F8F4F0' }}>
       <CartView catalog={catalog} updated={updated === '1'} />
     </main>
   );
