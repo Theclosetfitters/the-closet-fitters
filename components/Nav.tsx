@@ -27,19 +27,6 @@ const IconPhoto = () => (
     <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
   </svg>
 );
-const IconUser = () => (
-  <svg {...iconProps}>
-    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-  </svg>
-);
-const IconUserCircle = () => (
-  <svg {...iconProps}>
-    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-    <path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-    <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" />
-  </svg>
-);
 
 // Sticky brand nav on a Cosmos (dark teal) background.
 export default async function Nav() {
@@ -69,33 +56,12 @@ export default async function Nav() {
             <IconPhoto />
           </Link>
           <CartLink />
-          {user && (
-            <Link
-              href="/account"
-              title="My account"
-              aria-label="My account"
-              className={`hidden sm:inline ${iconLink}`}
-            >
-              <IconUserCircle />
-            </Link>
-          )}
           {admin && (
             <Link href="/admin" className={link}>
               Admin
             </Link>
           )}
-          {user ? (
-            <SignOutButton />
-          ) : (
-            <Link
-              href="/login"
-              title="Sign In"
-              aria-label="Sign In"
-              className={`hidden sm:inline ${iconLink}`}
-            >
-              <IconUser />
-            </Link>
-          )}
+          {user && <SignOutButton />}
           <Link
             href="/configure"
             className="rounded-full border border-cream/60 px-4 py-1.5 font-medium text-cream transition hover:bg-cream hover:text-brand"

@@ -19,12 +19,6 @@ export default function CheckoutSuccessPage() {
       </p>
       <div className="mt-8 flex gap-3">
         <Link
-          href="/account"
-          className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold text-cream hover:opacity-90"
-        >
-          View my orders
-        </Link>
-        <Link
           href="/configure"
           className="rounded-full border border-line px-6 py-2.5 text-sm font-semibold text-ink hover:bg-card"
         >
