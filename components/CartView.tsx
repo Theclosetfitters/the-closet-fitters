@@ -178,7 +178,7 @@ export default function CartView({
               <div key={item.id} style={{ background: '#fff', borderRadius: 12, border: `0.5px solid ${CARD_BORDER}`, padding: 32 }}>
                 {/* item header */}
                 <div style={{ marginBottom: 14 }}>
-                  <span style={{ fontFamily: CORMORANT, fontSize: 30, color: COSMOS, fontWeight: 400, float: 'right', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                  <span style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 30, color: COSMOS, fontWeight: 500, float: 'right', whiteSpace: 'nowrap', marginLeft: 12 }}>
                     {formatCents(item.totalCents)}
                   </span>
                   <div style={{ fontFamily: CORMORANT, fontSize: 30, color: COSMOS, fontWeight: 400 }}>
@@ -288,7 +288,7 @@ export default function CartView({
           <div style={{ borderTop: '1px solid rgba(199,172,144,0.3)', paddingTop: 14, marginBottom: 16, marginTop: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <span style={{ fontSize: 11, color: MUTED }}>Estimated total</span>
-              <span style={{ fontFamily: CORMORANT, fontSize: 26, color: COSMOS, fontWeight: 400, lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 26, color: COSMOS, fontWeight: 500, lineHeight: 1 }}>
                 {formatCents(totalCents)}
               </span>
             </div>
