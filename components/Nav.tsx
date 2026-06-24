@@ -64,13 +64,13 @@ export default async function Nav() {
           {user && <SignOutButton />}
           <Link
             href="/configure"
-            className="rounded-full border border-cream/60 px-4 py-1.5 font-medium text-cream transition hover:bg-cream hover:text-brand"
+            className="rounded-full bg-cream px-4 py-1.5 font-medium text-brand transition hover:bg-cream/90"
           >
             Start Designing
           </Link>
           <Link
             href="/consultation"
-            className="rounded-full border border-cream/60 px-4 py-1.5 font-medium text-cream transition hover:bg-cream hover:text-brand"
+            className="rounded-full bg-cream px-4 py-1.5 font-medium text-brand transition hover:bg-cream/90"
           >
             Free Consultation
           </Link>

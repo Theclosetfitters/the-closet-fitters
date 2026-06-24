@@ -78,12 +78,6 @@ export default function Home() {
               >
                 Start Designing
               </Link>
-              <Link
-                href="#how"
-                className="rounded-full border border-cream/60 px-8 py-3 text-center text-sm font-semibold text-cream transition hover:bg-cream hover:text-brand"
-              >
-                See How It Works
-              </Link>
             </div>
           </div>
 
