@@ -600,8 +600,11 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
       config.sections.filter((s) => s.wall === w).reduce((a, s) => a + s.widthIn * IN, 0);
     const Wa = widthM('A');
     const gap = CORNER_CLEARANCE_IN * IN;
-    const hPanel = H - TOE_H - T;
-    const yPanel = TOE_H + (H - TOE_H) / 2;
+    // Full interior height: floor (y=0) to the underside of the top cap (y=H).
+    // H is the reactive case height (84" or 96"); the 0.75" cap sits above it,
+    // so H already equals caseHeight - topCapThickness. Reacts to "Raise to 8'".
+    const hPanel = H;
+    const yPanel = H / 2;
     const zPanel = -D / 2 + T / 2;
     const out = [
       <Panel key="back-corner-l" size={[gap, hPanel, T]} position={[-Wa / 2 - gap / 2, yPanel, zPanel]} material={matV} />,
