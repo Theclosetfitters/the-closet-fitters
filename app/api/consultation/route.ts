@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
 import { isEmailConfigured, sendQuoteEmail } from '@/lib/email';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import {
   buildCompanyConsultationHtml,
   buildCustomerConsultationHtml,
@@ -82,6 +84,44 @@ export async function POST(request: Request) {
       emailSent = true;
     } catch (err) {
       console.error('consultation email failed', err);
+    }
+  }
+
+  // Staff portal: record the submission as a job + its default stages.
+  // Best-effort — never blocks the customer response. Uses the service-role
+  // client because the submitter is anonymous (RLS would otherwise reject it).
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createServiceRoleClient();
+      const { data: job, error } = await supabase
+        .from('jobs')
+        .insert({
+          customer_first_name: contact.firstName,
+          customer_last_name: contact.lastName,
+          customer_email: contact.email,
+          customer_phone: contact.phone,
+          customer_address: contact.address,
+          how_heard: contact.referral ?? null,
+          closet_config: body.items ?? null,
+          status: 'new',
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      const stages = [
+        'deposit_received',
+        'cnc_sent',
+        'cut_edge_banded',
+        'assembled',
+        'delivered',
+        'installed',
+      ];
+      await supabase
+        .from('job_stages')
+        .insert(stages.map((stage) => ({ job_id: job.id, stage, completed: false })));
+    } catch (err) {
+      console.error('job record failed', err);
     }
   }
 
