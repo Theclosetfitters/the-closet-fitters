@@ -264,14 +264,16 @@ function Interior({
     }
 
     case 'shoe_shelves': {
-      // 6 angled shelves: a fixed shelf in the center (3rd from the bottom)
-      // with 2 adjustable below it and 3 adjustable above it, evenly spaced.
-      const n = 6;
+      // 9 flat horizontal shelves -> 10 openings. A fixed shelf centred on the
+      // cabinet opening, with 4 evenly-spaced adjustable shelves above and 4
+      // below. The fixed shelf is rendered thicker so it reads as non-adjustable.
+      const fixedY = bottomY + rh / 2;
+      const spacing = rh / 10; // (interior/2) / 5, equal above and below
       return (
         <group>
-          {Array.from({ length: n }, (_, i) =>
-            shelf(`shoe-${i}`, bottomY + (rh * (i + 1)) / (n + 1), [-0.3, 0, 0])
-          )}
+          {[1, 2, 3, 4].map((i) => shelf(`ss-up-${i}`, topY - spacing * i))}
+          <Panel key="ss-fixed" size={[uw, T * 1.8, sd]} position={[cx, fixedY, 0]} material={matH} />
+          {[1, 2, 3, 4].map((i) => shelf(`ss-dn-${i}`, fixedY - spacing * i))}
         </group>
       );
     }
@@ -392,7 +394,9 @@ function WallRun({
             ? { ...s, interior: 'long_hanging' }
             : s;
         const noTopShelf =
-          eff.interior === 'double_hanging' || eff.interior === 'full_hanging';
+          eff.interior === 'double_hanging' ||
+          eff.interior === 'full_hanging' ||
+          eff.interior === 'shoe_shelves';
         return (
           <group key={`bay-${s.id}`}>
             <Panel

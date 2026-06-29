@@ -69,13 +69,17 @@ function interiorPieces(
       break;
     }
     case 'shoe_shelves': {
-      // 6 angled shelves: fixed center (3rd up) + 2 adjustable below, 3 above.
-      const n = 6;
-      for (let i = 1; i <= n; i++) {
-        const y = regionTopY + (rh * i) / (n + 1);
-        out.push(
-          `<line x1="${x0}" y1="${y + 4}" x2="${x1}" y2="${y - 4}" stroke="${STROKE}" stroke-width="1.4"/>`
-        );
+      // 9 flat horizontal shelves -> 10 openings. The centre (5th) shelf is
+      // fixed (solid, thicker); the other 8 are adjustable (dashed).
+      for (let i = 1; i <= 9; i++) {
+        const y = regionTopY + (rh * i) / 10;
+        if (i === 5) {
+          out.push(
+            `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${STROKE}" stroke-width="2.6"/>`
+          );
+        } else {
+          out.push(hline(y, true));
+        }
       }
       break;
     }
@@ -177,9 +181,13 @@ export function closetSketchSvg(
       if (i < sections.length - 1) {
         parts.push(`<line x1="${cursor}" y1="${oy}" x2="${cursor}" y2="${bottom}" stroke="${STROKE}" stroke-width="2"/>`);
       }
-      parts.push(`<line x1="${bx}" y1="${fixedShelfY}" x2="${bx + w}" y2="${fixedShelfY}" stroke="${STROKE}" stroke-width="1.6"/>`);
+      // Shoe Section spans the full interior height (no 12" cubby shelf).
+      const ssFull = s.interior === 'shoe_shelves';
+      if (!ssFull) {
+        parts.push(`<line x1="${bx}" y1="${fixedShelfY}" x2="${bx + w}" y2="${fixedShelfY}" stroke="${STROKE}" stroke-width="1.6"/>`);
+      }
       parts.push(`<line x1="${bx}" y1="${toeTopY}" x2="${bx + w}" y2="${toeTopY}" stroke="${STROKE}" stroke-width="1.6"/>`);
-      parts.push(...interiorPieces(s.interior, bx, w, fixedShelfY, toeTopY));
+      parts.push(...interiorPieces(s.interior, bx, w, ssFull ? oy : fixedShelfY, toeTopY));
       parts.push(
         `<text x="${bx + w / 2}" y="${oy - 10}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="${LABEL}">${esc(
           formatInches(s.widthIn)

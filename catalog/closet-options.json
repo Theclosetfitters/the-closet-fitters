@@ -45,7 +45,7 @@
       "id": "shoe_shelves",
       "code": "SS",
       "label": "Shoe Section",
-      "description": "Angled shelves that display shoes front-facing.",
+      "description": "Flat shelves for shoes — a fixed center shelf with adjustable shelves above and below.",
       "maxWidthIn": 36,
       "priceCents": 50000
     },
