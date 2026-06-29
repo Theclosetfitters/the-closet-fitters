@@ -29,9 +29,10 @@ export async function proxy(request: NextRequest) {
   if (!staffPath.startsWith('/staff/login')) {
     const user = await getSessionUser(request);
     if (!user) {
+      // The portal is path-based (e.g. <host>/staff). Always send to the
+      // /staff/login path — works whether or not a subdomain is ever added.
       const loginUrl = request.nextUrl.clone();
-      // On the subdomain the public "/login" rewrites to /staff/login below.
-      loginUrl.pathname = isSubdomain ? '/login' : '/staff/login';
+      loginUrl.pathname = '/staff/login';
       return NextResponse.redirect(loginUrl);
     }
   }
