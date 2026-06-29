@@ -15,6 +15,20 @@ function cornerPanel(x: number, y: number, w: number, h: number): string {
   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${BACK}" stroke="${LINE}" stroke-width="1.5"/>`;
 }
 
+const DRAWER_FILL = '#e3d2b4';
+const DR_OUT = 4; // protrusion at the opening (schematic 0.75" overlay forward)
+const DR_SIDE = 2; // 3/8" overlay beyond each case side
+/** Overlay drawer front — a proud element at the opening side of a DR bay,
+ * extending past the bay sides and protruding forward. `dir` is the side the
+ * bay opens toward (Wall A opens down; side walls open inward). */
+function drawerOverlay(x: number, y: number, w: number, h: number, dir: 'down' | 'right' | 'left'): string {
+  if (dir === 'down')
+    return `<rect x="${x - DR_SIDE}" y="${y + h}" width="${w + 2 * DR_SIDE}" height="${DR_OUT}" fill="${DRAWER_FILL}" stroke="${LINE}" stroke-width="1.2"/>`;
+  if (dir === 'right')
+    return `<rect x="${x + w}" y="${y - DR_SIDE}" width="${DR_OUT}" height="${h + 2 * DR_SIDE}" fill="${DRAWER_FILL}" stroke="${LINE}" stroke-width="1.2"/>`;
+  return `<rect x="${x - DR_OUT}" y="${y - DR_SIDE}" width="${DR_OUT}" height="${h + 2 * DR_SIDE}" fill="${DRAWER_FILL}" stroke="${LINE}" stroke-width="1.2"/>`;
+}
+
 const BAY = 46; // bay cell length (along the wall)
 const DEP = 30; // closet depth (perpendicular)
 const GAP = 16; // open 8.5" clearance notch at each corner (room width direction)
@@ -92,7 +106,10 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
     const w = n * BAY;
     const parts: string[] = [];
     parts.push(capRect(M, M, w, DEP + CAP_OVER)); // cap behind the bays
-    a.forEach((c, i) => parts.push(bayCell(M + i * BAY, M, BAY, DEP, c)));
+    a.forEach((c, i) => {
+      parts.push(bayCell(M + i * BAY, M, BAY, DEP, c));
+      if (c === 'DR') parts.push(drawerOverlay(M + i * BAY, M, BAY, DEP, 'down'));
+    });
     parts.push(label('Wall A', M + w / 2, M + DEP + CAP_OVER + 14));
     const W = M * 2 + w;
     const H = M + DEP + CAP_OVER + 40;
@@ -115,9 +132,15 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
     parts.push(capRect(ox, oy, DEP + CAP_OVER, nb * BAY));
     parts.push(capRect(ox + DEP, oy, GAP, DEP + CAP_OVER));
     // Wall B runs down the left, flush to the back-wall line (top edge at oy).
-    b.forEach((c, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, c)));
+    b.forEach((c, j) => {
+      parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, c));
+      if (c === 'DR') parts.push(drawerOverlay(ox, oy + j * BAY, DEP, BAY, 'right'));
+    });
     // Wall A runs along the back wall.
-    a.forEach((c, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, c)));
+    a.forEach((c, i) => {
+      parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, c));
+      if (c === 'DR') parts.push(drawerOverlay(aStartX + i * BAY, oy, BAY, DEP, 'down'));
+    });
     // Corner back panel filling the A↔B gap (only when backs are on).
     if (config.backPanels) parts.push(cornerPanel(ox + DEP, oy, GAP, DEP));
     parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
@@ -142,9 +165,18 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
   parts.push(capRect(ox + DEP, oy, GAP, DEP + CAP_OVER));
   parts.push(capRect(aEndX, oy, GAP, DEP + CAP_OVER));
   // Side walls flush to the back-wall line (top edge at oy); Wall A along the back.
-  b.forEach((cc, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, cc)));
-  c.forEach((cc, j) => parts.push(bayCell(cStartX, oy + j * BAY, DEP, BAY, cc)));
-  a.forEach((cc, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, cc)));
+  b.forEach((cc, j) => {
+    parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, cc));
+    if (cc === 'DR') parts.push(drawerOverlay(ox, oy + j * BAY, DEP, BAY, 'right'));
+  });
+  c.forEach((cc, j) => {
+    parts.push(bayCell(cStartX, oy + j * BAY, DEP, BAY, cc));
+    if (cc === 'DR') parts.push(drawerOverlay(cStartX, oy + j * BAY, DEP, BAY, 'left'));
+  });
+  a.forEach((cc, i) => {
+    parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, cc));
+    if (cc === 'DR') parts.push(drawerOverlay(aStartX + i * BAY, oy, BAY, DEP, 'down'));
+  });
   // Corner back panels filling both A↔B and A↔C gaps (only when backs are on).
   if (config.backPanels) {
     parts.push(cornerPanel(ox + DEP, oy, GAP, DEP));

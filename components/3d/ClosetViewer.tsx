@@ -226,7 +226,6 @@ function Interior({
   const uw = wM - 1.6 * T;
   const sd = D - 1.6 * T;
   const rodLen = uw * 0.94;
-  const zFront = D / 2 - 0.02;
   const rh = topY - bottomY;
 
   const shelf = (key: string, y: number, rot?: [number, number, number]) => (
@@ -292,16 +291,26 @@ function Interior({
     }
 
     case 'drawers': {
+      // Overlay drawer fronts: the FRONT face protrudes 0.75" past the case face
+      // and overlaps 3/8" beyond the bay's case sides and over the dividers above
+      // and below. Only the front face changes — the carcass/case are unchanged.
+      const OVERLAY = 0.75 * IN; // protrusion / front thickness
+      const SIDE = 0.375 * IN; // 3/8" overlap on each side, top, and bottom
+      const frontFaceZ = D / 2 + OVERLAY; // protruding front face
       const drawers = Array.from({ length: 4 }, (_, k) => {
         const y = bottomY + DRAWER_H * (k + 0.5);
         return (
           <group key={`dr-${k}`}>
-            <Panel size={[uw, DRAWER_H - 0.01, 0.02]} position={[cx, y, zFront]} material={matH} />
+            <Panel
+              size={[uw + 2 * SIDE, DRAWER_H - 0.01 + 2 * SIDE, OVERLAY]}
+              position={[cx, y, D / 2 + OVERLAY / 2]}
+              material={matH}
+            />
             <Pull
               styleId={hardwareStyleId}
               cx={cx}
               y={y}
-              zFront={zFront}
+              zFront={frontFaceZ}
               width={uw}
               metal={pullMetal}
             />
