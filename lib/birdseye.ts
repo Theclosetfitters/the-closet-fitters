@@ -25,7 +25,7 @@ function codeFor(catalog: Catalog, interior: string): string {
 }
 
 // Fixed legend order for the bird's-eye / diagram key (every bay type).
-const LEGEND_ORDER = ['FH', 'LH', 'SH', 'DR', 'SS', 'DH'];
+const LEGEND_ORDER = ['LH', 'DH', 'FH', 'SH', 'SS', 'DR'];
 
 /** The full {code,label} key for all bay types, in a fixed order — shown under
  * every diagram so the acronyms always read the same everywhere. */

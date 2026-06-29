@@ -23,6 +23,14 @@
       "label": "Long Hanging",
       "description": "A single full-height rod for dresses, coats and long garments.",
       "maxWidthIn": 36,
+      "priceCents": 47500
+    },
+    {
+      "id": "double_hanging",
+      "code": "DH",
+      "label": "Double Hang",
+      "description": "A short rod at the top, a fixed middle shelf, and a short rod below — twice the hanging space.",
+      "maxWidthIn": 36,
       "priceCents": 50000
     },
     {
@@ -34,10 +42,10 @@
       "priceCents": 50000
     },
     {
-      "id": "double_hanging",
-      "code": "DH",
-      "label": "Double Hang",
-      "description": "A short rod at the top, a fixed middle shelf, and a short rod below — twice the hanging space.",
+      "id": "adjustable_shelves",
+      "code": "SH",
+      "label": "Shelving",
+      "description": "Movable shelves for folded clothes and bins.",
       "maxWidthIn": 36,
       "priceCents": 50000
     },
@@ -47,15 +55,7 @@
       "label": "Shoe Section",
       "description": "Flat shelves for shoes — a fixed center shelf with adjustable shelves above and below.",
       "maxWidthIn": 36,
-      "priceCents": 50000
-    },
-    {
-      "id": "adjustable_shelves",
-      "code": "SH",
-      "label": "Shelving",
-      "description": "Movable shelves for folded clothes and bins.",
-      "maxWidthIn": 36,
-      "priceCents": 50000
+      "priceCents": 55000
     },
     {
       "id": "drawers",
