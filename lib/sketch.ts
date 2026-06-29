@@ -92,13 +92,12 @@ function interiorPieces(
     }
     case 'drawers': {
       const drawerPx = 10 * SCALE;
-      // Overlay fronts: drawn 3/8" wider than the interior on each side so they
-      // read as proud of (overlapping) the bay's case sides.
-      const over = 0.375 * SCALE;
+      // Overlay fronts span the full bay width (bx..bx+w) so their edges sit
+      // flush with the outside faces of the bay's case side panels.
       for (let k = 0; k < 4; k++) {
         const top = regionBotY - drawerPx * (k + 1);
         out.push(
-          `<rect x="${x0 - over}" y="${top}" width="${x1 - x0 + 2 * over}" height="${drawerPx - 2}" fill="none" stroke="${STROKE}" stroke-width="1.4"/>` +
+          `<rect x="${bx}" y="${top}" width="${w}" height="${drawerPx - 2}" fill="none" stroke="${STROKE}" stroke-width="1.4"/>` +
             `<line x1="${cx - 10}" y1="${top + drawerPx / 2}" x2="${cx + 10}" y2="${top + drawerPx / 2}" stroke="${ROD}" stroke-width="2.4" stroke-linecap="round"/>`
         );
       }

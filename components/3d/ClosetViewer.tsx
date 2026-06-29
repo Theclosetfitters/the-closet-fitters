@@ -302,7 +302,7 @@ function Interior({
         return (
           <group key={`dr-${k}`}>
             <Panel
-              size={[uw + 2 * SIDE, DRAWER_H - 0.01 + 2 * SIDE, OVERLAY]}
+              size={[wM + T, DRAWER_H - 0.01 + 2 * SIDE, OVERLAY]}
               position={[cx, y, D / 2 + OVERLAY / 2]}
               material={matH}
             />
