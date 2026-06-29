@@ -50,9 +50,7 @@ export function buildQuoteEmailHtml(
         .map(
           (s, i) =>
             `<tr><td style="padding:4px 8px;color:#52525b;">Bay ${i + 1}</td>` +
-            `<td style="padding:4px 8px;">${esc(interiorLabel(s.interior))}${
-              s.hasBack ? ' + back panel' : ''
-            }</td>` +
+            `<td style="padding:4px 8px;">${esc(interiorLabel(s.interior))}</td>` +
             `<td style="padding:4px 8px;text-align:right;color:#52525b;">${esc(
               formatInches(s.widthIn)
             )}</td></tr>`
@@ -105,6 +103,21 @@ export function buildQuoteEmailHtml(
         finishedHeightLabel(catalog, cfg)
       )} H</td></tr>
             <tr><td style="padding:1px 8px 1px 0;color:#71717a;">Top cap</td><td>Included — 0.75&quot; × 15.5&quot;, 0.5&quot; front overhang, matching finish, spanning full width including corners</td></tr>
+            ${
+              cfg.backPanels
+                ? `<tr><td style="padding:1px 8px 1px 0;color:#71717a;">Back panels</td><td>${
+                    cfg.sections.length
+                  } bay${cfg.sections.length === 1 ? '' : 's'}${
+                    cfg.shape === 'l_shaped'
+                      ? ' + 1 corner panel (included)'
+                      : cfg.shape === 'u_shaped'
+                        ? ' + 2 corner panels (included)'
+                        : ''
+                  } — ${esc(
+                    formatCents(cfg.sections.length * catalog.pricing.backPerSectionCents)
+                  )}</td></tr>`
+                : ''
+            }
           </table>
           ${wallBlock}
           ${img}

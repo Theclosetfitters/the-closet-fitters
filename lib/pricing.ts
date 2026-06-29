@@ -38,13 +38,22 @@ export function computePrice(
       )}`,
       amountCents: interior.priceCents,
     });
-    if (section.hasBack) {
-      lineItems.push({
-        label: `   ↳ Back panel`,
-        amountCents: catalog.pricing.backPerSectionCents,
-      });
-    }
   });
+
+  // Back panels — a single all-or-nothing option for the whole closet. Price is
+  // bays × $200 for every shape; the L/U corner panels are complimentary.
+  if (config.backPanels) {
+    const bays = config.sections.length;
+    const corners =
+      config.shape === 'l_shaped' ? 1 : config.shape === 'u_shaped' ? 2 : 0;
+    const cornerNote = corners
+      ? ` + ${corners} corner panel${corners === 1 ? '' : 's'} (included)`
+      : '';
+    lineItems.push({
+      label: `Back Panels — ${bays} bay${bays === 1 ? '' : 's'}${cornerNote}`,
+      amountCents: bays * catalog.pricing.backPerSectionCents,
+    });
+  }
 
   if (config.heightUpgrade) {
     const widthIn = totalWidthIn(config);

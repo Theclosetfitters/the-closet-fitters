@@ -196,7 +196,7 @@ export function closetSketchSvg(
       parts.push(
         `<text x="${bx + w / 2}" y="${oy + 28}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="${LABEL}">${esc(
           interiorLabel(s.interior)
-        )}${s.hasBack ? ' +B' : ''}</text>`
+        )}${config.backPanels ? ' +B' : ''}</text>`
       );
     });
     return runW;

@@ -162,6 +162,10 @@ export default function Configurator({
     (heightUpgrade: boolean) => setConfig((c) => ({ ...c, heightUpgrade })),
     []
   );
+  const setBackPanels = useCallback(
+    (backPanels: boolean) => setConfig((c) => ({ ...c, backPanels })),
+    []
+  );
 
   // Side-wall corner bay never allows drawers — the back wall would block it
   // opening. Mirrored layout: Wall B corner = last bay, Wall C corner = first
@@ -342,6 +346,35 @@ export default function Configurator({
               onSelect={setHardwareColor}
             />
           </div>
+        </section>
+
+        {/* Back panels (global) — all-or-nothing, paired directly above height */}
+        <section className="rounded-xl border border-brand/30 bg-cream p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              data-testid="back-panels"
+              type="checkbox"
+              checked={config.backPanels}
+              onChange={(e) => setBackPanels(e.target.checked)}
+              className="mt-0.5 h-5 w-5 accent-brand"
+            />
+            <span className="min-w-0">
+              <span className="block text-base font-semibold text-ink">
+                Add Back Panels{' '}
+                <span className="font-normal text-muted">
+                  (+{formatCents(catalog.pricing.backPerSectionCents)}/bay)
+                </span>
+              </span>
+              <span className="mt-1 block text-xs text-sand">
+                Closes in the rear of every bay
+                {config.shape === 'l_shaped'
+                  ? ', plus 1 corner panel (included)'
+                  : config.shape === 'u_shaped'
+                    ? ', plus 2 corner panels (included)'
+                    : ''}
+              </span>
+            </span>
+          </label>
         </section>
 
         {/* Height (global) — highlighted upgrade option */}

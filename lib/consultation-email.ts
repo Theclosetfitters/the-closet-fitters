@@ -90,6 +90,20 @@ function configBlock(
             ${row('Hardware', `${styleLabel(cfg.hardwareStyleId)} in ${colorLabel(cfg.hardwareColorId)}`)}
             ${row('Rod color', colorLabel(cfg.rodColorId))}
             ${row('Top cap', 'Included')}
+            ${
+              cfg.backPanels
+                ? row(
+                    'Back panels',
+                    `${cfg.sections.length} bay${cfg.sections.length === 1 ? '' : 's'}${
+                      cfg.shape === 'l_shaped'
+                        ? ' + 1 corner panel (included)'
+                        : cfg.shape === 'u_shaped'
+                          ? ' + 2 corner panels (included)'
+                          : ''
+                    } — ${formatCents(cfg.sections.length * catalog.pricing.backPerSectionCents)}`
+                  )
+                : ''
+            }
           </table>
           <ul style="margin:8px 0 0;padding-left:18px;color:${INK};font-size:13px;">${wallRows}</ul>
         </div>`;

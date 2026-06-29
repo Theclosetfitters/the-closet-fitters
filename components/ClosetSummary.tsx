@@ -89,13 +89,23 @@ export default function ClosetSummary({
         Top cap panel: Included — 0.75&quot; × 15.5&quot; full width, 0.5&quot; front
         overhang, matching finish
       </p>
+      {config.backPanels && (
+        <p className="mt-1 text-[11px] text-muted">
+          Back Panels — {config.sections.length} bay
+          {config.sections.length === 1 ? '' : 's'}
+          {config.shape === 'l_shaped'
+            ? ' + 1 corner panel (included)'
+            : config.shape === 'u_shaped'
+              ? ' + 2 corner panels (included)'
+              : ''}
+        </p>
+      )}
 
       <ol className="mt-3 space-y-1 text-sm">
         {config.sections.map((s, i) => (
           <li key={s.id} className="flex justify-between">
             <span className="text-muted">
               Bay {i + 1}: {interiorLabel(s.interior)}
-              {s.hasBack ? ' + back panel' : ''}
             </span>
             <span className="tabular-nums text-muted">{formatInches(s.widthIn)}</span>
           </li>

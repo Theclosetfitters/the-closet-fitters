@@ -99,7 +99,6 @@ export interface SectionConfig {
   id: string; // stable client id
   interior: InteriorType;
   widthIn: number; // snapped to 1/8"
-  hasBack: boolean;
   wall: WallId; // which wall this bay sits on (always 'A' for straight)
 }
 
@@ -116,6 +115,9 @@ export interface ClosetConfig {
   hardwareColorId: string; // drawer pull/knob finish color
   hardwareStyleId: HardwareStyleId; // drawer pull/knob style
   heightUpgrade: boolean; // false = standard height, true = +1'
+  /** All-or-nothing: when true, every bay gets a back panel (plus the L/U
+   * corner panels, which are complimentary). Stored once for the whole closet. */
+  backPanels: boolean;
 }
 
 export interface PriceLineItem {

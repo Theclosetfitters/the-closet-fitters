@@ -190,11 +190,21 @@ export default function CartView({
                 </div>
 
                 {/* hardware pills */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 18 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: cfg.backPanels ? 8 : 18 }}>
                   {hardware.map((h) => (
                     <span key={h} style={pill}>{h}</span>
                   ))}
                 </div>
+                {cfg.backPanels && (
+                  <div style={{ fontSize: 12, color: KABUL, marginBottom: 18 }}>
+                    Back Panels — {cfg.sections.length} bay{cfg.sections.length === 1 ? '' : 's'}
+                    {cfg.shape === 'l_shaped'
+                      ? ' + 1 corner panel (included)'
+                      : cfg.shape === 'u_shaped'
+                        ? ' + 2 corner panels (included)'
+                        : ''}
+                  </div>
+                )}
 
                 {/* floor plan */}
                 <div style={{ fontSize: 12, color: TAN, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>

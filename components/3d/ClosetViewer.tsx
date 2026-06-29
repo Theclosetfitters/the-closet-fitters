@@ -341,6 +341,7 @@ function WallRun({
   D,
   mats,
   blockedIds,
+  backPanels,
 }: {
   sections: SectionConfig[];
   H: number;
@@ -348,6 +349,8 @@ function WallRun({
   mats: RunMaterials;
   /** Side-wall corner bay ids that must not render drawers. */
   blockedIds: Set<string>;
+  /** Global toggle — when true every bay gets a back panel. */
+  backPanels: boolean;
 }) {
   const { matV, matH, rodMetal, pullMetal, hardwareStyleId } = mats;
   const widths = sections.map((s) => s.widthIn * IN);
@@ -407,7 +410,7 @@ function WallRun({
             {!noTopShelf && (
               <Panel size={[uw, T, D - 1.6 * T]} position={[cx, fixedShelfY, 0]} material={matH} />
             )}
-            {s.hasBack && (
+            {backPanels && (
               <Panel
                 size={[wM - T, H - TOE_H - T, T]}
                 position={[cx, TOE_H + (H - TOE_H) / 2, -D / 2 + T / 2]}
@@ -587,13 +590,38 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
     ];
   }, [config.shape, config.sections, catalog.constraints, H, D, matH]);
 
+  // Corner back panels for L/U shapes — a solid panel filling each 8.5" corner
+  // gap at the back, in the back-panel material. Only when backs are toggled on
+  // (complimentary; not separately configurable).
+  const backCorners = useMemo(() => {
+    if (!config.backPanels) return null;
+    if (config.shape !== 'l_shaped' && config.shape !== 'u_shaped') return null;
+    const widthM = (w: WallId) =>
+      config.sections.filter((s) => s.wall === w).reduce((a, s) => a + s.widthIn * IN, 0);
+    const Wa = widthM('A');
+    const gap = CORNER_CLEARANCE_IN * IN;
+    const hPanel = H - TOE_H - T;
+    const yPanel = TOE_H + (H - TOE_H) / 2;
+    const zPanel = -D / 2 + T / 2;
+    const out = [
+      <Panel key="back-corner-l" size={[gap, hPanel, T]} position={[-Wa / 2 - gap / 2, yPanel, zPanel]} material={matV} />,
+    ];
+    if (config.shape === 'u_shaped') {
+      out.push(
+        <Panel key="back-corner-r" size={[gap, hPanel, T]} position={[Wa / 2 + gap / 2, yPanel, zPanel]} material={matV} />
+      );
+    }
+    return out;
+  }, [config.backPanels, config.shape, config.sections, H, D, matV]);
+
   return (
     <group position={[-center[0], 0, -center[1]]}>
       {topCap}
+      {backCorners}
       {placements.map((p) =>
         p.sections.length === 0 ? null : (
           <group key={p.wall} position={p.position} rotation={[0, p.rotationY, 0]}>
-            <WallRun sections={p.sections} H={H} D={D} mats={mats} blockedIds={blockedIds} />
+            <WallRun sections={p.sections} H={H} D={D} mats={mats} blockedIds={blockedIds} backPanels={config.backPanels} />
             <Html
               position={[0, H + 0.16, 0]}
               center

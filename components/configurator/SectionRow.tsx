@@ -28,8 +28,7 @@ export default function SectionRow({
   const interior = catalog.interiors.find((i) => i.id === section.interior)!;
   const max = maxWidthFor(catalog, section.interior);
   const min = catalog.constraints.minWidthIn;
-  const sectionTotal =
-    interior.priceCents + (section.hasBack ? catalog.pricing.backPerSectionCents : 0);
+  const sectionTotal = interior.priceCents;
 
   return (
     <div
@@ -89,29 +88,6 @@ export default function SectionRow({
       <div className="flex justify-between text-[10px] text-faint">
         <span>{formatInches(min)}</span>
         <span>max {formatInches(max)}</span>
-      </div>
-
-      {/* Back panel — highlighted option */}
-      <div className="mt-3 rounded-lg border border-brand/30 bg-cream p-3">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={section.hasBack}
-            onChange={(e) => onChange(section.id, { hasBack: e.target.checked })}
-            className="mt-0.5 h-5 w-5 accent-brand"
-          />
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold text-ink">
-              Add back panel{' '}
-              <span className="font-normal text-muted">
-                (+{formatCents(catalog.pricing.backPerSectionCents)})
-              </span>
-            </span>
-            <span className="mt-0.5 block text-xs text-sand">
-              Adds a full back panel to close in the rear of your closet unit
-            </span>
-          </span>
-        </label>
       </div>
     </div>
   );

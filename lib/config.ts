@@ -33,11 +33,15 @@ export function normalizeConfig(
     hardwareStyleId:
       (config.hardwareStyleId as HardwareStyleId) ?? catalog.hardwareStyles[0].id,
     heightUpgrade: Boolean(config.heightUpgrade),
+    // Single all-or-nothing flag. Migrate legacy per-bay back panels: if any
+    // old section had a back, treat the whole closet as backs-on.
+    backPanels:
+      Boolean(config.backPanels) ||
+      (config.sections ?? []).some((s) => (s as { hasBack?: boolean }).hasBack === true),
     sections: (config.sections ?? []).map((s) => ({
       id: s.id ?? makeSectionId(),
       interior: (s.interior as InteriorType) ?? 'long_hanging',
       widthIn: typeof s.widthIn === 'number' ? s.widthIn : 24,
-      hasBack: Boolean(s.hasBack),
       wall: s.wall && walls.includes(s.wall) ? s.wall : 'A',
     })),
   };
@@ -109,7 +113,6 @@ export function defaultSection(
     id: makeSectionId(),
     interior: 'long_hanging',
     widthIn: Math.min(24, catalog.constraints.standardMaxWidthIn),
-    hasBack: false,
     wall,
   };
 }
@@ -123,6 +126,7 @@ export function defaultConfig(catalog: Catalog): ClosetConfig {
     hardwareColorId: catalog.hardware[0].id,
     hardwareStyleId: catalog.hardwareStyles[0].id,
     heightUpgrade: false,
+    backPanels: false,
   };
 }
 

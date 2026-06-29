@@ -8,6 +8,12 @@ import { wallLabel, wallsForShape } from '@/lib/config';
 const LINE = '#1F333A'; // Cosmos
 const FILL = '#ffffff';
 const TAN = '#C7AC90';
+const BACK = '#b29568'; // back-panel fill (corner panels, top-down)
+
+/** A solid corner back panel filling an 8.5" gap (only when backs are on). */
+function cornerPanel(x: number, y: number, w: number, h: number): string {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${BACK}" stroke="${LINE}" stroke-width="1.5"/>`;
+}
 
 const BAY = 46; // bay cell length (along the wall)
 const DEP = 30; // closet depth (perpendicular)
@@ -112,6 +118,8 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
     b.forEach((c, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, c)));
     // Wall A runs along the back wall.
     a.forEach((c, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, c)));
+    // Corner back panel filling the A↔B gap (only when backs are on).
+    if (config.backPanels) parts.push(cornerPanel(ox + DEP, oy, GAP, DEP));
     parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
     parts.push(label('Wall B', ox - 9, oy + (nb * BAY) / 2, -90));
     const W = aStartX + na * BAY + M;
@@ -137,6 +145,11 @@ export function birdsEyeSvg(catalog: Catalog, config: ClosetConfig): string {
   b.forEach((cc, j) => parts.push(bayCell(ox, oy + j * BAY, DEP, BAY, cc)));
   c.forEach((cc, j) => parts.push(bayCell(cStartX, oy + j * BAY, DEP, BAY, cc)));
   a.forEach((cc, i) => parts.push(bayCell(aStartX + i * BAY, oy, BAY, DEP, cc)));
+  // Corner back panels filling both A↔B and A↔C gaps (only when backs are on).
+  if (config.backPanels) {
+    parts.push(cornerPanel(ox + DEP, oy, GAP, DEP));
+    parts.push(cornerPanel(aEndX, oy, GAP, DEP));
+  }
   parts.push(label('Wall A', aStartX + (na * BAY) / 2, oy - 8));
   parts.push(label('Wall B', ox - 9, oy + (nb * BAY) / 2, -90));
   parts.push(label('Wall C', cStartX + DEP + 9, oy + (nc * BAY) / 2, 90));
