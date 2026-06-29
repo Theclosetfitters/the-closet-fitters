@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import { Inter, Cormorant_Garamond, Dancing_Script } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
@@ -51,11 +52,14 @@ export const viewport: Viewport = {
   themeColor: '#1F333A',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The staff portal (/staff, set by the proxy) is a separate app — no public
+  // nav. Public pages are unaffected.
+  const isStaff = (await headers()).get('x-staff-portal') === '1';
   return (
     <html
       lang="en"
@@ -63,7 +67,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-paper text-ink">
         <CartProvider>
-          <Nav />
+          {!isStaff && <Nav />}
           <div className="flex flex-1 flex-col">{children}</div>
           <ServiceWorkerRegister />
         </CartProvider>

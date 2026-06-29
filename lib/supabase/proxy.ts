@@ -41,3 +41,27 @@ export async function updateSession(
 
   return supabaseResponse;
 }
+
+/** Read the signed-in user from the request cookies (for proxy auth gating).
+ * Returns null if Supabase isn't configured or there is no valid session. */
+export async function getSessionUser(request: NextRequest) {
+  if (!isSupabaseConfigured()) return null;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll() {
+          // read-only here
+        },
+      },
+    }
+  );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
