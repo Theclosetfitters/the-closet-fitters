@@ -8,6 +8,7 @@ import { formatCents } from '@/lib/format';
 import type { ClosetConfig } from '@/types';
 import JobDetail, {
   type ClosetSummary,
+  type JobAppointment,
   type JobInfo,
   type StageRow,
 } from '@/components/staff/JobDetail';
@@ -69,11 +70,29 @@ export default async function JobDetailPage({
     .select('id, stage, photo_url')
     .eq('job_id', id);
   const { data: staff } = await supabase.from('staff_profiles').select('id, full_name');
+  const { data: apptRaw } = await supabase
+    .from('appointments')
+    .select('id, staff_id, scheduled_start, scheduled_end, status')
+    .eq('job_id', id)
+    .neq('status', 'cancelled')
+    .order('scheduled_start', { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   const staffNames: Record<string, string> = {};
+  const staffList: { id: string; name: string }[] = [];
   for (const s of (staff ?? []) as { id: string; full_name: string }[]) {
     staffNames[s.id] = s.full_name;
+    staffList.push({ id: s.id, name: s.full_name });
   }
+
+  const appointment: JobAppointment | null = apptRaw
+    ? {
+        id: apptRaw.id as string,
+        startISO: apptRaw.scheduled_start as string,
+        staffName: apptRaw.staff_id ? staffNames[apptRaw.staff_id as string] ?? '' : '',
+      }
+    : null;
 
   const stages: StageRow[] = ((stagesRaw ?? []) as StageRow[]).map((s) => ({
     id: s.id,
@@ -113,6 +132,8 @@ export default async function JobDetailPage({
       grandTotal={formatCents(grandTotalCents)}
       staffNames={staffNames}
       currentUser={{ id: me.id, name: me.full_name }}
+      appointment={appointment}
+      staff={staffList}
     />
   );
 }

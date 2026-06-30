@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import ScheduleModal from '@/components/staff/ScheduleModal';
+import { formatDateET, formatTimeET } from '@/lib/staff/scheduling';
 
 export type ClosetSummary = {
   shape: string;
@@ -32,6 +35,7 @@ export type StageRow = {
   completed_at: string | null;
   completed_by: string | null;
 };
+export type JobAppointment = { id: string; startISO: string; staffName: string };
 type Photo = { id: string; path: string; url: string };
 
 const STAGES = [
@@ -87,6 +91,8 @@ export default function JobDetail({
   grandTotal,
   staffNames,
   currentUser,
+  appointment,
+  staff,
 }: {
   info: JobInfo;
   stages: StageRow[];
@@ -95,13 +101,17 @@ export default function JobDetail({
   grandTotal: string;
   staffNames: Record<string, string>;
   currentUser: { id: string; name: string };
+  appointment: JobAppointment | null;
+  staff: { id: string; name: string }[];
 }) {
+  const router = useRouter();
   const [stages, setStages] = useState<StageRow[]>(initialStages);
   const [photosByStage, setPhotosByStage] = useState<Record<string, Photo[]>>({});
   const [notes, setNotes] = useState(info.notes);
   const savedNotes = useRef(info.notes);
   const [toast, setToast] = useState<string | null>(null);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function showToast(msg: string) {
@@ -218,8 +228,53 @@ export default function JobDetail({
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr]" style={{ gap: 16, alignItems: 'start', marginTop: 16 }}>
-        {/* LEFT — stage tracker */}
+        {/* LEFT — appointment + stage tracker */}
         <div>
+          {/* Appointment card */}
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+            {appointment ? (
+              <>
+                <div style={sectionLabel}>Consultation Scheduled</div>
+                <div style={{ fontFamily: CORMORANT, fontSize: 20, color: '#1F333A', marginTop: 4 }}>
+                  {formatDateET(appointment.startISO)} at {formatTimeET(appointment.startISO)}
+                </div>
+                {appointment.staffName && (
+                  <div style={{ fontSize: 13, color: '#7A6E65', marginTop: 2 }}>
+                    With {appointment.staffName}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setScheduleOpen(true)}
+                  style={{ background: 'none', border: 'none', color: '#C7AC90', fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 10 }}
+                >
+                  Reschedule
+                </button>
+              </>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <span style={{ fontSize: 13, color: '#7A6E65' }}>No consultation scheduled yet</span>
+                <button
+                  type="button"
+                  onClick={() => setScheduleOpen(true)}
+                  style={{
+                    background: '#1F333A',
+                    color: '#EAE0D5',
+                    border: 'none',
+                    borderRadius: 9999,
+                    padding: '6px 16px',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Schedule Now
+                </button>
+              </div>
+            )}
+          </div>
+
           <div style={{ ...card, marginBottom: 16 }}>
             <div style={{ ...sectionLabel, marginBottom: 20 }}>Job Progress</div>
 
@@ -402,6 +457,21 @@ export default function JobDetail({
           />
         </div>
       </div>
+
+      {/* Schedule / reschedule modal */}
+      {scheduleOpen && (
+        <ScheduleModal
+          job={{ id: info.id, name: info.name, address: info.address }}
+          staff={staff}
+          existingId={appointment?.id}
+          onClose={() => setScheduleOpen(false)}
+          onScheduled={() => {
+            setScheduleOpen(false);
+            showToast(appointment ? 'Appointment rescheduled ✓' : 'Appointment scheduled ✓');
+            router.refresh();
+          }}
+        />
+      )}
 
       {/* Photo modal */}
       {modalUrl && (

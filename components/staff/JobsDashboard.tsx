@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import ScheduleModal, { type ScheduleJob } from '@/components/staff/ScheduleModal';
+import { formatDateET, formatTimeET } from '@/lib/staff/scheduling';
 
 export type DashJob = {
   id: string;
@@ -10,6 +13,7 @@ export type DashJob = {
   status: string;
   createdLabel: string;
   completedStages: number;
+  appointment: { startISO: string; staffName: string } | null;
 };
 
 type StatusStyle = { label: string; bg: string; color: string; group: string };
@@ -37,9 +41,25 @@ const TABS = [
 
 const CORMORANT = 'var(--font-cormorant), Georgia, serif';
 
-export default function JobsDashboard({ jobs, today }: { jobs: DashJob[]; today: string }) {
+export default function JobsDashboard({
+  jobs,
+  today,
+  staff,
+}: {
+  jobs: DashJob[];
+  today: string;
+  staff: { id: string; name: string }[];
+}) {
+  const router = useRouter();
   const [tab, setTab] = useState('all');
+  const [scheduleJob, setScheduleJob] = useState<ScheduleJob | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const filtered = tab === 'all' ? jobs : jobs.filter((j) => cfg(j.status).group === tab);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
@@ -126,21 +146,51 @@ export default function JobsDashboard({ jobs, today }: { jobs: DashJob[]; today:
                   )}
                   <div style={{ fontSize: 12, color: '#C7AC90', marginTop: 4 }}>{j.createdLabel}</div>
                 </div>
-                <div style={{ minWidth: 120, textAlign: 'right' }}>
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      background: c.bg,
-                      color: c.color,
-                      borderRadius: 9999,
-                      padding: '4px 12px',
-                      fontSize: 12,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {c.label}
-                  </span>
-                  <div style={{ background: '#F0EBE4', height: 4, borderRadius: 9999, marginTop: 8, overflow: 'hidden' }}>
+                <div style={{ minWidth: 160, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {j.appointment ? (
+                      <span style={{ fontSize: 12, color: '#7A6E65' }}>
+                        Scheduled: {formatDateET(j.appointment.startISO)} at{' '}
+                        {formatTimeET(j.appointment.startISO)}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setScheduleJob({ id: j.id, name: j.name, address: j.address });
+                        }}
+                        style={{
+                          background: '#1F333A',
+                          color: '#EAE0D5',
+                          border: 'none',
+                          borderRadius: 9999,
+                          padding: '6px 16px',
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Schedule
+                      </button>
+                    )}
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        background: c.bg,
+                        color: c.color,
+                        borderRadius: 9999,
+                        padding: '4px 12px',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {c.label}
+                    </span>
+                  </div>
+                  <div style={{ background: '#F0EBE4', height: 4, borderRadius: 9999, overflow: 'hidden', width: '100%' }}>
                     <div
                       style={{
                         background: '#C7AC90',
@@ -155,6 +205,38 @@ export default function JobsDashboard({ jobs, today }: { jobs: DashJob[]; today:
             </Link>
           );
         })
+      )}
+
+      {scheduleJob && (
+        <ScheduleModal
+          job={scheduleJob}
+          staff={staff}
+          onClose={() => setScheduleJob(null)}
+          onScheduled={() => {
+            setScheduleJob(null);
+            showToast('Appointment scheduled ✓');
+            router.refresh();
+          }}
+        />
+      )}
+
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            background: '#1F333A',
+            color: '#EAE0D5',
+            borderRadius: 8,
+            padding: '10px 16px',
+            fontSize: 13,
+            zIndex: 80,
+            boxShadow: '0 6px 24px rgba(31,51,58,0.25)',
+          }}
+        >
+          {toast}
+        </div>
       )}
 
       <style>{`.staff-job-card:hover{border-color:#C7AC90 !important;box-shadow:0 2px 12px rgba(31,51,58,0.07);}`}</style>
