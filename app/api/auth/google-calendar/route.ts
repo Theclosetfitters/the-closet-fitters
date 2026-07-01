@@ -4,12 +4,13 @@
 // server logs (see the callback route).
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { CALENDAR_SCOPES, getOAuthClient } from '@/lib/google-calendar';
+import { CALENDAR_SCOPES, calendarRedirectUri, getOAuthClient } from '@/lib/google-calendar';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  const redirectUri = new URL('/api/auth/google-calendar/callback', request.url).toString();
+  const redirectUri = calendarRedirectUri(request);
+  console.log('[google-calendar] consent redirect_uri:', redirectUri);
   const oauth2 = getOAuthClient(redirectUri);
   const url = oauth2.generateAuthUrl({
     access_type: 'offline',

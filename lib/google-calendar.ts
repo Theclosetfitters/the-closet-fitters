@@ -15,6 +15,20 @@ export type CalendarAppointment = {
   endISO: string;
 };
 
+/** The OAuth redirect URI — MUST be byte-for-byte identical between the consent
+ *  request and the token exchange, and registered in Google Cloud Console.
+ *  Priority: explicit env override -> proxy-forwarded host/proto (Vercel) ->
+ *  request URL. request.url alone is unreliable on Vercel (it can report the
+ *  internal http host), which causes "Token exchange failed". */
+export function calendarRedirectUri(request: Request): string {
+  if (process.env.GOOGLE_OAUTH_REDIRECT_URI) return process.env.GOOGLE_OAUTH_REDIRECT_URI;
+  const h = request.headers;
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  const proto = h.get('x-forwarded-proto') ?? new URL(request.url).protocol.replace(':', '');
+  if (host) return `${proto}://${host}/api/auth/google-calendar/callback`;
+  return new URL('/api/auth/google-calendar/callback', request.url).toString();
+}
+
 /** OAuth2 client. Pass a redirectUri for the one-time consent flow; omit it for
  *  server-to-server calls that authenticate with the stored refresh token. */
 export function getOAuthClient(redirectUri?: string) {

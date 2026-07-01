@@ -3,7 +3,7 @@
 // Vercel). One-time setup.
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getOAuthClient } from '@/lib/google-calendar';
+import { calendarRedirectUri, getOAuthClient } from '@/lib/google-calendar';
 
 export const runtime = 'nodejs';
 
@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
   if (!code) {
     return NextResponse.json({ error: 'Missing authorization code' }, { status: 400 });
   }
-  const redirectUri = new URL('/api/auth/google-calendar/callback', request.url).toString();
+  // MUST match the redirect_uri used at consent time (same helper).
+  const redirectUri = calendarRedirectUri(request);
+  console.log('[google-calendar] callback redirect_uri:', redirectUri);
   const oauth2 = getOAuthClient(redirectUri);
 
   try {
@@ -31,7 +33,22 @@ export async function GET(request: NextRequest) {
       { status: 200, headers: { 'content-type': 'text/plain' } }
     );
   } catch (err) {
-    console.error('Google OAuth token exchange failed:', err);
-    return NextResponse.json({ error: 'Token exchange failed' }, { status: 500 });
+    // Surface the actual Google error (invalid_grant, redirect_uri_mismatch, …).
+    const e = err as { message?: string; response?: { data?: unknown } };
+    const googleError = e.response?.data;
+    console.error('=================== GOOGLE TOKEN EXCHANGE FAILED ===================');
+    console.error('  redirect_uri sent :', redirectUri);
+    console.error('  message           :', e.message);
+    console.error('  google error body :', googleError ? JSON.stringify(googleError) : '(none)');
+    console.error('===================================================================');
+    return NextResponse.json(
+      {
+        error: 'Token exchange failed',
+        redirect_uri: redirectUri,
+        message: e.message,
+        google: googleError ?? null,
+      },
+      { status: 500 }
+    );
   }
 }
