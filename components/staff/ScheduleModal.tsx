@@ -76,19 +76,30 @@ export default function ScheduleModal({
     setSaving(true);
     const start = etWallToUtc(date, hour);
     const end = etWallToUtc(date, hour + 1);
-    const supabase = createClient();
+    // Writes go through a server route so the Google Calendar event can be
+    // created/updated with server-only credentials.
     const payload = {
-      job_id: job.id,
-      staff_id: staffId,
-      scheduled_start: start.toISOString(),
-      scheduled_end: end.toISOString(),
-      client_address: job.address || null,
-      status: 'scheduled',
+      jobId: job.id,
+      staffId,
+      startISO: start.toISOString(),
+      endISO: end.toISOString(),
     };
-    if (existingId) {
-      await supabase.from('appointments').update(payload).eq('id', existingId);
-    } else {
-      await supabase.from('appointments').insert(payload);
+    try {
+      if (existingId) {
+        await fetch(`/api/staff/appointments/${existingId}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch('/api/staff/appointments', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+    } catch (err) {
+      console.error('Appointment save failed:', err);
     }
     setSaving(false);
     onScheduled();

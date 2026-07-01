@@ -221,6 +221,18 @@ export default function JobDetail({
     showToast('Notes saved');
   }
 
+  async function cancelAppointment() {
+    if (!appointment) return;
+    if (!window.confirm('Cancel this appointment?')) return;
+    try {
+      await fetch(`/api/staff/appointments/${appointment.id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Cancel failed:', err);
+    }
+    showToast('Appointment cancelled');
+    router.refresh();
+  }
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
       <Link href="/staff/dashboard" style={{ fontSize: 13, color: '#C7AC90', textDecoration: 'none' }}>
@@ -243,13 +255,22 @@ export default function JobDetail({
                     With {appointment.staffName}
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setScheduleOpen(true)}
-                  style={{ background: 'none', border: 'none', color: '#C7AC90', fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 10 }}
-                >
-                  Reschedule
-                </button>
+                <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleOpen(true)}
+                    style={{ background: 'none', border: 'none', color: '#C7AC90', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                  >
+                    Reschedule
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelAppointment}
+                    style={{ background: 'none', border: 'none', color: '#C0392B', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                  >
+                    Cancel Appointment
+                  </button>
+                </div>
               </>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
