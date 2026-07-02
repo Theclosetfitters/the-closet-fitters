@@ -4,7 +4,8 @@
 import { NextResponse } from 'next/server';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
-import { isEmailConfigured, sendQuoteEmail } from '@/lib/email';
+import { isEmailConfigured, sendQuoteEmail, type EmailAttachment } from '@/lib/email';
+import { generateFloorPlanPdf } from '@/lib/generate-floor-plan-pdf';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import {
@@ -71,15 +72,33 @@ export async function POST(request: Request) {
         process.env.NEXT_PUBLIC_SITE_URL ??
         request.headers.get('origin') ??
         new URL(request.url).origin;
+
+      // Generate the floor-plan PDF once and attach it to both emails.
+      // PDF failure must never block the email send.
+      let attachments: EmailAttachment[] | undefined;
+      if (closets.length > 0) {
+        try {
+          const pdf = await generateFloorPlanPdf(
+            body.items,
+            `${contact.firstName} ${contact.lastName}`
+          );
+          attachments = [{ filename: 'closet-floor-plan.pdf', content: pdf.toString('base64') }];
+        } catch (err) {
+          console.error('floor-plan PDF generation failed', err);
+        }
+      }
+
       await sendQuoteEmail({
         to: COMPANY_EMAIL,
-        subject: `New Consultation Request — ${contact.firstName} ${contact.lastName}`,
+        subject: 'The Closet Fitters — New Consultation Request',
         html: buildCompanyConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
+        attachments,
       });
       await sendQuoteEmail({
         to: contact.email,
-        subject: 'Your consultation request has been received — The Closet Fitters',
+        subject: 'The Closet Fitters — Your Consultation Request',
         html: buildCustomerConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
+        attachments,
       });
       emailSent = true;
     } catch (err) {

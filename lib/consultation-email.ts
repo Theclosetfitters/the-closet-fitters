@@ -125,7 +125,7 @@ function shell(title: string, inner: string, baseUrl: string): string {
   return `<div style="background:#f6f1ea;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;">
       <div style="background:${COSMOS};color:${CREAM};padding:24px;text-align:center;">
-        <img src="${baseUrl}/images/logos/logo-full-transparent.png" alt="The Closet Fitters" style="height:64px;width:auto;display:block;margin:0 auto 12px;" />
+        <img src="${baseUrl}/images/logos/logo-full-transparent.png" alt="The Closet Fitters" style="height:120px;width:auto;display:block;margin:0 auto 12px;" />
         <div style="font-size:20px;font-weight:700;">${esc(title)}</div>
       </div>
       <div style="padding:22px 24px;color:${INK};">${inner}</div>
