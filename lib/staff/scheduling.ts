@@ -79,3 +79,32 @@ export function todayET(): string {
     day: '2-digit',
   }).format(new Date());
 }
+
+// The ET calendar date (YYYY-MM-DD) that a UTC instant falls on.
+export function etDateString(iso: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ET,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(iso));
+}
+
+// Shift a YYYY-MM-DD date string by n days (calendar math, TZ-agnostic).
+export function addDays(dateStr: string, n: number): string {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().slice(0, 10);
+}
+
+// "Mon, Jul 6" for a plain YYYY-MM-DD (no TZ shift).
+export function formatDateLabel(dateStr: string): string {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(Date.UTC(y, mo - 1, d, 12)));
+}

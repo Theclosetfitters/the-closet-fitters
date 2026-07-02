@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   etWallToUtc,
+  formatTimeET,
   hourLabel,
   isWeekend,
   slotHoursForDate,
@@ -11,8 +12,33 @@ import {
 } from '@/lib/staff/scheduling';
 
 const CORMORANT = 'var(--font-cormorant), Georgia, serif';
+const BUFFER_MIN = 15;
 
 export type ScheduleJob = { id: string; name: string; address: string };
+
+type DayAppt = { id: string; address: string; startISO: string; endISO: string };
+type TravelSide = {
+  travelMin: number;
+  availableMin: number;
+  neededMin: number;
+  ok: boolean;
+  time: string;
+};
+type TravelInfo = { prev: TravelSide | null; next: TravelSide | null };
+
+async function fetchTravel(origin: string, destination: string) {
+  try {
+    const res = await fetch('/api/staff/travel-time', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ origin, destination }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as { durationMinutes: number } | null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ScheduleModal({
   job,
@@ -31,17 +57,26 @@ export default function ScheduleModal({
   const [hour, setHour] = useState<number | null>(null);
   const [staffId, setStaffId] = useState(staff[0]?.id ?? '');
   const [bookedHours, setBookedHours] = useState<Set<number>>(new Set());
+  const [dayAppts, setDayAppts] = useState<DayAppt[]>([]);
+  const [travel, setTravel] = useState<TravelInfo | null>(null);
+  const [travelLoading, setTravelLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const weekend = date !== '' && isWeekend(date);
   const slots = date && !weekend ? slotHoursForDate(date) : [];
+  const hasConflict = Boolean(
+    travel && ((travel.prev && !travel.prev.ok) || (travel.next && !travel.next.ok))
+  );
 
-  // Grey out hours already taken by any staff member on the selected date.
+  // Grey out hours already taken by any staff member on the selected date, and
+  // keep the day's appointments (with addresses) for the travel-time check.
   useEffect(() => {
     let cancelled = false;
     setHour(null);
+    setTravel(null);
     if (!date || weekend) {
       setBookedHours(new Set());
+      setDayAppts([]);
       return;
     }
     (async () => {
@@ -50,29 +85,113 @@ export default function ScheduleModal({
       const dayEnd = etWallToUtc(date, 24).toISOString();
       let q = supabase
         .from('appointments')
-        .select('id, scheduled_start')
+        .select('id, client_address, scheduled_start, scheduled_end')
         .gte('scheduled_start', dayStart)
         .lt('scheduled_start', dayEnd)
         .neq('status', 'cancelled');
       if (existingId) q = q.neq('id', existingId);
       const { data } = await q;
       if (cancelled) return;
+      const rows = (data ?? []) as {
+        id: string;
+        client_address: string | null;
+        scheduled_start: string;
+        scheduled_end: string;
+      }[];
       const taken = new Set<number>();
-      for (const row of (data ?? []) as { scheduled_start: string }[]) {
+      for (const row of rows) {
         const t = new Date(row.scheduled_start).getTime();
         for (const h of slotHoursForDate(date)) {
           if (etWallToUtc(date, h).getTime() === t) taken.add(h);
         }
       }
       setBookedHours(taken);
+      setDayAppts(
+        rows.map((r) => ({
+          id: r.id,
+          address: r.client_address ?? '',
+          startISO: r.scheduled_start,
+          endISO: r.scheduled_end,
+        }))
+      );
     })();
     return () => {
       cancelled = true;
     };
   }, [date, weekend, existingId]);
 
+  // When a slot is picked, check driving time from the previous appointment and
+  // to the next appointment. Warnings only — never blocks booking.
+  useEffect(() => {
+    let cancelled = false;
+    if (hour === null || !date) {
+      setTravel(null);
+      return;
+    }
+    const slotStart = etWallToUtc(date, hour).getTime();
+    const slotEnd = etWallToUtc(date, hour + 1).getTime();
+    const newAddr = job.address;
+
+    let prev: DayAppt | null = null;
+    let next: DayAppt | null = null;
+    for (const a of dayAppts) {
+      const s = new Date(a.startISO).getTime();
+      if (s < slotStart && (!prev || s > new Date(prev.startISO).getTime())) prev = a;
+      if (s > slotStart && (!next || s < new Date(next.startISO).getTime())) next = a;
+    }
+    if (!prev && !next) {
+      setTravel(null);
+      return;
+    }
+
+    setTravelLoading(true);
+    (async () => {
+      const info: TravelInfo = { prev: null, next: null };
+      if (prev && prev.address && newAddr) {
+        const t = await fetchTravel(prev.address, newAddr);
+        if (t) {
+          const available = Math.round((slotStart - new Date(prev.endISO).getTime()) / 60000);
+          const needed = t.durationMinutes + BUFFER_MIN;
+          info.prev = {
+            travelMin: t.durationMinutes,
+            availableMin: available,
+            neededMin: needed,
+            ok: available >= needed,
+            time: formatTimeET(prev.startISO),
+          };
+        }
+      }
+      if (next && next.address && newAddr) {
+        const t = await fetchTravel(newAddr, next.address);
+        if (t) {
+          const available = Math.round((new Date(next.startISO).getTime() - slotEnd) / 60000);
+          const needed = t.durationMinutes + BUFFER_MIN;
+          info.next = {
+            travelMin: t.durationMinutes,
+            availableMin: available,
+            neededMin: needed,
+            ok: available >= needed,
+            time: formatTimeET(next.startISO),
+          };
+        }
+      }
+      if (cancelled) return;
+      setTravel(info.prev || info.next ? info : null);
+      setTravelLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hour, date, dayAppts, job.address]);
+
   async function confirm() {
     if (!date || hour === null || !staffId) return;
+    if (
+      hasConflict &&
+      !window.confirm('There may not be enough travel time between appointments. Book anyway?')
+    ) {
+      return;
+    }
     setSaving(true);
     const start = etWallToUtc(date, hour);
     const end = etWallToUtc(date, hour + 1);
@@ -187,6 +306,36 @@ export default function ScheduleModal({
                 );
               })}
             </div>
+
+            {/* Travel-time check (warnings only) */}
+            {travelLoading && (
+              <div style={{ fontSize: 12, color: '#7A6E65', marginTop: 10 }}>
+                Checking travel time…
+              </div>
+            )}
+            {!travelLoading && travel && hasConflict && (
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {travel.prev && !travel.prev.ok && (
+                  <div style={warnBox}>
+                    ⚠️ Travel warning: {travel.prev.travelMin} mins from previous appointment at{' '}
+                    {travel.prev.time}. Only {travel.prev.availableMin} mins available —{' '}
+                    {travel.prev.neededMin} mins needed including buffer.
+                  </div>
+                )}
+                {travel.next && !travel.next.ok && (
+                  <div style={warnBox}>
+                    ⚠️ Travel warning: {travel.next.travelMin} mins to next appointment at{' '}
+                    {travel.next.time}. Only {travel.next.availableMin} mins available —{' '}
+                    {travel.next.neededMin} mins needed including buffer.
+                  </div>
+                )}
+              </div>
+            )}
+            {!travelLoading && travel && !hasConflict && (
+              <div style={{ ...okBox, marginTop: 10 }}>
+                ✓ Enough travel time from/to adjacent appointments
+              </div>
+            )}
           </>
         )}
 
@@ -247,4 +396,20 @@ const inputStyle: React.CSSProperties = {
   color: '#1F333A',
   outline: 'none',
   boxSizing: 'border-box',
+};
+const warnBox: React.CSSProperties = {
+  background: '#FFF4E5',
+  border: '1px solid #F0A500',
+  borderRadius: 8,
+  padding: '12px 14px',
+  fontSize: 13,
+  color: '#A05C00',
+};
+const okBox: React.CSSProperties = {
+  background: '#EAF4EA',
+  border: '1px solid #2D7A2D',
+  borderRadius: 8,
+  padding: '12px 14px',
+  fontSize: 13,
+  color: '#2D7A2D',
 };

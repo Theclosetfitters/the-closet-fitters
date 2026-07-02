@@ -51,6 +51,10 @@ export default async function StaffLayout({
         />
         {name && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <a href="/staff/schedule" style={{ color: '#C7AC90', fontSize: 13, textDecoration: 'none' }}>
+              Today&rsquo;s Schedule
+            </a>
+            <span style={{ color: '#7A6E65', fontSize: 13 }}>|</span>
             <span style={{ color: '#EAE0D5', fontSize: 13 }}>{name}</span>
             <span style={{ color: '#7A6E65', fontSize: 13 }}>|</span>
             <StaffSignOut />

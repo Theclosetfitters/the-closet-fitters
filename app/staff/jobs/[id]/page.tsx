@@ -4,6 +4,8 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
 import { finishedHeightLabel, normalizeConfig, wallsForShape } from '@/lib/config';
+import { etDateString, etWallToUtc } from '@/lib/staff/scheduling';
+import { getTravelTime } from '@/lib/travel-time';
 import { formatCents } from '@/lib/format';
 import type { ClosetConfig } from '@/types';
 import JobDetail, {
@@ -123,6 +125,35 @@ export default async function JobDetailPage({
     notes: job.notes ?? '',
   };
 
+  // Travel time to/from adjacent appointments on the same day (server-side).
+  let travelFromPrev: number | null = null;
+  let travelToNext: number | null = null;
+  if (appointment && info.address) {
+    const day = etDateString(appointment.startISO);
+    const { data: others } = await supabase
+      .from('appointments')
+      .select('id, client_address, scheduled_start')
+      .gte('scheduled_start', etWallToUtc(day, 0).toISOString())
+      .lt('scheduled_start', etWallToUtc(day, 24).toISOString())
+      .neq('status', 'cancelled')
+      .neq('id', appointment.id);
+    const rows = (others ?? []) as { client_address: string | null; scheduled_start: string }[];
+    const thisStart = new Date(appointment.startISO).getTime();
+    let prev: (typeof rows)[number] | null = null;
+    let next: (typeof rows)[number] | null = null;
+    for (const o of rows) {
+      const s = new Date(o.scheduled_start).getTime();
+      if (s < thisStart && (!prev || s > new Date(prev.scheduled_start).getTime())) prev = o;
+      if (s > thisStart && (!next || s < new Date(next.scheduled_start).getTime())) next = o;
+    }
+    if (prev?.client_address) {
+      travelFromPrev = (await getTravelTime(prev.client_address, info.address))?.durationMinutes ?? null;
+    }
+    if (next?.client_address) {
+      travelToNext = (await getTravelTime(info.address, next.client_address))?.durationMinutes ?? null;
+    }
+  }
+
   return (
     <JobDetail
       info={info}
@@ -134,6 +165,8 @@ export default async function JobDetailPage({
       currentUser={{ id: me.id, name: me.full_name }}
       appointment={appointment}
       staff={staffList}
+      travelFromPrev={travelFromPrev}
+      travelToNext={travelToNext}
     />
   );
 }

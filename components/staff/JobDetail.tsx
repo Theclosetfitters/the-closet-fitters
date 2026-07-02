@@ -93,6 +93,8 @@ export default function JobDetail({
   currentUser,
   appointment,
   staff,
+  travelFromPrev,
+  travelToNext,
 }: {
   info: JobInfo;
   stages: StageRow[];
@@ -103,6 +105,8 @@ export default function JobDetail({
   currentUser: { id: string; name: string };
   appointment: JobAppointment | null;
   staff: { id: string; name: string }[];
+  travelFromPrev: number | null;
+  travelToNext: number | null;
 }) {
   const router = useRouter();
   const [stages, setStages] = useState<StageRow[]>(initialStages);
@@ -253,6 +257,20 @@ export default function JobDetail({
                 {appointment.staffName && (
                   <div style={{ fontSize: 13, color: '#7A6E65', marginTop: 2 }}>
                     With {appointment.staffName}
+                  </div>
+                )}
+                {(travelFromPrev !== null || travelToNext !== null) && (
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {travelFromPrev !== null && (
+                      <div style={{ fontSize: 12, color: '#7A6E65' }}>
+                        ~{travelFromPrev} mins from previous appointment
+                      </div>
+                    )}
+                    {travelToNext !== null && (
+                      <div style={{ fontSize: 12, color: '#7A6E65' }}>
+                        ~{travelToNext} mins to next appointment
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
