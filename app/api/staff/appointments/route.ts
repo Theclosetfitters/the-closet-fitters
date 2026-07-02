@@ -4,6 +4,9 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { createCalendarEvent, type CalendarAppointment } from '@/lib/google-calendar';
+import { isEmailConfigured, sendQuoteEmail } from '@/lib/email';
+import { buildAppointmentConfirmationHtml } from '@/lib/appointment-email';
+import { ET, formatTimeET } from '@/lib/staff/scheduling';
 
 export const runtime = 'nodejs';
 
@@ -86,6 +89,45 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error('Calendar event create failed (appointment still saved):', err);
+  }
+
+  // Confirmation email to the client — best-effort, never blocks the booking.
+  try {
+    if (!job.customer_email) {
+      console.warn('Appointment confirmation email skipped: job has no customer_email', jobId);
+    } else if (isEmailConfigured()) {
+      const { data: staffProfile } = await db
+        .from('staff_profiles')
+        .select('full_name')
+        .eq('id', staffId)
+        .maybeSingle();
+      const baseUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        request.headers.get('origin') ??
+        new URL(request.url).origin;
+      const dateLabel = new Intl.DateTimeFormat('en-US', {
+        timeZone: ET,
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date(startISO));
+      const timeLabel = `${formatTimeET(startISO)} — ${formatTimeET(endISO)} Eastern Time`;
+      await sendQuoteEmail({
+        to: job.customer_email,
+        subject: 'The Closet Fitters — Your Consultation is Confirmed',
+        html: buildAppointmentConfirmationHtml({
+          firstName: job.customer_first_name ?? 'there',
+          dateLabel,
+          timeLabel,
+          address: job.customer_address ?? '',
+          consultant: (staffProfile?.full_name as string) ?? 'your consultant',
+          baseUrl,
+        }),
+      });
+    }
+  } catch (err) {
+    console.error('Appointment confirmation email failed (appointment still saved):', err);
   }
 
   return NextResponse.json({ ok: true, id: appt.id });
