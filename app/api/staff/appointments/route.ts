@@ -1,8 +1,8 @@
-// Create an appointment (staff-only). Inserts into Supabase, then best-effort
-// creates a Google Calendar event and stores its id. A Calendar failure never
-// blocks the booking.
+// Create an appointment (staff-only). Auth is checked with the cookie client,
+// but the writes use the SERVICE ROLE client so the insert can't be silently
+// rejected by RLS. A Calendar failure never blocks the booking.
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { createCalendarEvent, type CalendarAppointment } from '@/lib/google-calendar';
 
 export const runtime = 'nodejs';
@@ -17,12 +17,13 @@ type JobRow = {
 };
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  // Authenticate + authorize with the user's session (cookie client).
+  const auth = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data: me } = await supabase
+  const { data: me } = await auth
     .from('staff_profiles')
     .select('id')
     .eq('id', user.id)
@@ -35,14 +36,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  const { data: job } = await supabase
+  // Trusted writes bypass RLS via the service role client.
+  const db = createServiceRoleClient();
+
+  const { data: job } = await db
     .from('jobs')
     .select('id, customer_first_name, customer_last_name, customer_email, customer_phone, customer_address')
     .eq('id', jobId)
     .maybeSingle<JobRow>();
   if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
 
-  const { data: appt, error } = await supabase
+  const { data: appt, error } = await db
     .from('appointments')
     .insert({
       job_id: jobId,
@@ -52,16 +56,18 @@ export async function POST(request: Request) {
       client_address: job.customer_address ?? null,
       status: 'scheduled',
     })
-    .select('id')
+    .select()
     .single();
   if (error || !appt) {
-    console.error('Appointment insert failed:', error);
-    return NextResponse.json({ error: 'Could not create appointment' }, { status: 500 });
+    console.error('Appointment insert error:', error);
+    return NextResponse.json(
+      { error: 'Could not create appointment', details: error },
+      { status: 500 }
+    );
   }
 
-  // Move the job to 'scheduled' explicitly (in case the DB trigger from 0006 is
-  // not present). Only touches jobs still marked 'new'.
-  await supabase.from('jobs').update({ status: 'scheduled' }).eq('id', jobId).eq('status', 'new');
+  // Move the job to 'scheduled' (only if still 'new').
+  await db.from('jobs').update({ status: 'scheduled' }).eq('id', jobId).eq('status', 'new');
 
   // Best-effort Google Calendar event — never blocks the booking.
   try {
@@ -76,10 +82,7 @@ export async function POST(request: Request) {
     };
     const eventId = await createCalendarEvent(appointment);
     if (eventId) {
-      await supabase
-        .from('appointments')
-        .update({ google_calendar_event_id: eventId })
-        .eq('id', appt.id);
+      await db.from('appointments').update({ google_calendar_event_id: eventId }).eq('id', appt.id);
     }
   } catch (err) {
     console.error('Calendar event create failed (appointment still saved):', err);
