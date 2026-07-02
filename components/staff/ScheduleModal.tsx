@@ -56,6 +56,7 @@ export default function ScheduleModal({
   const [date, setDate] = useState('');
   const [hour, setHour] = useState<number | null>(null);
   const [staffId, setStaffId] = useState(staff[0]?.id ?? '');
+  const [error, setError] = useState<string | null>(null);
   const [bookedHours, setBookedHours] = useState<Set<number>>(new Set());
   const [dayAppts, setDayAppts] = useState<DayAppt[]>([]);
   const [travel, setTravel] = useState<TravelInfo | null>(null);
@@ -67,6 +68,12 @@ export default function ScheduleModal({
   const hasConflict = Boolean(
     travel && ((travel.prev && !travel.prev.ok) || (travel.next && !travel.next.ok))
   );
+
+  // Keep a staff member selected once the list is available (guards against the
+  // button being permanently disabled because staffId never got set).
+  useEffect(() => {
+    if (!staffId && staff.length > 0) setStaffId(staff[0].id);
+  }, [staff, staffId]);
 
   // Grey out hours already taken by any staff member on the selected date, and
   // keep the day's appointments (with addresses) for the travel-time check.
@@ -184,8 +191,13 @@ export default function ScheduleModal({
     };
   }, [hour, date, dayAppts, job.address]);
 
-  async function confirm() {
-    if (!date || hour === null || !staffId) return;
+  async function handleConfirm() {
+    console.log('[ScheduleModal] Confirm clicked', { date, hour, staffId, saving });
+    if (!date || hour === null || !staffId) {
+      setError('Please pick a date, a time, and a staff member.');
+      return;
+    }
+    setError(null);
     if (
       hasConflict &&
       !window.confirm('There may not be enough travel time between appointments. Book anyway?')
@@ -354,13 +366,17 @@ export default function ScheduleModal({
           ))}
         </select>
 
+        {error && (
+          <div style={{ fontSize: 13, color: '#C0392B', marginTop: 14 }}>{error}</div>
+        )}
+
         <button
           type="button"
-          disabled={!date || hour === null || !staffId || saving}
-          onClick={confirm}
+          disabled={saving}
+          onClick={handleConfirm}
           style={{
             width: '100%',
-            marginTop: 20,
+            marginTop: error ? 10 : 20,
             background: '#1F333A',
             color: '#EAE0D5',
             border: 'none',
@@ -368,8 +384,8 @@ export default function ScheduleModal({
             padding: '12px 24px',
             fontSize: 14,
             fontWeight: 500,
-            cursor: !date || hour === null || !staffId || saving ? 'default' : 'pointer',
-            opacity: !date || hour === null || !staffId || saving ? 0.6 : 1,
+            cursor: saving ? 'default' : 'pointer',
+            opacity: saving ? 0.6 : !date || hour === null || !staffId ? 0.75 : 1,
           }}
         >
           {saving ? 'Scheduling…' : 'Confirm Appointment'}
