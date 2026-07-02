@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import StaffSignOut from '@/components/staff/StaffSignOut';
+import Logo from '@/components/Logo';
 
 export const metadata: Metadata = {
   title: 'Staff Portal · The Closet Fitters',
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 // Staff portal shell — no public nav/footer (the root layout drops the public
 // nav for /staff via the proxy's x-staff-portal header). Cosmos top bar with
-// the monogram; the employee name + Sign Out show only when signed in.
+// the brand wordmark; the employee name + Sign Out show only when signed in.
 export default async function StaffLayout({
   children,
 }: {
@@ -43,12 +44,7 @@ export default async function StaffLayout({
           justifyContent: 'space-between',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/logos/monogram.svg"
-          alt="The Closet Fitters"
-          style={{ height: 36, filter: 'brightness(0) invert(1)' }}
-        />
+        <Logo tone="light" />
         {name && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <a href="/staff/schedule" style={{ color: '#C7AC90', fontSize: 13, textDecoration: 'none' }}>
