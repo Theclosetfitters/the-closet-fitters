@@ -14,6 +14,13 @@ export async function proxy(request: NextRequest) {
     hostname.startsWith('staff.') || hostname === 'staff.theclosetfitters.com';
   const path = request.nextUrl.pathname;
 
+  // API routes must never be rewritten or redirected by the portal logic —
+  // otherwise (e.g. on the staff.* subdomain) /api/* gets rewritten to
+  // /staff/api/* or bounced to the login page and returns HTML instead of JSON.
+  if (path.startsWith('/api')) {
+    return NextResponse.next();
+  }
+
   // The portal is reached two ways: the staff.* subdomain (any path) or, for
   // local dev, a direct /staff/* path.
   const onStaff = isSubdomain || path.startsWith('/staff');
