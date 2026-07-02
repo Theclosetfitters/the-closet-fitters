@@ -171,7 +171,7 @@ export default function CartView({
               styleLabel(cfg.hardwareStyleId),
               colorLabel(cfg.hardwareColorId),
               `${colorLabel(cfg.rodColorId)} rod`,
-              `Top cap · ${finishedHeightLabel(catalog, cfg)}`,
+              `Height · ${finishedHeightLabel(catalog, cfg)}`,
             ];
 
             return (
