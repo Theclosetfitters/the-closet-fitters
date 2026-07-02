@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ScheduleModal, { type ScheduleJob } from '@/components/staff/ScheduleModal';
+import { createClient } from '@/lib/supabase/client';
 import { formatDateET, formatTimeET } from '@/lib/staff/scheduling';
 
 export type DashJob = {
@@ -42,7 +43,7 @@ const TABS = [
 const CORMORANT = 'var(--font-cormorant), Georgia, serif';
 
 export default function JobsDashboard({
-  jobs,
+  jobs: jobsProp,
   today,
   staff,
 }: {
@@ -54,11 +55,50 @@ export default function JobsDashboard({
   const [tab, setTab] = useState('all');
   const [scheduleJob, setScheduleJob] = useState<ScheduleJob | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const filtered = tab === 'all' ? jobs : jobs.filter((j) => cfg(j.status).group === tab);
+  // Local copy so a booking reflects immediately; re-synced whenever the server
+  // sends fresh props (e.g. after router.refresh()).
+  const [jobs, setJobs] = useState<DashJob[]>(jobsProp);
+  useEffect(() => setJobs(jobsProp), [jobsProp]);
+
+  const filtered =
+    tab === 'all'
+      ? jobs
+      : jobs.filter((j) =>
+          tab === 'scheduled'
+            ? cfg(j.status).group === 'scheduled' || j.appointment != null
+            : cfg(j.status).group === tab
+        );
 
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  }
+
+  // After a booking, re-read that job's appointment and patch local state so the
+  // card updates without waiting on the route refresh.
+  async function refreshBookedJob(jobId: string) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('appointments')
+      .select('scheduled_start, staff_id, status')
+      .eq('job_id', jobId)
+      .neq('status', 'cancelled')
+      .order('scheduled_start', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return;
+    const staffName = staff.find((s) => s.id === data.staff_id)?.name ?? '';
+    setJobs((prev) =>
+      prev.map((j) =>
+        j.id === jobId
+          ? {
+              ...j,
+              appointment: { startISO: data.scheduled_start as string, staffName },
+              status: j.status === 'new' ? 'scheduled' : j.status,
+            }
+          : j
+      )
+    );
   }
 
   return (
@@ -213,8 +253,11 @@ export default function JobsDashboard({
           staff={staff}
           onClose={() => setScheduleJob(null)}
           onScheduled={() => {
+            if (!scheduleJob) return;
+            const jobId = scheduleJob.id;
             setScheduleJob(null);
             showToast('Appointment scheduled ✓');
+            refreshBookedJob(jobId);
             router.refresh();
           }}
         />

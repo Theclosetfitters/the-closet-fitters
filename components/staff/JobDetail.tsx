@@ -237,6 +237,12 @@ export default function JobDetail({
     router.refresh();
   }
 
+  // Stage changes auto-save on checkbox click, so this only confirms + returns.
+  function updateAndReturn() {
+    showToast('Job updated ✓');
+    setTimeout(() => router.push('/staff/dashboard'), 1000);
+  }
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
       <Link href="/staff/dashboard" style={{ fontSize: 13, color: '#C7AC90', textDecoration: 'none' }}>
@@ -425,6 +431,25 @@ export default function JobDetail({
                 </div>
               );
             })}
+
+            <button
+              type="button"
+              onClick={updateAndReturn}
+              style={{
+                width: '100%',
+                marginTop: 20,
+                background: '#1F333A',
+                color: '#EAE0D5',
+                border: 'none',
+                borderRadius: 9999,
+                padding: 14,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              Update &amp; Return
+            </button>
           </div>
         </div>
 
