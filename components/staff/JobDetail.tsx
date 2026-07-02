@@ -40,19 +40,18 @@ type Photo = { id: string; path: string; url: string };
 
 const STAGES = [
   { key: 'deposit_received', label: 'Signed Invoice & Deposit Received' },
-  { key: 'cnc_sent', label: '2D Drawings Sent to CNC Facility' },
   { key: 'cut_edge_banded', label: 'Cut & Edge Banded' },
   { key: 'assembled', label: 'Assembled' },
   { key: 'delivered', label: 'Delivered' },
   { key: 'installed', label: 'Installed' },
 ];
+const STAGE_KEYS = new Set(STAGES.map((s) => s.key));
 const STATUS_FOR: Record<string, string> = {
   deposit_received: 'in_production',
-  cnc_sent: 'in_production',
   cut_edge_banded: 'in_production',
   assembled: 'assembled',
   delivered: 'delivered',
-  installed: 'installed',
+  installed: 'complete',
 };
 function statusFromCompleted(done: Set<string>): string {
   let latest = -1;
@@ -142,7 +141,7 @@ export default function JobDetail({
     };
   }, [initialPhotos]);
 
-  const completedCount = stages.filter((s) => s.completed).length;
+  const completedCount = stages.filter((s) => s.completed && STAGE_KEYS.has(s.stage)).length;
   const isDone = (key: string) => stages.find((s) => s.stage === key)?.completed ?? false;
 
   async function toggleStage(key: string) {
@@ -185,8 +184,13 @@ export default function JobDetail({
     await supabase.from('jobs').update({ status }).eq('id', info.id);
 
     if (completing) {
-      const idx = STAGES.findIndex((s) => s.key === key);
-      if (idx === 0 || isDone(STAGES[idx - 1].key)) showToast('Stage marked complete ✓');
+      if (key === 'installed') {
+        showToast('Job complete! ✓');
+        setTimeout(() => router.push('/staff/dashboard'), 2000);
+      } else {
+        const idx = STAGES.findIndex((s) => s.key === key);
+        if (idx === 0 || isDone(STAGES[idx - 1].key)) showToast('Stage marked complete ✓');
+      }
     } else {
       showToast('Stage unchecked');
     }
@@ -324,10 +328,10 @@ export default function JobDetail({
             <div style={{ ...sectionLabel, marginBottom: 20 }}>Job Progress</div>
 
             <div style={{ fontSize: 13, color: '#7A6E65', marginBottom: 8 }}>
-              {completedCount} of 6 stages complete
+              {completedCount} of {STAGES.length} stages complete
             </div>
             <div style={{ background: '#F0EBE4', height: 6, borderRadius: 9999, overflow: 'hidden', marginBottom: 24 }}>
-              <div style={{ background: '#C7AC90', height: 6, borderRadius: 9999, width: `${Math.round((completedCount / 6) * 100)}%` }} />
+              <div style={{ background: '#C7AC90', height: 6, borderRadius: 9999, width: `${Math.round((completedCount / STAGES.length) * 100)}%` }} />
             </div>
 
             {STAGES.map((st, i) => {

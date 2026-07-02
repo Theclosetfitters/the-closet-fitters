@@ -111,7 +111,6 @@ export async function POST(request: Request) {
 
       const stages = [
         'deposit_received',
-        'cnc_sent',
         'cut_edge_banded',
         'assembled',
         'delivered',

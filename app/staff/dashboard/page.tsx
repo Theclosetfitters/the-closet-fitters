@@ -14,7 +14,7 @@ type JobRow = {
   status: string | null;
   created_at: string | null;
 };
-type StageRow = { job_id: string; completed: boolean | null };
+type StageRow = { job_id: string; stage: string | null; completed: boolean | null };
 type ApptRow = {
   job_id: string;
   staff_id: string | null;
@@ -43,7 +43,7 @@ export default async function StaffDashboardPage() {
     .from('jobs')
     .select('id, customer_first_name, customer_last_name, customer_address, status, created_at')
     .order('created_at', { ascending: false });
-  const { data: stagesRaw } = await supabase.from('job_stages').select('job_id, completed');
+  const { data: stagesRaw } = await supabase.from('job_stages').select('job_id, stage, completed');
   const { data: apptsRaw } = await supabase
     .from('appointments')
     .select('job_id, staff_id, scheduled_start, status')
@@ -53,7 +53,9 @@ export default async function StaffDashboardPage() {
 
   const completedByJob = new Map<string, number>();
   for (const s of (stagesRaw ?? []) as StageRow[]) {
-    if (s.completed) completedByJob.set(s.job_id, (completedByJob.get(s.job_id) ?? 0) + 1);
+    if (s.completed && s.stage !== 'cnc_sent') {
+      completedByJob.set(s.job_id, (completedByJob.get(s.job_id) ?? 0) + 1);
+    }
   }
 
   const staffNames = new Map<string, string>();

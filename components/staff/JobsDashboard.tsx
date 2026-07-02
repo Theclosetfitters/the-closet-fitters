@@ -37,8 +37,11 @@ const TABS = [
   { key: 'new', label: 'New' },
   { key: 'scheduled', label: 'Scheduled' },
   { key: 'in_progress', label: 'In Progress' },
-  { key: 'complete', label: 'Complete' },
+  { key: 'completed', label: 'Completed' },
 ];
+
+// Stages shown/counted in the tracker (cnc_sent removed).
+const STAGE_COUNT = 5;
 
 const CORMORANT = 'var(--font-cormorant), Georgia, serif';
 
@@ -60,18 +63,41 @@ export default function JobsDashboard({
   const [jobs, setJobs] = useState<DashJob[]>(jobsProp);
   useEffect(() => setJobs(jobsProp), [jobsProp]);
 
+  // Completed jobs (status 'complete') live only in the Completed tab; every
+  // other tab (including All) excludes them.
+  const isComplete = (j: DashJob) => j.status === 'complete';
   const filtered =
-    tab === 'all'
-      ? jobs
-      : jobs.filter((j) =>
-          tab === 'scheduled'
-            ? cfg(j.status).group === 'scheduled' || j.appointment != null
-            : cfg(j.status).group === tab
-        );
+    tab === 'completed'
+      ? jobs.filter(isComplete)
+      : tab === 'all'
+        ? jobs.filter((j) => !isComplete(j))
+        : jobs.filter(
+            (j) =>
+              !isComplete(j) &&
+              (tab === 'scheduled'
+                ? cfg(j.status).group === 'scheduled' || j.appointment != null
+                : cfg(j.status).group === tab)
+          );
 
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  }
+
+  async function deleteJob(id: string) {
+    if (!window.confirm('Are you sure you want to delete this job? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/staff/jobs/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        showToast('Could not delete job');
+        return;
+      }
+    } catch {
+      showToast('Could not delete job');
+      return;
+    }
+    setJobs((prev) => prev.filter((j) => j.id !== id));
+    showToast('Job deleted');
   }
 
   // After a booking, re-fetch the whole jobs list from Supabase and replace
@@ -83,7 +109,7 @@ export default function JobsDashboard({
         .from('jobs')
         .select('id, customer_first_name, customer_last_name, customer_address, status, created_at')
         .order('created_at', { ascending: false }),
-      supabase.from('job_stages').select('job_id, completed'),
+      supabase.from('job_stages').select('job_id, stage, completed'),
       supabase
         .from('appointments')
         .select('job_id, staff_id, scheduled_start, status')
@@ -98,7 +124,11 @@ export default function JobsDashboard({
       status: string | null;
       created_at: string | null;
     }[];
-    const stagesRaw = (stagesRes.data ?? []) as { job_id: string; completed: boolean | null }[];
+    const stagesRaw = (stagesRes.data ?? []) as {
+      job_id: string;
+      stage: string | null;
+      completed: boolean | null;
+    }[];
     const apptsRaw = (apptsRes.data ?? []) as {
       job_id: string;
       staff_id: string | null;
@@ -107,7 +137,9 @@ export default function JobsDashboard({
 
     const completedByJob = new Map<string, number>();
     for (const s of stagesRaw) {
-      if (s.completed) completedByJob.set(s.job_id, (completedByJob.get(s.job_id) ?? 0) + 1);
+      if (s.completed && s.stage !== 'cnc_sent') {
+        completedByJob.set(s.job_id, (completedByJob.get(s.job_id) ?? 0) + 1);
+      }
     }
     const apptByJob = new Map<string, { startISO: string; staffName: string }>();
     for (const a of apptsRaw) {
@@ -268,10 +300,29 @@ export default function JobsDashboard({
                         background: '#C7AC90',
                         height: 4,
                         borderRadius: 9999,
-                        width: `${Math.round((j.completedStages / 6) * 100)}%`,
+                        width: `${Math.round((j.completedStages / STAGE_COUNT) * 100)}%`,
                       }}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      deleteJob(j.id);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#C0392B',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginTop: 4,
+                    }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </Link>
