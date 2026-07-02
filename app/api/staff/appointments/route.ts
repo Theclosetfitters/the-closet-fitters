@@ -59,6 +59,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Could not create appointment' }, { status: 500 });
   }
 
+  // Move the job to 'scheduled' explicitly (in case the DB trigger from 0006 is
+  // not present). Only touches jobs still marked 'new'.
+  await supabase.from('jobs').update({ status: 'scheduled' }).eq('id', jobId).eq('status', 'new');
+
   // Best-effort Google Calendar event — never blocks the booking.
   try {
     const appointment: CalendarAppointment = {

@@ -47,7 +47,7 @@ export default async function StaffDashboardPage() {
   const { data: apptsRaw } = await supabase
     .from('appointments')
     .select('job_id, staff_id, scheduled_start, status')
-    .neq('status', 'cancelled')
+    .eq('status', 'scheduled')
     .order('scheduled_start', { ascending: true });
   const { data: staffRaw } = await supabase.from('staff_profiles').select('id, full_name');
 
@@ -62,7 +62,7 @@ export default async function StaffDashboardPage() {
     return { id: s.id, name: s.full_name };
   });
 
-  // One appointment per job (earliest upcoming non-cancelled).
+  // One scheduled appointment per job (earliest upcoming).
   const apptByJob = new Map<string, { startISO: string; staffName: string }>();
   for (const a of (apptsRaw ?? []) as ApptRow[]) {
     if (!apptByJob.has(a.job_id)) {

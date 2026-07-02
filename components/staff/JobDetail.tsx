@@ -448,7 +448,7 @@ export default function JobDetail({
                 cursor: 'pointer',
               }}
             >
-              Update &amp; Return
+              Update
             </button>
           </div>
         </div>

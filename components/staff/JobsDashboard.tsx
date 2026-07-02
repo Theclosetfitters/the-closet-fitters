@@ -74,30 +74,62 @@ export default function JobsDashboard({
     setTimeout(() => setToast(null), 3000);
   }
 
-  // After a booking, re-read that job's appointment and patch local state so the
-  // card updates without waiting on the route refresh.
-  async function refreshBookedJob(jobId: string) {
+  // After a booking, re-fetch the whole jobs list from Supabase and replace
+  // local state so the card, pill, and Scheduled tab reflect the DB exactly.
+  async function refetchJobs() {
     const supabase = createClient();
-    const { data } = await supabase
-      .from('appointments')
-      .select('scheduled_start, staff_id, status')
-      .eq('job_id', jobId)
-      .neq('status', 'cancelled')
-      .order('scheduled_start', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (!data) return;
-    const staffName = staff.find((s) => s.id === data.staff_id)?.name ?? '';
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === jobId
-          ? {
-              ...j,
-              appointment: { startISO: data.scheduled_start as string, staffName },
-              status: j.status === 'new' ? 'scheduled' : j.status,
-            }
-          : j
-      )
+    const [jobsRes, stagesRes, apptsRes] = await Promise.all([
+      supabase
+        .from('jobs')
+        .select('id, customer_first_name, customer_last_name, customer_address, status, created_at')
+        .order('created_at', { ascending: false }),
+      supabase.from('job_stages').select('job_id, completed'),
+      supabase
+        .from('appointments')
+        .select('job_id, staff_id, scheduled_start, status')
+        .eq('status', 'scheduled')
+        .order('scheduled_start', { ascending: true }),
+    ]);
+    const jobsRaw = (jobsRes.data ?? []) as {
+      id: string;
+      customer_first_name: string | null;
+      customer_last_name: string | null;
+      customer_address: string | null;
+      status: string | null;
+      created_at: string | null;
+    }[];
+    const stagesRaw = (stagesRes.data ?? []) as { job_id: string; completed: boolean | null }[];
+    const apptsRaw = (apptsRes.data ?? []) as {
+      job_id: string;
+      staff_id: string | null;
+      scheduled_start: string;
+    }[];
+
+    const completedByJob = new Map<string, number>();
+    for (const s of stagesRaw) {
+      if (s.completed) completedByJob.set(s.job_id, (completedByJob.get(s.job_id) ?? 0) + 1);
+    }
+    const apptByJob = new Map<string, { startISO: string; staffName: string }>();
+    for (const a of apptsRaw) {
+      if (!apptByJob.has(a.job_id)) {
+        apptByJob.set(a.job_id, {
+          startISO: a.scheduled_start,
+          staffName: staff.find((s) => s.id === a.staff_id)?.name ?? '',
+        });
+      }
+    }
+
+    const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    setJobs(
+      jobsRaw.map((j) => ({
+        id: j.id,
+        name: `${j.customer_first_name ?? ''} ${j.customer_last_name ?? ''}`.trim() || 'Unknown',
+        address: j.customer_address ?? '',
+        status: j.status ?? 'new',
+        createdLabel: j.created_at ? fmt.format(new Date(j.created_at)) : '',
+        completedStages: completedByJob.get(j.id) ?? 0,
+        appointment: apptByJob.get(j.id) ?? null,
+      }))
     );
   }
 
@@ -253,11 +285,9 @@ export default function JobsDashboard({
           staff={staff}
           onClose={() => setScheduleJob(null)}
           onScheduled={() => {
-            if (!scheduleJob) return;
-            const jobId = scheduleJob.id;
             setScheduleJob(null);
             showToast('Appointment scheduled ✓');
-            refreshBookedJob(jobId);
+            refetchJobs();
             router.refresh();
           }}
         />
