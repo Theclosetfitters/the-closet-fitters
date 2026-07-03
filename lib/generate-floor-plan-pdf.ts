@@ -65,12 +65,12 @@ export async function generateFloorPlanPdf(closetConfig: unknown, customerName: 
     new Date()
   );
 
-  doc.rect(0, 0, pageW, 160).fill(COSMOS);
+  doc.rect(0, 0, pageW, 220).fill(COSMOS);
   // PDFKit can't render SVG — convert the hanger to a PNG buffer (best-effort).
   // Never throw: the PDF must still generate if the logo can't be produced.
   try {
     const png = Buffer.from(HANGER_PNG_BASE64, 'base64');
-    doc.image(png, pageW / 2 - 60, 15, { width: 120, height: 120 });
+    doc.image(png, pageW / 2 - 250, -30, { width: 500, height: 500 });
   } catch (err) {
     console.error('hanger logo skipped:', err);
   }
@@ -78,16 +78,16 @@ export async function generateFloorPlanPdf(closetConfig: unknown, customerName: 
     .fillColor(TAN)
     .font('Helvetica')
     .fontSize(9)
-    .text('THE', 0, 78, { width: pageW, align: 'center', characterSpacing: 5 });
+    .text('THE', 0, 150, { width: pageW, align: 'center', characterSpacing: 5 });
   doc
     .fillColor(CREAM)
     .font('Helvetica')
     .fontSize(26)
-    .text('ClosetFitters', 0, 100, { width: pageW, align: 'center' });
-  doc.rect(0, 160, pageW, 3).fill(TAN);
+    .text('ClosetFitters', 0, 178, { width: pageW, align: 'center' });
+  doc.rect(0, 220, pageW, 3).fill(TAN);
 
   // Subtitle below the branded header.
-  doc.fillColor(MUTED).font('Helvetica').fontSize(12).text(`Floor Plan — ${shapeLabel} Closet`, left, 176, {
+  doc.fillColor(MUTED).font('Helvetica').fontSize(12).text(`Floor Plan — ${shapeLabel} Closet`, left, 236, {
     width: contentW,
     align: 'center',
   });
