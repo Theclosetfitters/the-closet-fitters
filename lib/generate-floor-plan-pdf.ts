@@ -12,6 +12,7 @@ import type { ClosetConfig, WallId } from '@/types';
 
 const COSMOS = '#1F333A';
 const TAN = '#C7AC90';
+const CREAM = '#EAE0D5';
 const MUTED = '#7A6E65';
 const INK = '#231F20';
 const STROKE = '#3f3f46';
@@ -37,6 +38,32 @@ const WALL_NAMES: Record<string, Record<WallId, string>> = {
 };
 const wallName = (shape: string, w: WallId) => (WALL_NAMES[shape] ?? WALL_NAMES.straight)[w];
 
+// Returns a PNG buffer of the hanger logo, or null if it can't be produced.
+// Prefers an existing PNG, else converts an SVG via sharp. Never throws.
+async function hangerPng(): Promise<Buffer | null> {
+  try {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const dir = path.join(process.cwd(), 'public', 'images', 'logos');
+
+    const pngPath = path.join(dir, 'hanger.png');
+    if (fs.existsSync(pngPath)) return fs.readFileSync(pngPath);
+
+    const svgPath = [path.join(dir, 'hanger-transparent.svg'), path.join(dir, 'hanger.svg')].find((p) =>
+      fs.existsSync(p)
+    );
+    if (!svgPath) return null;
+
+    const sharp = (await import('sharp')).default;
+    return await sharp(fs.readFileSync(svgPath))
+      .resize(240, 240, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+  } catch {
+    return null;
+  }
+}
+
 type Doc = InstanceType<typeof PDFDocument>;
 type Run = { title: string; sections: ClosetConfig['sections'] };
 
@@ -50,26 +77,42 @@ export async function generateFloorPlanPdf(closetConfig: unknown, customerName: 
 
   const left = doc.page.margins.left;
   const contentW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const pageW = doc.page.width;
 
-  // ---- Header --------------------------------------------------------------
+  // ---- Header (branded Cosmos band + hanger logo) --------------------------
   const shapeLabel = label(catalog.shapes, cfg.shape);
   const dateStr = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(
     new Date()
   );
-  doc.fillColor(COSMOS).font('Helvetica-Bold').fontSize(18).text('The Closet Fitters', left, doc.y, {
-    width: contentW,
-    align: 'center',
-  });
-  doc.moveDown(0.3);
-  doc.fillColor(MUTED).font('Helvetica').fontSize(12).text(`Floor Plan — ${shapeLabel} Closet`, {
+
+  doc.rect(0, 0, pageW, 160).fill(COSMOS);
+  // PDFKit can't render SVG — convert the hanger to a PNG buffer (best-effort).
+  // Never throw: the PDF must still generate if the logo can't be produced.
+  try {
+    const png = await hangerPng();
+    if (png) doc.image(png, pageW / 2 - 60, 15, { width: 120, height: 120 });
+  } catch (err) {
+    console.error('hanger logo skipped:', err);
+  }
+  doc
+    .fillColor(TAN)
+    .font('Helvetica')
+    .fontSize(9)
+    .text('THE', 0, 78, { width: pageW, align: 'center', characterSpacing: 5 });
+  doc
+    .fillColor(CREAM)
+    .font('Helvetica')
+    .fontSize(26)
+    .text('ClosetFitters', 0, 100, { width: pageW, align: 'center' });
+  doc.rect(0, 160, pageW, 3).fill(TAN);
+
+  // Subtitle below the branded header.
+  doc.fillColor(MUTED).font('Helvetica').fontSize(12).text(`Floor Plan — ${shapeLabel} Closet`, left, 176, {
     width: contentW,
     align: 'center',
   });
   doc.moveDown(0.15);
   doc.fillColor(MUTED).fontSize(10).text(`${customerName} · ${dateStr}`, { width: contentW, align: 'center' });
-  doc.moveDown(0.5);
-  const dividerY = doc.y;
-  doc.moveTo(left, dividerY).lineTo(left + contentW, dividerY).lineWidth(1).strokeColor(TAN).stroke();
   doc.moveDown(1);
 
   // ---- Pill-tag row (matches the cart hardware pills) ----------------------
