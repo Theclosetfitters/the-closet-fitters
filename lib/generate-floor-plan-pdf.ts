@@ -49,9 +49,9 @@ async function hangerPng(): Promise<Buffer | null> {
     const pngPath = path.join(dir, 'hanger.png');
     if (fs.existsSync(pngPath)) return fs.readFileSync(pngPath);
 
-    const svgPath = [path.join(dir, 'hanger-transparent.svg'), path.join(dir, 'hanger.svg')].find((p) =>
-      fs.existsSync(p)
-    );
+    // Absolute (Vercel-safe) path to the hanger SVG; fall back to hanger.svg.
+    const primary = path.join(process.cwd(), 'public', 'images', 'logos', 'hanger-transparent.svg');
+    const svgPath = [primary, path.join(dir, 'hanger.svg')].find((p) => fs.existsSync(p));
     if (!svgPath) return null;
 
     const sharp = (await import('sharp')).default;
@@ -68,6 +68,7 @@ type Doc = InstanceType<typeof PDFDocument>;
 type Run = { title: string; sections: ClosetConfig['sections'] };
 
 export async function generateFloorPlanPdf(closetConfig: unknown, customerName: string): Promise<Buffer> {
+  console.log('[PDF] Generating with new branded header');
   const cfg: ClosetConfig = normalizeConfig(catalog, (extractConfig(closetConfig) ?? {}) as ClosetConfig);
 
   const doc = new PDFDocument({ size: 'LETTER', margins: { top: 60, bottom: 60, left: 60, right: 60 } });
