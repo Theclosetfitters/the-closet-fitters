@@ -1,8 +1,20 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import type { Catalog, SectionConfig } from '@/types';
 import { formatCents, formatInches } from '@/lib/format';
 import { maxWidthFor } from '@/lib/config';
+
+// Accept decimal inches ("24", "18.5") or feet+inches ("2'0\"", "1'6\"").
+function parseFeetInches(val: string): number {
+  const feetMatch = val.match(/(\d+)'\s*(\d+)?/);
+  if (feetMatch) {
+    const feet = parseInt(feetMatch[1]) || 0;
+    const inches = parseInt(feetMatch[2]) || 0;
+    return feet * 12 + inches;
+  }
+  return parseFloat(val);
+}
 
 interface Props {
   catalog: Catalog;
@@ -29,6 +41,48 @@ export default function SectionRow({
   const max = maxWidthFor(catalog, section.interior);
   const min = catalog.constraints.minWidthIn;
   const sectionTotal = interior.priceCents;
+
+  // --- Inline width editing (double-click / double-tap the width label) ----
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const skipCommit = useRef(false); // guards Escape/Enter from an extra blur commit
+  const lastTap = useRef(0);
+
+  const startEditing = () => {
+    skipCommit.current = false;
+    setInputValue(String(section.widthIn));
+    setEditing(true);
+  };
+  const doCommit = () => {
+    const parsed = parseFeetInches(inputValue);
+    // Reject NaN / out of range (12"–60") — revert to the original value.
+    if (!isNaN(parsed) && parsed >= 12 && parsed <= 60) {
+      // Round to the nearest 0.5"; updateSection re-clamps to this bay's range.
+      onChange(section.id, { widthIn: Math.round(parsed * 2) / 2 });
+    }
+  };
+  const commitAndClose = () => {
+    doCommit();
+    skipCommit.current = true;
+    setEditing(false);
+  };
+  const cancelEdit = () => {
+    skipCommit.current = true;
+    setEditing(false);
+  };
+  const onBlurCommit = () => {
+    if (skipCommit.current) {
+      skipCommit.current = false;
+      return;
+    }
+    doCommit();
+    setEditing(false);
+  };
+  const handleTouchStart = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) startEditing();
+    lastTap.current = now;
+  };
 
   return (
     <div
@@ -71,9 +125,45 @@ export default function SectionRow({
       {/* Width */}
       <div className="mt-3 flex items-center justify-between text-xs">
         <span className="text-muted">Width</span>
-        <span className="font-medium tabular-nums text-ink">
-          {formatInches(section.widthIn)}
-        </span>
+        {editing ? (
+          <input
+            data-testid={`section-width-input-${index}`}
+            type="text"
+            inputMode="text"
+            value={inputValue}
+            autoFocus
+            onChange={(e) => setInputValue(e.target.value)}
+            onBlur={onBlurCommit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitAndClose();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit();
+              }
+            }}
+            aria-label="Bay width in inches"
+            className="font-medium tabular-nums text-ink"
+            style={{
+              width: 60,
+              textAlign: 'center',
+              border: 'none',
+              borderBottom: '1px solid #C7AC90',
+              background: 'transparent',
+              outline: 'none',
+            }}
+          />
+        ) : (
+          <span
+            onDoubleClick={startEditing}
+            onTouchStart={handleTouchStart}
+            title="Double-click to edit width"
+            className="cursor-text font-medium tabular-nums text-ink underline-offset-2 decoration-dotted hover:underline"
+          >
+            {formatInches(section.widthIn)}
+          </span>
+        )}
       </div>
       <input
         data-testid={`section-width-${index}`}
