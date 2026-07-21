@@ -5,15 +5,34 @@ import type { Catalog, SectionConfig } from '@/types';
 import { formatCents, formatInches } from '@/lib/format';
 import { maxWidthFor } from '@/lib/config';
 
-// Accept decimal inches ("24", "18.5") or feet+inches ("2'0\"", "1'6\"").
-function parseFeetInches(val: string): number {
-  const feetMatch = val.match(/(\d+)'\s*(\d+)?/);
+// Parse a width entry to inches. Accepts whole/decimal inches ("24", "18.5"),
+// inch fractions ("23 3/8"), feet+inches ("2'0\""), and feet+fractions
+// ("1'6 1/8"). Returns null if it can't be parsed.
+function parseDimension(val: string): number | null {
+  const trimmed = val.trim();
+
+  // feet + optional inches + optional fraction, e.g. "2'6 3/8" / "2' 0"
+  const feetMatch = trimmed.match(/^(\d+)'\s*(\d+)?\s*(?:(\d+)\/(\d+))?/);
   if (feetMatch) {
     const feet = parseInt(feetMatch[1]) || 0;
     const inches = parseInt(feetMatch[2]) || 0;
-    return feet * 12 + inches;
+    const num = parseInt(feetMatch[3]) || 0;
+    const denom = parseInt(feetMatch[4]) || 1;
+    const frac = denom > 0 ? num / denom : 0;
+    return feet * 12 + inches + frac;
   }
-  return parseFloat(val);
+
+  // inches + optional fraction, e.g. "23 3/8" / "18.5" / "24"
+  const inchMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*(?:(\d+)\/(\d+))?$/);
+  if (inchMatch) {
+    const whole = parseFloat(inchMatch[1]) || 0;
+    const num = parseInt(inchMatch[2]) || 0;
+    const denom = parseInt(inchMatch[3]) || 1;
+    const frac = denom > 0 ? num / denom : 0;
+    return whole + frac;
+  }
+
+  return null;
 }
 
 interface Props {
@@ -54,11 +73,11 @@ export default function SectionRow({
     setEditing(true);
   };
   const doCommit = () => {
-    const parsed = parseFeetInches(inputValue);
-    // Reject NaN / out of range (12"–60") — revert to the original value.
-    if (!isNaN(parsed) && parsed >= 12 && parsed <= 60) {
-      // Round to the nearest 0.5"; updateSection re-clamps to this bay's range.
-      onChange(section.id, { widthIn: Math.round(parsed * 2) / 2 });
+    const parsed = parseDimension(inputValue);
+    // Reject unparseable / out of range (6"–60") — revert to the original value.
+    if (parsed !== null && parsed >= 6 && parsed <= 60) {
+      // Round to the nearest 1/8"; updateSection re-clamps to this bay's range.
+      onChange(section.id, { widthIn: Math.round(parsed * 8) / 8 });
     }
   };
   const commitAndClose = () => {
