@@ -1,7 +1,7 @@
-// Server-only: renders a Letter-size PDF whose diagram matches the shopping-cart
-// 2D view — separated tall bay columns with rods / shelves / drawer lines,
-// blue wall labels with tan underlines, and a tan cap bar under each bay. Never
-// import from a Client Component.
+// Server-only: renders a Letter-size PDF with one section per closet in the
+// cart (heading, pills, 2D diagram, wall details, line items) followed by a
+// single grand-total summary. The diagram matches the shopping-cart 2D view.
+// Never import from a Client Component.
 import PDFDocument from 'pdfkit';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
@@ -16,7 +16,6 @@ const MUTED = '#7A6E65';
 const INK = '#231F20';
 
 function extractConfig(raw: unknown): unknown {
-  if (Array.isArray(raw)) return (raw[0] as { config?: unknown })?.config ?? raw[0];
   if (raw && typeof raw === 'object' && 'config' in raw) return (raw as { config: unknown }).config;
   return raw;
 }
@@ -37,9 +36,7 @@ const wallName = (shape: string, w: WallId) => (WALL_NAMES[shape] ?? WALL_NAMES.
 type Doc = InstanceType<typeof PDFDocument>;
 type Run = { title: string; sections: ClosetConfig['sections'] };
 
-export async function generateFloorPlanPdf(closetConfig: unknown, customerName: string): Promise<Buffer> {
-  const cfg: ClosetConfig = normalizeConfig(catalog, (extractConfig(closetConfig) ?? {}) as ClosetConfig);
-
+export async function generateFloorPlanPdf(cartItems: unknown, customerName: string): Promise<Buffer> {
   const doc = new PDFDocument({ size: 'LETTER', margins: { top: 60, bottom: 60, left: 60, right: 60 } });
   const chunks: Buffer[] = [];
   doc.on('data', (c: Buffer) => chunks.push(c));
@@ -49,11 +46,17 @@ export async function generateFloorPlanPdf(closetConfig: unknown, customerName: 
   const contentW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
   const pageW = doc.page.width;
 
+  // Normalize every cart item to a valid closet config (drop empty ones).
+  const rawItems = Array.isArray(cartItems) ? cartItems : cartItems == null ? [] : [cartItems];
+  const closets: ClosetConfig[] = rawItems
+    .map((it) => normalizeConfig(catalog, (extractConfig(it) ?? {}) as ClosetConfig))
+    .filter((c) => c.sections.length > 0);
+
   // ---- Header (branded Cosmos band) ----------------------------------------
-  const shapeLabel = label(catalog.shapes, cfg.shape);
   const dateStr = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(
     new Date()
   );
+  const headerShape = closets.length ? label(catalog.shapes, closets[0].shape) : 'Custom';
 
   doc.rect(0, 0, pageW, 140).fill(COSMOS);
   doc.fillColor(TAN).font('Helvetica').fontSize(9).text('THE', 0, 68, {
@@ -67,8 +70,7 @@ export async function generateFloorPlanPdf(closetConfig: unknown, customerName: 
   });
   doc.rect(0, 140, pageW, 3).fill(TAN);
 
-  // Subtitle below the branded header.
-  doc.fillColor(MUTED).font('Helvetica').fontSize(12).text(`Floor Plan — ${shapeLabel} Closet`, left, 165, {
+  doc.fillColor(MUTED).font('Helvetica').fontSize(12).text(`Floor Plan — ${headerShape} Closet`, left, 165, {
     width: contentW,
     align: 'center',
   });
@@ -76,49 +78,162 @@ export async function generateFloorPlanPdf(closetConfig: unknown, customerName: 
   doc.fillColor(MUTED).fontSize(10).text(`${customerName} · ${dateStr}`, { width: contentW, align: 'center' });
   doc.moveDown(1);
 
-  // ---- Diagram -------------------------------------------------------------
-  drawDiagram(doc, cfg, left, doc.y, contentW);
-
-  // ---- Configuration details ----------------------------------------------
-  doc.font('Helvetica').fillColor(INK);
-  for (const w of wallsForShape(cfg.shape)) {
-    const bays = cfg.sections.filter((s) => s.wall === w);
-    if (!bays.length) continue;
-    doc.moveDown(0.5);
-    doc.font('Helvetica-Bold').fontSize(14).fillColor(COSMOS).text(wallName(cfg.shape, w), { underline: true });
-    doc.font('Helvetica').fontSize(10).fillColor(INK);
-    bays.forEach((b, i) => doc.text(`Bay ${i + 1}: ${interiorLabel(b.interior)}`));
+  // Empty cart → single message, still a valid PDF.
+  if (closets.length === 0) {
+    doc.moveDown(3);
+    doc.font('Helvetica').fontSize(14).fillColor(INK).text('No closet configuration found', left, doc.y, {
+      width: contentW,
+      align: 'center',
+    });
+    doc.end();
+    return done;
   }
 
-  doc.moveDown(0.7);
-  doc.font('Helvetica-Bold').fontSize(14).fillColor(COSMOS).text('Hardware', { underline: true });
-  doc.font('Helvetica').fontSize(10).fillColor(INK);
-  doc.text(
-    `Hardware: ${label(catalog.hardwareStyles, cfg.hardwareStyleId)} in ${label(catalog.hardware, cfg.hardwareColorId)}`
-  );
-  doc.text(`Rod: ${label(catalog.hardware, cfg.rodColorId)}`);
-  doc.text(`Height: ${finishedHeightIn(catalog, cfg)}"`);
-  doc.text(`Back Panels: ${cfg.backPanels ? 'Yes' : 'No'}`);
+  // ---- One section per closet ---------------------------------------------
+  const summaries: { n: number; shape: string; bays: number; totalCents: number }[] = [];
 
-  doc.moveDown(0.7);
-  doc.font('Helvetica-Bold').fontSize(14).fillColor(COSMOS).text('Pricing', { underline: true });
-  doc.font('Helvetica').fontSize(10).fillColor(INK);
-  try {
+  closets.forEach((cfg, i) => {
+    if (i > 0) doc.addPage();
+
+    // "Closet N" heading
+    doc.moveDown(0.5);
+    doc.font('Helvetica-Bold').fontSize(18).fillColor(COSMOS).text(`Closet ${i + 1}`, left, doc.y);
+
+    // Subtitle: shape · bays · height · material
+    const nBays = cfg.sections.length;
+    doc.font('Helvetica').fontSize(11).fillColor(MUTED).text(
+      `${label(catalog.shapes, cfg.shape)} · ${nBays} bay${nBays === 1 ? '' : 's'} · ${finishedHeightLabel(
+        catalog,
+        cfg
+      )} · ${label(catalog.materials, cfg.materialId)}`
+    );
+
+    // Hardware pill tags
+    doc.moveDown(0.4);
+    drawPills(
+      doc,
+      [
+        label(catalog.hardwareStyles, cfg.hardwareStyleId),
+        label(catalog.hardware, cfg.hardwareColorId),
+        `${label(catalog.hardware, cfg.rodColorId)} rod`,
+        `Height · ${finishedHeightLabel(catalog, cfg)}`,
+      ],
+      left,
+      contentW
+    );
+
+    // Back panels note
+    if (cfg.backPanels) {
+      doc.moveDown(0.2);
+      doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('Back panels included on all bays.', left, doc.y);
+    }
+
+    // FLOOR PLAN label
+    doc.moveDown(0.5);
+    doc.font('Helvetica-Bold').fontSize(8).fillColor(TAN).text('FLOOR PLAN', left, doc.y, { characterSpacing: 1.5 });
+    doc.moveDown(0.4);
+
+    // 2D diagram (unchanged style)
+    drawDiagram(doc, cfg, left, doc.y, contentW);
+
+    // Configuration details per wall
+    doc.font('Helvetica').fillColor(INK);
+    for (const w of wallsForShape(cfg.shape)) {
+      const bays = cfg.sections.filter((s) => s.wall === w);
+      if (!bays.length) continue;
+      doc.moveDown(0.5);
+      doc.font('Helvetica-Bold').fontSize(13).fillColor(COSMOS).text(wallName(cfg.shape, w), { underline: true });
+      doc.font('Helvetica').fontSize(10).fillColor(INK);
+      bays.forEach((b, bi) => doc.text(`Bay ${bi + 1}: ${interiorLabel(b.interior)}`));
+    }
+
+    doc.moveDown(0.6);
+    doc.font('Helvetica-Bold').fontSize(13).fillColor(COSMOS).text('Hardware', { underline: true });
+    doc.font('Helvetica').fontSize(10).fillColor(INK);
+    doc.text(
+      `Hardware: ${label(catalog.hardwareStyles, cfg.hardwareStyleId)} in ${label(catalog.hardware, cfg.hardwareColorId)}`
+    );
+    doc.text(`Rod: ${label(catalog.hardware, cfg.rodColorId)}`);
+    doc.text(`Height: ${finishedHeightIn(catalog, cfg)}"`);
+    doc.text(`Back Panels: ${cfg.backPanels ? 'Yes' : 'No'}`);
+
+    // Line items — NO per-closet total.
     const price = computePrice(catalog, cfg);
+    doc.moveDown(0.6);
+    doc.font('Helvetica-Bold').fontSize(13).fillColor(COSMOS).text('Line Items', { underline: true });
+    doc.font('Helvetica').fontSize(10).fillColor(INK);
     for (const li of price.lineItems) {
       doc.text(li.label, { continued: true });
       doc.text(formatCents(li.amountCents), { align: 'right' });
     }
-    doc.moveDown(0.3);
-    doc.font('Helvetica-Bold').fontSize(14).fillColor(COSMOS);
-    doc.text('Total', { continued: true });
-    doc.text(formatCents(price.totalCents), { align: 'right' });
-  } catch {
-    doc.text('Pricing unavailable.');
+
+    summaries.push({
+      n: i + 1,
+      shape: label(catalog.shapes, cfg.shape),
+      bays: nBays,
+      totalCents: price.totalCents,
+    });
+  });
+
+  // ---- Grand total summary -------------------------------------------------
+  const grand = summaries.reduce((a, s) => a + s.totalCents, 0);
+  // Start on a fresh page if not enough room remains.
+  if (doc.y > doc.page.height - doc.page.margins.bottom - 170) doc.addPage();
+
+  doc.moveDown(1.5);
+  doc.moveTo(left, doc.y).lineTo(left + contentW, doc.y).lineWidth(1).stroke(TAN);
+  doc.moveDown(0.8);
+
+  doc.font('Helvetica').fontSize(10).fillColor(MUTED);
+  for (const s of summaries) {
+    doc.text(`Closet ${s.n} — ${s.shape}, ${s.bays} bay${s.bays === 1 ? '' : 's'}`, { continued: true });
+    doc.text(formatCents(s.totalCents), { align: 'right' });
   }
+
+  doc.moveDown(0.6);
+  const rowY = doc.y;
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(COSMOS).text('TOTAL ESTIMATE', left, rowY + 8, { lineBreak: false });
+  // Serif dollar amount (PDFKit has no Cormorant; Times is the built-in serif).
+  doc.font('Times-Bold').fontSize(22).fillColor(COSMOS).text(formatCents(grand), left, rowY, {
+    width: contentW,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc.y = rowY + 26;
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica').fontSize(9).fillColor(TAN).text(
+    'No payment due today — your consultant will provide a final quote after your consultation.',
+    left,
+    doc.y,
+    { width: contentW, align: 'center' }
+  );
 
   doc.end();
   return done;
+}
+
+// --- Pills -----------------------------------------------------------------
+function drawPills(doc: Doc, pills: string[], x0: number, contentW: number) {
+  const padX = 10;
+  const pillH = 16;
+  const gap = 6;
+  doc.font('Helvetica').fontSize(8.5);
+  let px = x0;
+  let py = doc.y;
+  for (const t of pills) {
+    const pw = doc.widthOfString(t) + padX * 2;
+    if (px + pw > x0 + contentW) {
+      px = x0;
+      py += pillH + gap;
+    }
+    doc.roundedRect(px, py, pw, pillH, pillH / 2).lineWidth(0.75).fillAndStroke('#ffffff', TAN);
+    doc.fillColor(COSMOS).font('Helvetica').fontSize(8.5).text(t, px + padX, py + (pillH - 8.5) / 2 + 0.5, {
+      lineBreak: false,
+    });
+    px += pw + gap;
+  }
+  doc.y = py + pillH;
 }
 
 // --- Diagram (separated tall columns, matching the cart) -------------------
@@ -146,8 +261,6 @@ function drawDiagram(doc: Doc, cfg: ClosetConfig, x0: number, yTop: number, cont
   const totalBays = runs.reduce((a, r) => a + r.sections.length, 0) || 1;
   const bayW = (contentW - (totalBays - 1) * GAP) / totalBays;
 
-  // All diagram Y coordinates derive from startY (well below the header band +
-  // accent line) so header text can never overlap the diagram.
   const startY = Math.max(yTop, 166);
   const titleY = startY;
   const wallLabelY = titleY + 24;
@@ -155,14 +268,9 @@ function drawDiagram(doc: Doc, cfg: ClosetConfig, x0: number, yTop: number, cont
   const measureY = wallLabelY + 16;
   const bayTop = measureY + 14;
 
-  // Tall bays: fill the remaining page height (one row), min 300pt.
-  const bayH = Math.max(
-    300,
-    Math.min(360, doc.page.height - doc.page.margins.bottom - bayTop - 30)
-  );
+  const bayH = Math.max(300, Math.min(360, doc.page.height - doc.page.margins.bottom - bayTop - 30));
   const bayBottom = bayTop + bayH;
 
-  // Title line.
   const subtitle = `${label(catalog.shapes, cfg.shape)} · ${label(catalog.materials, cfg.materialId)} · ${label(
     catalog.hardware,
     cfg.rodColorId
@@ -178,7 +286,6 @@ function drawDiagram(doc: Doc, cfg: ClosetConfig, x0: number, yTop: number, cont
     const lastX = x0 + (idx + run.sections.length - 1) * (bayW + GAP);
     const wallCenter = (firstX + lastX + bayW) / 2;
 
-    // Wall label (blue, bold) + tan underline the width of the text.
     doc.font('Helvetica-Bold').fontSize(8).fillColor('#4A7A9B');
     const tw = doc.widthOfString(run.title);
     doc.text(run.title, wallCenter - 70, wallLabelY, { width: 140, align: 'center', lineBreak: false });
@@ -190,23 +297,18 @@ function drawDiagram(doc: Doc, cfg: ClosetConfig, x0: number, yTop: number, cont
 
     run.sections.forEach((s) => {
       const bx = x0 + idx * (bayW + GAP);
-      // measurement
       doc.font('Helvetica').fontSize(8).fillColor('#888888').text(formatInches(s.widthIn), bx, measureY, {
         width: bayW,
         align: 'center',
       });
-      // bay rectangle (white fill + dark border)
       doc.lineWidth(1).rect(bx, bayTop, bayW, bayH).fillAndStroke('#ffffff', '#333333');
-      // internal lines
       drawBayInternals(doc, s.interior, bx, bayW, bayTop, bayH);
-      // bay type code, colored, +B when back panels on
       const code = codeFor(s.interior);
       const color = code === 'DR' ? '#A0522D' : '#333333';
       doc.font('Helvetica-Bold').fontSize(9).fillColor(color).text(`${code}${cfg.backPanels ? ' +B' : ''}`, bx, bayTop + 4, {
         width: bayW,
         align: 'center',
       });
-      // tan cap bar directly below the bay
       doc.save();
       doc.fillOpacity(0.5).rect(bx, bayBottom, bayW, 5).fill(TAN);
       doc.restore();
@@ -214,7 +316,6 @@ function drawDiagram(doc: Doc, cfg: ClosetConfig, x0: number, yTop: number, cont
     });
   });
 
-  // Overall dimensions, centered below the columns.
   const totalWidthIn = cfg.sections.reduce((a, s) => a + s.widthIn, 0);
   doc.font('Helvetica').fontSize(9).fillColor('#555555').text(
     `Overall: ${formatInches(totalWidthIn)} W × ${finishedHeightLabel(catalog, cfg)} H × ${formatInches(
@@ -230,7 +331,6 @@ function drawDiagram(doc: Doc, cfg: ClosetConfig, x0: number, yTop: number, cont
 // Horizontal rod / shelf / drawer lines inside a bay (proportional to bay height).
 function drawBayInternals(doc: Doc, interior: string, bx: number, bayW: number, bayTop: number, bayH: number) {
   const cx = bx + bayW / 2;
-  // Draw a horizontal line at absolute y, spanning `frac` of the bay width.
   const lineY = (y: number, frac: number, color: string, w: number, dash: boolean) => {
     const half = (bayW * frac) / 2;
     if (dash) doc.dash(4, { space: 3 });
@@ -241,17 +341,17 @@ function drawBayInternals(doc: Doc, interior: string, bx: number, bayW: number, 
     lineY(bayTop + bayH * yFrac, frac, color, w, dash);
 
   switch (interior) {
-    case 'full_hanging': // FH — one rod near top
+    case 'full_hanging': // FH
       at(0.12, 0.9, '#333333', 1.5);
       break;
-    case 'long_hanging': // LH — one rod near the very top
+    case 'long_hanging': // LH
       at(0.08, 0.9, '#333333', 1.5);
       break;
-    case 'double_hanging': // DH — two rods
+    case 'double_hanging': // DH
       at(0.12, 0.9, '#333333', 1);
       at(0.45, 0.9, '#333333', 1);
       break;
-    case 'adjustable_shelves': // SH — 5 evenly spaced dashed shelves 0.15..0.90
+    case 'adjustable_shelves': // SH — 5 dashed
       for (let i = 0; i < 5; i++) at(0.15 + (0.9 - 0.15) * (i / 4), 0.85, '#aaaaaa', 1, true);
       break;
     case 'shoe_shelves': {
@@ -259,7 +359,7 @@ function drawBayInternals(doc: Doc, interior: string, bx: number, bayW: number, 
       const centerY = bayTop + bayH * 0.43;
       const z1top = bayTop + bayH * 0.1;
       for (let i = 0; i < 4; i++) lineY(z1top + ((centerY - z1top) * (i + 1)) / 5, 0.85, '#aaaaaa', 1, true);
-      at(0.43, 0.9, '#555555', 2); // fixed center shelf
+      at(0.43, 0.9, '#555555', 2);
       const z2bot = bayTop + bayH * 0.94;
       for (let i = 0; i < 4; i++) lineY(centerY + ((z2bot - centerY) * (i + 1)) / 5, 0.85, '#aaaaaa', 1, true);
       break;
@@ -278,6 +378,6 @@ function drawBayInternals(doc: Doc, interior: string, bx: number, bayW: number, 
       }
       break;
     }
-    // Unknown interior → empty rectangle (no internal lines).
+    // Unknown interior → empty rectangle.
   }
 }
