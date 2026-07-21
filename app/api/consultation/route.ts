@@ -126,10 +126,10 @@ export async function POST(request: Request) {
           // Room/name from the first closet (full data is in closet_config).
           closet_name: firstCfg?.name ?? null,
           room_width: firstCfg?.roomWidth ?? null,
-          room_depth: firstCfg?.roomDepth ?? null,
+          room_length: firstCfg?.roomLength ?? null,
           room_height: firstCfg?.roomHeight ?? null,
           room_width_display: firstCfg?.roomWidthDisplay ?? null,
-          room_depth_display: firstCfg?.roomDepthDisplay ?? null,
+          room_length_display: firstCfg?.roomLengthDisplay ?? null,
           room_height_display: firstCfg?.roomHeightDisplay ?? null,
           status: 'new',
         })

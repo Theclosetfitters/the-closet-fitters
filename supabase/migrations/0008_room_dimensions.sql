@@ -5,8 +5,8 @@
 ALTER TABLE jobs
   ADD COLUMN IF NOT EXISTS closet_name TEXT,
   ADD COLUMN IF NOT EXISTS room_width NUMERIC,
-  ADD COLUMN IF NOT EXISTS room_depth NUMERIC,
+  ADD COLUMN IF NOT EXISTS room_length NUMERIC,
   ADD COLUMN IF NOT EXISTS room_height NUMERIC,
   ADD COLUMN IF NOT EXISTS room_width_display TEXT,
-  ADD COLUMN IF NOT EXISTS room_depth_display TEXT,
+  ADD COLUMN IF NOT EXISTS room_length_display TEXT,
   ADD COLUMN IF NOT EXISTS room_height_display TEXT;

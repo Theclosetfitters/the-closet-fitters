@@ -19,7 +19,7 @@ export type ClosetSummary = {
   height: string;
   priceCents: number;
   roomWidthDisplay?: string;
-  roomDepthDisplay?: string;
+  roomLengthDisplay?: string;
   roomHeightDisplay?: string;
 };
 export type JobInfo = {
@@ -493,10 +493,10 @@ export default function JobDetail({
                   <Row label="Hardware" value={`${c.hardwareStyle} · ${c.hardwareColor}`} />
                   <Row label="Rod" value={c.rodColor} />
                   <Row label="Height" value={c.height} />
-                  {(c.roomWidthDisplay || c.roomDepthDisplay || c.roomHeightDisplay) && (
+                  {(c.roomWidthDisplay || c.roomLengthDisplay || c.roomHeightDisplay) && (
                     <Row
                       label="Room"
-                      value={`${c.roomWidthDisplay ?? '—'} W × ${c.roomDepthDisplay ?? '—'} D × ${c.roomHeightDisplay ?? '—'} H`}
+                      value={`${c.roomWidthDisplay ?? '—'} W × ${c.roomLengthDisplay ?? '—'} L × ${c.roomHeightDisplay ?? '—'} H`}
                     />
                   )}
                 </div>

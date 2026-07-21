@@ -110,9 +110,9 @@ export async function generateFloorPlanPdf(cartItems: unknown, customerName: str
     );
 
     // Room info (display strings exactly as typed — never reformatted).
-    if (cfg.roomWidthDisplay || cfg.roomDepthDisplay || cfg.roomHeightDisplay) {
+    if (cfg.roomWidthDisplay || cfg.roomLengthDisplay || cfg.roomHeightDisplay) {
       doc.font('Helvetica').fontSize(10).fillColor(MUTED).text(
-        `Room Dimensions: ${cfg.roomWidthDisplay ?? '—'} W × ${cfg.roomDepthDisplay ?? '—'} D × ${
+        `Room Dimensions: ${cfg.roomWidthDisplay ?? '—'} W × ${cfg.roomLengthDisplay ?? '—'} L × ${
           cfg.roomHeightDisplay ?? '—'
         } H`
       );

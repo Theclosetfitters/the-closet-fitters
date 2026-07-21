@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import type {
@@ -103,9 +103,13 @@ export default function Configurator({
     };
   }, [config]);
 
-  // Total closet width for the room-width constraint: all bay widths + the
-  // 8.5" corner gaps (L/U). Exact decimals, no rounding.
-  const totalClosetWidth = totalWidthIn(config) + cornerGapCount(config.shape) * 8.5;
+  // Room WIDTH constrains ONLY the back wall (Wall A) + the 8.5" corner gaps
+  // (L=1, U=2). Side walls (B/C) are constrained by room LENGTH, not width.
+  // Exact decimals, no rounding.
+  const backWallWidth = config.sections
+    .filter((s) => s.wall === 'A')
+    .reduce((a, s) => a + s.widthIn, 0);
+  const totalClosetWidth = backWallWidth + cornerGapCount(config.shape) * 8.5;
   const roomWidthSet = typeof config.roomWidth === 'number';
   const widthExceeded = roomWidthSet && totalClosetWidth > (config.roomWidth as number);
   // Room-height block: a room under 8' (96") can't take the raise-to-8' option.
@@ -113,24 +117,53 @@ export default function Configurator({
   const sideWallLen = (wall: WallId) =>
     config.sections.filter((s) => s.wall === wall).reduce((a, s) => a + s.widthIn, 0);
 
+  // Room errors only appear when an add/resize is blocked, and auto-dismiss.
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flashError = useCallback((msg: string) => {
+    setRoomError(msg);
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    errorTimer.current = setTimeout(() => setRoomError(null), 4000);
+  }, []);
+  const clearError = useCallback(() => {
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    setRoomError(null);
+  }, []);
+
   // --- Mutators -----------------------------------------------------------
   const updateSection = useCallback(
     (id: string, patch: Partial<SectionConfig>) => {
-      // Hard block: a width increase that would exceed the room width.
-      if (patch.widthIn !== undefined && typeof config.roomWidth === 'number') {
+      // Constraint check ONLY on an actual width change (inline editor / slider).
+      if (patch.widthIn !== undefined) {
         const cur = config.sections.find((s) => s.id === id);
+        const wall = cur?.wall ?? 'A';
         const nextW = clampWidth(catalog, cur?.interior ?? 'long_hanging', patch.widthIn);
-        const total =
-          config.sections.reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0) +
-          cornerGapCount(config.shape) * 8.5;
-        if (total > config.roomWidth) {
-          setRoomError(
-            `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
-          );
-          return;
+        // Back-wall bay → check room WIDTH (Wall A + corner gaps only).
+        if (wall === 'A' && typeof config.roomWidth === 'number') {
+          const total =
+            config.sections
+              .filter((s) => s.wall === 'A')
+              .reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0) +
+            cornerGapCount(config.shape) * 8.5;
+          console.log('[constraint] totalWidth:', total, 'roomWidth:', config.roomWidth);
+          if (total > config.roomWidth) {
+            flashError(
+              `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
+            );
+            return; // reject — revert to previous width
+          }
+        }
+        // Side-wall bay → check room LENGTH.
+        if ((wall === 'B' || wall === 'C') && typeof config.roomLength === 'number') {
+          const total = config.sections
+            .filter((s) => s.wall === wall)
+            .reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0);
+          if (total > config.roomLength) {
+            flashError(`The side wall exceeds your room length of ${config.roomLengthDisplay ?? ''}.`);
+            return;
+          }
         }
       }
-      setRoomError(null);
+      clearError();
       setConfig((c) => ({
         ...c,
         sections: c.sections.map((s) => {
@@ -141,54 +174,60 @@ export default function Configurator({
         }),
       }));
     },
-    [catalog, config]
+    [catalog, config, flashError, clearError]
   );
 
   const addBay = useCallback(
     (wall: WallId) => {
       const defW = defaultSection(catalog, wall).widthIn;
-      // Room width block.
-      if (typeof config.roomWidth === 'number') {
-        const total = totalWidthIn(config) + cornerGapCount(config.shape) * 8.5 + defW;
+      // Adding a back-wall bay → check room WIDTH (Wall A + corner gaps only).
+      if (wall === 'A' && typeof config.roomWidth === 'number') {
+        const total = backWallWidth + cornerGapCount(config.shape) * 8.5 + defW;
+        console.log('[constraint] totalWidth:', total, 'roomWidth:', config.roomWidth);
         if (total > config.roomWidth) {
-          setRoomError(
+          flashError(
             `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
           );
           return;
         }
       }
-      // Side-wall depth block (L/U only).
-      if ((wall === 'B' || wall === 'C') && typeof config.roomDepth === 'number') {
-        if (sideWallLen(wall) + defW > config.roomDepth) {
-          setRoomError(`The side wall exceeds your room depth of ${config.roomDepthDisplay ?? ''}.`);
+      // Adding a side-wall bay (L/U) → check room LENGTH.
+      if ((wall === 'B' || wall === 'C') && typeof config.roomLength === 'number') {
+        if (sideWallLen(wall) + defW > config.roomLength) {
+          flashError(`The side wall exceeds your room length of ${config.roomLengthDisplay ?? ''}.`);
           return;
         }
       }
-      setRoomError(null);
+      clearError();
       setConfig((c) => ({ ...c, sections: [...c.sections, defaultSection(catalog, wall)] }));
     },
-    [catalog, config, sideWallLen]
+    [catalog, config, sideWallLen, backWallWidth, flashError, clearError]
   );
 
   const setName = useCallback((name: string) => setConfig((c) => ({ ...c, name })), []);
-  const setRoom = useCallback((field: 'Width' | 'Depth' | 'Height', typed: string) => {
-    const parsed = parseRoomDimension(typed); // exact decimal; null = no constraint
-    setRoomError(null);
-    setConfig((c) => {
-      const next = { ...c };
-      if (field === 'Width') {
-        next.roomWidthDisplay = typed;
-        next.roomWidth = parsed ?? undefined;
-      } else if (field === 'Depth') {
-        next.roomDepthDisplay = typed;
-        next.roomDepth = parsed ?? undefined;
-      } else {
-        next.roomHeightDisplay = typed;
-        next.roomHeight = parsed ?? undefined;
-      }
-      return next;
-    });
-  }, []);
+  // Typing room dimensions is silent — never blocks or errors, just updates the
+  // stored values (and, via derived state, the informational usage bar).
+  const setRoom = useCallback(
+    (field: 'Width' | 'Length' | 'Height', typed: string) => {
+      const parsed = parseRoomDimension(typed); // exact decimal; null = no constraint
+      clearError();
+      setConfig((c) => {
+        const next = { ...c };
+        if (field === 'Width') {
+          next.roomWidthDisplay = typed;
+          next.roomWidth = parsed ?? undefined;
+        } else if (field === 'Length') {
+          next.roomLengthDisplay = typed;
+          next.roomLength = parsed ?? undefined;
+        } else {
+          next.roomHeightDisplay = typed;
+          next.roomHeight = parsed ?? undefined;
+        }
+        return next;
+      });
+    },
+    [clearError]
+  );
 
   const removeBay = useCallback((wall: WallId) => {
     setConfig((c) => {
@@ -333,9 +372,10 @@ export default function Configurator({
   const usagePct = roomWidthSet
     ? Math.min(100, (totalClosetWidth / (config.roomWidth as number)) * 100)
     : 0;
-  const bannerMsg = widthExceeded
-    ? `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
-    : roomError;
+  // The banner reflects ONLY an actively-blocked action (auto-dismissing). It is
+  // never shown merely because the current config exceeds the room — the usage
+  // bar below conveys that, informationally.
+  const bannerMsg = roomError;
 
   const roomLabelStyle: CSSProperties = {
     display: 'block',
@@ -410,12 +450,12 @@ export default function Configurator({
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
-            {(['Width', 'Depth', 'Height'] as const).map((field) => {
+            {(['Width', 'Length', 'Height'] as const).map((field) => {
               const display =
                 field === 'Width'
                   ? config.roomWidthDisplay
-                  : field === 'Depth'
-                    ? config.roomDepthDisplay
+                  : field === 'Length'
+                    ? config.roomLengthDisplay
                     : config.roomHeightDisplay;
               return (
                 <div key={field} style={{ flex: 1 }}>

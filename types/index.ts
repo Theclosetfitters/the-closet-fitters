@@ -125,10 +125,10 @@ export interface ClosetConfig {
    * display string exactly as the customer typed it. All optional; when unset,
    * no room constraints apply. */
   roomWidth?: number;
-  roomDepth?: number;
+  roomLength?: number;
   roomHeight?: number;
   roomWidthDisplay?: string;
-  roomDepthDisplay?: string;
+  roomLengthDisplay?: string;
   roomHeightDisplay?: string;
 }
 

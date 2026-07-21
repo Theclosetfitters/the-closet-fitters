@@ -38,7 +38,7 @@ function closetSummary(raw: unknown): ClosetSummary | null {
     height: finishedHeightLabel(catalog, config),
     priceCents: computePrice(catalog, config).totalCents,
     roomWidthDisplay: config.roomWidthDisplay,
-    roomDepthDisplay: config.roomDepthDisplay,
+    roomLengthDisplay: config.roomLengthDisplay,
     roomHeightDisplay: config.roomHeightDisplay,
   };
 }

@@ -47,10 +47,10 @@ export function normalizeConfig(
     // Optional metadata — passed through untouched (never rounded).
     name: config.name,
     roomWidth: config.roomWidth,
-    roomDepth: config.roomDepth,
+    roomLength: config.roomLength,
     roomHeight: config.roomHeight,
     roomWidthDisplay: config.roomWidthDisplay,
-    roomDepthDisplay: config.roomDepthDisplay,
+    roomLengthDisplay: config.roomLengthDisplay,
     roomHeightDisplay: config.roomHeightDisplay,
   };
 }
