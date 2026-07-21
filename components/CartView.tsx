@@ -182,7 +182,7 @@ export default function CartView({
                     {formatCents(item.totalCents)}
                   </span>
                   <div style={{ fontFamily: CORMORANT, fontSize: 30, color: COSMOS, fontWeight: 400 }}>
-                    Closet {i + 1}
+                    {cfg.name?.trim() || `Closet ${i + 1}`}
                   </div>
                   <div style={{ fontSize: 14, color: MUTED, marginTop: 2 }}>
                     {shapeLabel(cfg.shape)} · {nWalls} wall{nWalls === 1 ? '' : 's'} · {nBays} bay{nBays === 1 ? '' : 's'} · {finishedHeightLabel(catalog, cfg)} · {matLabel(cfg.materialId)}

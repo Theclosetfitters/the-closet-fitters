@@ -90,14 +90,15 @@ export async function generateFloorPlanPdf(cartItems: unknown, customerName: str
   }
 
   // ---- One section per closet ---------------------------------------------
-  const summaries: { n: number; shape: string; bays: number; totalCents: number }[] = [];
+  const summaries: { name: string; shape: string; bays: number; totalCents: number }[] = [];
 
   closets.forEach((cfg, i) => {
     if (i > 0) doc.addPage();
 
-    // "Closet N" heading
+    // Name heading (falls back to "Closet N")
+    const closetName = cfg.name?.trim() || `Closet ${i + 1}`;
     doc.moveDown(0.5);
-    doc.font('Helvetica-Bold').fontSize(18).fillColor(COSMOS).text(`Closet ${i + 1}`, left, doc.y);
+    doc.font('Helvetica-Bold').fontSize(18).fillColor(COSMOS).text(closetName, left, doc.y);
 
     // Subtitle: shape · bays · height · material
     const nBays = cfg.sections.length;
@@ -107,6 +108,15 @@ export async function generateFloorPlanPdf(cartItems: unknown, customerName: str
         cfg
       )} · ${label(catalog.materials, cfg.materialId)}`
     );
+
+    // Room info (display strings exactly as typed — never reformatted).
+    if (cfg.roomWidthDisplay || cfg.roomDepthDisplay || cfg.roomHeightDisplay) {
+      doc.font('Helvetica').fontSize(10).fillColor(MUTED).text(
+        `Room Dimensions: ${cfg.roomWidthDisplay ?? '—'} W × ${cfg.roomDepthDisplay ?? '—'} D × ${
+          cfg.roomHeightDisplay ?? '—'
+        } H`
+      );
+    }
 
     // Hardware pill tags
     doc.moveDown(0.4);
@@ -168,7 +178,7 @@ export async function generateFloorPlanPdf(cartItems: unknown, customerName: str
     }
 
     summaries.push({
-      n: i + 1,
+      name: closetName,
       shape: label(catalog.shapes, cfg.shape),
       bays: nBays,
       totalCents: price.totalCents,
@@ -186,7 +196,7 @@ export async function generateFloorPlanPdf(cartItems: unknown, customerName: str
 
   doc.font('Helvetica').fontSize(10).fillColor(MUTED);
   for (const s of summaries) {
-    doc.text(`Closet ${s.n} — ${s.shape}, ${s.bays} bay${s.bays === 1 ? '' : 's'}`, { continued: true });
+    doc.text(`${s.name} — ${s.shape}, ${s.bays} bay${s.bays === 1 ? '' : 's'}`, { continued: true });
     doc.text(formatCents(s.totalCents), { align: 'right' });
   }
 

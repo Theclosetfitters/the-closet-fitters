@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import type {
@@ -14,10 +14,12 @@ import type {
 } from '@/types';
 import {
   clampWidth,
+  cornerGapCount,
   defaultConfig,
   defaultSection,
   finishedHeightLabel,
   normalizeConfig,
+  parseRoomDimension,
   restrictedDrawerBayIds,
   totalWidthIn,
   wallDisplayLabel,
@@ -55,6 +57,7 @@ export default function Configurator({
   const [pricing, setPricing] = useState(false);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [roomError, setRoomError] = useState<string | null>(null);
   const cart = useCart();
 
   // --- Edit mode: seed the config from the cart item exactly once -----------
@@ -100,9 +103,34 @@ export default function Configurator({
     };
   }, [config]);
 
+  // Total closet width for the room-width constraint: all bay widths + the
+  // 8.5" corner gaps (L/U). Exact decimals, no rounding.
+  const totalClosetWidth = totalWidthIn(config) + cornerGapCount(config.shape) * 8.5;
+  const roomWidthSet = typeof config.roomWidth === 'number';
+  const widthExceeded = roomWidthSet && totalClosetWidth > (config.roomWidth as number);
+  // Room-height block: a room under 8' (96") can't take the raise-to-8' option.
+  const heightBlocked = typeof config.roomHeight === 'number' && config.roomHeight < 96;
+  const sideWallLen = (wall: WallId) =>
+    config.sections.filter((s) => s.wall === wall).reduce((a, s) => a + s.widthIn, 0);
+
   // --- Mutators -----------------------------------------------------------
   const updateSection = useCallback(
-    (id: string, patch: Partial<SectionConfig>) =>
+    (id: string, patch: Partial<SectionConfig>) => {
+      // Hard block: a width increase that would exceed the room width.
+      if (patch.widthIn !== undefined && typeof config.roomWidth === 'number') {
+        const cur = config.sections.find((s) => s.id === id);
+        const nextW = clampWidth(catalog, cur?.interior ?? 'long_hanging', patch.widthIn);
+        const total =
+          config.sections.reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0) +
+          cornerGapCount(config.shape) * 8.5;
+        if (total > config.roomWidth) {
+          setRoomError(
+            `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
+          );
+          return;
+        }
+      }
+      setRoomError(null);
       setConfig((c) => ({
         ...c,
         sections: c.sections.map((s) => {
@@ -111,15 +139,56 @@ export default function Configurator({
           next.widthIn = clampWidth(catalog, next.interior, next.widthIn);
           return next;
         }),
-      })),
-    [catalog]
+      }));
+    },
+    [catalog, config]
   );
 
   const addBay = useCallback(
-    (wall: WallId) =>
-      setConfig((c) => ({ ...c, sections: [...c.sections, defaultSection(catalog, wall)] })),
-    [catalog]
+    (wall: WallId) => {
+      const defW = defaultSection(catalog, wall).widthIn;
+      // Room width block.
+      if (typeof config.roomWidth === 'number') {
+        const total = totalWidthIn(config) + cornerGapCount(config.shape) * 8.5 + defW;
+        if (total > config.roomWidth) {
+          setRoomError(
+            `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
+          );
+          return;
+        }
+      }
+      // Side-wall depth block (L/U only).
+      if ((wall === 'B' || wall === 'C') && typeof config.roomDepth === 'number') {
+        if (sideWallLen(wall) + defW > config.roomDepth) {
+          setRoomError(`The side wall exceeds your room depth of ${config.roomDepthDisplay ?? ''}.`);
+          return;
+        }
+      }
+      setRoomError(null);
+      setConfig((c) => ({ ...c, sections: [...c.sections, defaultSection(catalog, wall)] }));
+    },
+    [catalog, config, sideWallLen]
   );
+
+  const setName = useCallback((name: string) => setConfig((c) => ({ ...c, name })), []);
+  const setRoom = useCallback((field: 'Width' | 'Depth' | 'Height', typed: string) => {
+    const parsed = parseRoomDimension(typed); // exact decimal; null = no constraint
+    setRoomError(null);
+    setConfig((c) => {
+      const next = { ...c };
+      if (field === 'Width') {
+        next.roomWidthDisplay = typed;
+        next.roomWidth = parsed ?? undefined;
+      } else if (field === 'Depth') {
+        next.roomDepthDisplay = typed;
+        next.roomDepth = parsed ?? undefined;
+      } else {
+        next.roomHeightDisplay = typed;
+        next.roomHeight = parsed ?? undefined;
+      }
+      return next;
+    });
+  }, []);
 
   const removeBay = useCallback((wall: WallId) => {
     setConfig((c) => {
@@ -159,9 +228,17 @@ export default function Configurator({
     []
   );
   const setHeightUpgrade = useCallback(
-    (heightUpgrade: boolean) => setConfig((c) => ({ ...c, heightUpgrade })),
-    []
+    (heightUpgrade: boolean) => {
+      if (heightUpgrade && heightBlocked) return; // room too short for the 8' raise
+      setConfig((c) => ({ ...c, heightUpgrade }));
+    },
+    [heightBlocked]
   );
+
+  // If the room height rules out the 8' raise, force the option back off.
+  useEffect(() => {
+    if (heightBlocked && config.heightUpgrade) setConfig((c) => ({ ...c, heightUpgrade: false }));
+  }, [heightBlocked, config.heightUpgrade]);
   const setBackPanels = useCallback(
     (backPanels: boolean) => setConfig((c) => ({ ...c, backPanels })),
     []
@@ -224,23 +301,62 @@ export default function Configurator({
     [walls, config.shape, config.sections]
   );
 
+  const withName = useCallback(
+    (c: ClosetConfig): ClosetConfig => ({
+      ...c,
+      name: c.name?.trim() ? c.name.trim() : `Closet ${cart.count + 1}`,
+    }),
+    [cart.count]
+  );
+
   const addToCart = useCallback(() => {
     if (!breakdown) return;
-    cart.add(config, breakdown.totalCents);
+    cart.add(withName(config), breakdown.totalCents);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
-  }, [cart, config, breakdown]);
+  }, [cart, config, breakdown, withName]);
 
   // Edit mode: replace the existing item in place, then return to the cart.
   const updateCloset = useCallback(() => {
     if (!breakdown || !editId) return;
-    cart.update(editId, config, breakdown.totalCents);
+    cart.update(editId, withName(config), breakdown.totalCents);
     router.push('/cart?updated=1');
-  }, [cart, config, breakdown, editId, router]);
+  }, [cart, config, breakdown, editId, router, withName]);
 
   const totalWidth = useMemo(() => totalWidthIn(config), [config]);
   const heightLabel = finishedHeightLabel(catalog, config);
   const upgradedHeightLabel = finishedHeightLabel(catalog, { ...config, heightUpgrade: true });
+
+  // Room name/dimension display helpers.
+  const defaultName = `Closet ${cart.count + 1}`;
+  const roomInvalid = (typed?: string) => Boolean(typed) && parseRoomDimension(typed ?? '') === null;
+  const usagePct = roomWidthSet
+    ? Math.min(100, (totalClosetWidth / (config.roomWidth as number)) * 100)
+    : 0;
+  const bannerMsg = widthExceeded
+    ? `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
+    : roomError;
+
+  const roomLabelStyle: CSSProperties = {
+    display: 'block',
+    fontFamily: 'var(--font-inter), Inter, sans-serif',
+    fontSize: 10,
+    color: '#C7AC90',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  };
+  const roomInputStyle = (bad: boolean): CSSProperties => ({
+    width: '100%',
+    fontFamily: 'var(--font-inter), Inter, sans-serif',
+    fontSize: 14,
+    color: '#1F333A',
+    border: `1px solid ${bad ? '#EF4444' : '#E5DDD5'}`,
+    borderRadius: 8,
+    padding: '10px 12px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  });
 
   if (loadingEdit) {
     return (
@@ -264,6 +380,98 @@ export default function Configurator({
 
       {/* Right: scrollable editor */}
       <div className="space-y-8 py-6 lg:py-12">
+        {/* Closet name + room dimensions */}
+        <section className="space-y-4">
+          <div>
+            <label htmlFor="closet-name" style={roomLabelStyle}>
+              Closet Name
+            </label>
+            <input
+              id="closet-name"
+              data-testid="closet-name"
+              value={config.name ?? ''}
+              placeholder={defaultName}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => {
+                if (!config.name || !config.name.trim()) setName(defaultName);
+              }}
+              style={{
+                width: '100%',
+                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontSize: 22,
+                color: '#1F333A',
+                border: 'none',
+                borderBottom: '1.5px solid #C7AC90',
+                background: 'transparent',
+                padding: '8px 0',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            {(['Width', 'Depth', 'Height'] as const).map((field) => {
+              const display =
+                field === 'Width'
+                  ? config.roomWidthDisplay
+                  : field === 'Depth'
+                    ? config.roomDepthDisplay
+                    : config.roomHeightDisplay;
+              return (
+                <div key={field} style={{ flex: 1 }}>
+                  <label style={roomLabelStyle}>Room {field}</label>
+                  <input
+                    data-testid={`room-${field.toLowerCase()}`}
+                    type="text"
+                    value={display ?? ''}
+                    placeholder={field === 'Height' ? "8' 0\"" : "12' 0\""}
+                    onChange={(e) => setRoom(field, e.target.value)}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = '#C7AC90')}
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = roomInvalid(display) ? '#EF4444' : '#E5DDD5')
+                    }
+                    style={roomInputStyle(roomInvalid(display))}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {roomWidthSet && (
+            <div>
+              <div style={{ fontSize: 11, color: '#7A6E65', marginBottom: 4 }}>
+                Using {formatInches(totalClosetWidth)} of {config.roomWidthDisplay} available
+              </div>
+              <div style={{ background: '#F0EBE4', height: 4, borderRadius: 9999, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: 4,
+                    borderRadius: 9999,
+                    width: `${usagePct}%`,
+                    background: widthExceeded ? '#EF4444' : '#C7AC90',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {bannerMsg && (
+            <div
+              data-testid="room-error"
+              style={{
+                background: '#FEE2E2',
+                border: '1px solid #EF4444',
+                borderRadius: 8,
+                padding: '10px 14px',
+                fontSize: 13,
+                color: '#991B1B',
+              }}
+            >
+              {bannerMsg}
+            </div>
+          )}
+        </section>
+
         {isEditing && (
           <div className="rounded-lg bg-brand px-3 py-2 text-xs font-medium text-cream">
             Editing your saved closet — make your changes and click Update Closet
@@ -379,11 +587,19 @@ export default function Configurator({
 
         {/* Height (global) — highlighted upgrade option */}
         <section className="rounded-xl border border-brand/30 bg-cream p-4">
-          <label className="flex cursor-pointer items-start gap-3">
+          <label
+            className={`flex items-start gap-3 ${heightBlocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+            title={
+              heightBlocked
+                ? `Your room height of ${config.roomHeightDisplay ?? ''} does not allow raising to 8'. Standard height will be used.`
+                : undefined
+            }
+          >
             <input
               data-testid="height-upgrade"
               type="checkbox"
               checked={config.heightUpgrade}
+              disabled={heightBlocked}
               onChange={(e) => setHeightUpgrade(e.target.checked)}
               className="mt-0.5 h-5 w-5 accent-brand"
             />

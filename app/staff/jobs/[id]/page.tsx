@@ -27,6 +27,7 @@ function closetSummary(raw: unknown): ClosetSummary | null {
   const label = (arr: { id: string; label: string }[], id: string) =>
     arr.find((x) => x.id === id)?.label ?? id;
   return {
+    name: config.name,
     shape: label(catalog.shapes, config.shape),
     walls: wallsForShape(config.shape).length,
     bays: config.sections.length,
@@ -36,6 +37,9 @@ function closetSummary(raw: unknown): ClosetSummary | null {
     rodColor: label(catalog.hardware, config.rodColorId),
     height: finishedHeightLabel(catalog, config),
     priceCents: computePrice(catalog, config).totalCents,
+    roomWidthDisplay: config.roomWidthDisplay,
+    roomDepthDisplay: config.roomDepthDisplay,
+    roomHeightDisplay: config.roomHeightDisplay,
   };
 }
 

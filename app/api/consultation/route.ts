@@ -112,6 +112,7 @@ export async function POST(request: Request) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createServiceRoleClient();
+      const firstCfg = body.items?.[0]?.config;
       const { data: job, error } = await supabase
         .from('jobs')
         .insert({
@@ -122,6 +123,14 @@ export async function POST(request: Request) {
           customer_address: contact.address,
           how_heard: contact.referral ?? null,
           closet_config: body.items ?? null,
+          // Room/name from the first closet (full data is in closet_config).
+          closet_name: firstCfg?.name ?? null,
+          room_width: firstCfg?.roomWidth ?? null,
+          room_depth: firstCfg?.roomDepth ?? null,
+          room_height: firstCfg?.roomHeight ?? null,
+          room_width_display: firstCfg?.roomWidthDisplay ?? null,
+          room_depth_display: firstCfg?.roomDepthDisplay ?? null,
+          room_height_display: firstCfg?.roomHeightDisplay ?? null,
           status: 'new',
         })
         .select()

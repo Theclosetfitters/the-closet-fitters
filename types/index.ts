@@ -118,6 +118,18 @@ export interface ClosetConfig {
   /** All-or-nothing: when true, every bay gets a back panel (plus the L/U
    * corner panels, which are complimentary). Stored once for the whole closet. */
   backPanels: boolean;
+
+  /** Optional closet name (defaults to "Closet N" in the UI). */
+  name?: string;
+  /** Optional room dimensions — exact decimal inches (never rounded) plus the
+   * display string exactly as the customer typed it. All optional; when unset,
+   * no room constraints apply. */
+  roomWidth?: number;
+  roomDepth?: number;
+  roomHeight?: number;
+  roomWidthDisplay?: string;
+  roomDepthDisplay?: string;
+  roomHeightDisplay?: string;
 }
 
 export interface PriceLineItem {

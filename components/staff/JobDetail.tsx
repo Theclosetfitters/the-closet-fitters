@@ -8,6 +8,7 @@ import ScheduleModal from '@/components/staff/ScheduleModal';
 import { formatDateET, formatTimeET } from '@/lib/staff/scheduling';
 
 export type ClosetSummary = {
+  name?: string;
   shape: string;
   walls: number;
   bays: number;
@@ -17,6 +18,9 @@ export type ClosetSummary = {
   rodColor: string;
   height: string;
   priceCents: number;
+  roomWidthDisplay?: string;
+  roomDepthDisplay?: string;
+  roomHeightDisplay?: string;
 };
 export type JobInfo = {
   id: string;
@@ -480,15 +484,21 @@ export default function JobDetail({
             <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {closets.map((c, i) => (
                 <div key={i} style={{ fontSize: 13, color: '#1F333A', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {closets.length > 1 && (
-                    <div style={{ ...fieldLabel, marginBottom: 2 }}>Closet {i + 1}</div>
-                  )}
+                  <div style={{ ...fieldLabel, marginBottom: 2 }}>
+                    {c.name?.trim() || `Closet ${i + 1}`}
+                  </div>
                   <Row label="Type" value={`${c.shape}`} />
                   <Row label="Walls / Bays" value={`${c.walls} wall${c.walls === 1 ? '' : 's'} · ${c.bays} bay${c.bays === 1 ? '' : 's'}`} />
                   <Row label="Material" value={c.material} />
                   <Row label="Hardware" value={`${c.hardwareStyle} · ${c.hardwareColor}`} />
                   <Row label="Rod" value={c.rodColor} />
                   <Row label="Height" value={c.height} />
+                  {(c.roomWidthDisplay || c.roomDepthDisplay || c.roomHeightDisplay) && (
+                    <Row
+                      label="Room"
+                      value={`${c.roomWidthDisplay ?? '—'} W × ${c.roomDepthDisplay ?? '—'} D × ${c.roomHeightDisplay ?? '—'} H`}
+                    />
+                  )}
                 </div>
               ))}
             </div>

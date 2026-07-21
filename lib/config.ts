@@ -44,7 +44,50 @@ export function normalizeConfig(
       widthIn: typeof s.widthIn === 'number' ? s.widthIn : 24,
       wall: s.wall && walls.includes(s.wall) ? s.wall : 'A',
     })),
+    // Optional metadata — passed through untouched (never rounded).
+    name: config.name,
+    roomWidth: config.roomWidth,
+    roomDepth: config.roomDepth,
+    roomHeight: config.roomHeight,
+    roomWidthDisplay: config.roomWidthDisplay,
+    roomDepthDisplay: config.roomDepthDisplay,
+    roomHeightDisplay: config.roomHeightDisplay,
   };
+}
+
+/** Open corner clearance count for a shape (each L/U corner adds an 8.5" gap). */
+export function cornerGapCount(shape: ClosetShape): number {
+  return shape === 'l_shaped' ? 1 : shape === 'u_shaped' ? 2 : 0;
+}
+
+/** Parse a room dimension string to exact decimal inches — NO rounding, any
+ * fraction denominator accepted. Returns null if it can't be parsed. Used only
+ * for room dimensions (never for bay widths). */
+export function parseRoomDimension(val: string): number | null {
+  const trimmed = val.trim();
+
+  const feetMatch = trimmed.match(/^(\d+)['′]\s*(\d+(?:\.\d+)?)?\s*(?:(\d+)\/(\d+))?"?$/);
+  if (feetMatch) {
+    const feet = parseFloat(feetMatch[1]) || 0;
+    const inches = parseFloat(feetMatch[2]) || 0;
+    const num = parseFloat(feetMatch[3]) || 0;
+    const denom = parseFloat(feetMatch[4]) || 1;
+    const frac = denom > 0 ? num / denom : 0;
+    return feet * 12 + inches + frac;
+  }
+
+  const inchMatch = trimmed.match(/^(\d+(?:\.\d+)?)"?$/);
+  if (inchMatch) return parseFloat(inchMatch[1]);
+
+  const mixedMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s+(\d+)\/(\d+)$/);
+  if (mixedMatch) {
+    const whole = parseFloat(mixedMatch[1]);
+    const num = parseFloat(mixedMatch[2]);
+    const denom = parseFloat(mixedMatch[3]);
+    return whole + (denom > 0 ? num / denom : 0);
+  }
+
+  return null;
 }
 
 /** Which walls a shape has, in order. */
