@@ -55,9 +55,26 @@ export function normalizeConfig(
   };
 }
 
-/** Open corner clearance count for a shape (each L/U corner adds an 8.5" gap). */
-export function cornerGapCount(shape: ClosetShape): number {
-  return shape === 'l_shaped' ? 1 : shape === 'u_shaped' ? 2 : 0;
+/** Cabinet carcass depth (in). The back wall's top cap is cut to fit between
+ * the side-wall caps, so the back run only loses the carcass depth (15, not
+ * 15.5). */
+export const CABINET_DEPTH = 15;
+/** Open clearance between a side wall and the back wall. */
+export const CORNER_GAP = 8.5;
+
+/** Maximum back-wall (Wall A) run for a shape, given the room width. Each side
+ * cabinet sits flush against the back wall and eats its own depth + one corner
+ * gap from the usable back run. Exact — never rounded. */
+export function maxBackWallWidth(shape: ClosetShape, roomWidth: number): number {
+  if (shape === 'l_shaped') return roomWidth - CABINET_DEPTH - CORNER_GAP; // roomWidth - 23.5
+  if (shape === 'u_shaped') return roomWidth - 2 * CABINET_DEPTH - 2 * CORNER_GAP; // roomWidth - 47
+  return roomWidth;
+}
+
+/** Side walls (B/C) are unobstructed — each is checked against the full room
+ * length independently. */
+export function maxSideWallWidth(roomLength: number): number {
+  return roomLength;
 }
 
 /** Parse a room dimension string to exact decimal inches — NO rounding, any

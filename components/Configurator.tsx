@@ -14,10 +14,10 @@ import type {
 } from '@/types';
 import {
   clampWidth,
-  cornerGapCount,
   defaultConfig,
   defaultSection,
   finishedHeightLabel,
+  maxBackWallWidth,
   normalizeConfig,
   parseRoomDimension,
   restrictedDrawerBayIds,
@@ -103,15 +103,16 @@ export default function Configurator({
     };
   }, [config]);
 
-  // Room WIDTH constrains ONLY the back wall (Wall A) + the 8.5" corner gaps
-  // (L=1, U=2). Side walls (B/C) are constrained by room LENGTH, not width.
+  // Room WIDTH constrains ONLY the back wall (Wall A). Side cabinets sit flush
+  // against it and eat a cabinet depth + corner gap per side (baked into
+  // maxBackWallWidth). Side walls (B/C) are constrained by room LENGTH.
   // Exact decimals, no rounding.
   const backWallWidth = config.sections
     .filter((s) => s.wall === 'A')
     .reduce((a, s) => a + s.widthIn, 0);
-  const totalClosetWidth = backWallWidth + cornerGapCount(config.shape) * 8.5;
   const roomWidthSet = typeof config.roomWidth === 'number';
-  const widthExceeded = roomWidthSet && totalClosetWidth > (config.roomWidth as number);
+  const maxBack = roomWidthSet ? maxBackWallWidth(config.shape, config.roomWidth as number) : 0;
+  const widthExceeded = roomWidthSet && backWallWidth > maxBack;
   // Room-height block: a room under 8' (96") can't take the raise-to-8' option.
   const heightBlocked = typeof config.roomHeight === 'number' && config.roomHeight < 96;
   const sideWallLen = (wall: WallId) =>
@@ -137,28 +138,26 @@ export default function Configurator({
         const cur = config.sections.find((s) => s.id === id);
         const wall = cur?.wall ?? 'A';
         const nextW = clampWidth(catalog, cur?.interior ?? 'long_hanging', patch.widthIn);
-        // Back-wall bay → check room WIDTH (Wall A + corner gaps only).
+        // Back-wall bay → check the back-wall run against maxBackWallWidth.
         if (wall === 'A' && typeof config.roomWidth === 'number') {
-          const total =
-            config.sections
-              .filter((s) => s.wall === 'A')
-              .reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0) +
-            cornerGapCount(config.shape) * 8.5;
-          console.log('[constraint] totalWidth:', total, 'roomWidth:', config.roomWidth);
-          if (total > config.roomWidth) {
-            flashError(
-              `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
-            );
+          const backSum = config.sections
+            .filter((s) => s.wall === 'A')
+            .reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0);
+          const maxB = maxBackWallWidth(config.shape, config.roomWidth);
+          console.log('[constraint] backWall:', backSum, 'maxBackWall:', maxB);
+          if (backSum > maxB) {
+            flashError('This wall is too wide for your room. Remove a bay or reduce bay widths to fit.');
             return; // reject — revert to previous width
           }
         }
-        // Side-wall bay → check room LENGTH.
+        // Side-wall bay → check its run against the full room length.
         if ((wall === 'B' || wall === 'C') && typeof config.roomLength === 'number') {
-          const total = config.sections
+          const sideSum = config.sections
             .filter((s) => s.wall === wall)
             .reduce((a, s) => a + (s.id === id ? nextW : s.widthIn), 0);
-          if (total > config.roomLength) {
-            flashError(`The side wall exceeds your room length of ${config.roomLengthDisplay ?? ''}.`);
+          console.log('[constraint] sideWall:', sideSum, 'roomLength:', config.roomLength);
+          if (sideSum > config.roomLength) {
+            flashError('This side wall is too long for your room. Remove a bay or reduce bay widths to fit.');
             return;
           }
         }
@@ -180,21 +179,20 @@ export default function Configurator({
   const addBay = useCallback(
     (wall: WallId) => {
       const defW = defaultSection(catalog, wall).widthIn;
-      // Adding a back-wall bay → check room WIDTH (Wall A + corner gaps only).
+      // Adding a back-wall bay → check the back-wall run against maxBackWallWidth.
       if (wall === 'A' && typeof config.roomWidth === 'number') {
-        const total = backWallWidth + cornerGapCount(config.shape) * 8.5 + defW;
-        console.log('[constraint] totalWidth:', total, 'roomWidth:', config.roomWidth);
-        if (total > config.roomWidth) {
-          flashError(
-            `This exceeds your room width of ${config.roomWidthDisplay ?? ''}. Remove a bay or reduce bay widths to fit.`
-          );
+        const backSum = backWallWidth + defW;
+        const maxB = maxBackWallWidth(config.shape, config.roomWidth);
+        console.log('[constraint] backWall:', backSum, 'maxBackWall:', maxB);
+        if (backSum > maxB) {
+          flashError('This wall is too wide for your room. Remove a bay or reduce bay widths to fit.');
           return;
         }
       }
-      // Adding a side-wall bay (L/U) → check room LENGTH.
+      // Adding a side-wall bay (L/U) → check its run against the full room length.
       if ((wall === 'B' || wall === 'C') && typeof config.roomLength === 'number') {
         if (sideWallLen(wall) + defW > config.roomLength) {
-          flashError(`The side wall exceeds your room length of ${config.roomLengthDisplay ?? ''}.`);
+          flashError('This side wall is too long for your room. Remove a bay or reduce bay widths to fit.');
           return;
         }
       }
@@ -369,8 +367,8 @@ export default function Configurator({
   // Room name/dimension display helpers.
   const defaultName = `Closet ${cart.count + 1}`;
   const roomInvalid = (typed?: string) => Boolean(typed) && parseRoomDimension(typed ?? '') === null;
-  const usagePct = roomWidthSet
-    ? Math.min(100, (totalClosetWidth / (config.roomWidth as number)) * 100)
+  const usagePct = roomWidthSet && maxBack > 0
+    ? Math.min(100, (backWallWidth / maxBack) * 100)
     : 0;
   // The banner reflects ONLY an actively-blocked action (auto-dismissing). It is
   // never shown merely because the current config exceeds the room — the usage
@@ -480,7 +478,7 @@ export default function Configurator({
           {roomWidthSet && (
             <div>
               <div style={{ fontSize: 11, color: '#7A6E65', marginBottom: 4 }}>
-                Using {formatInches(totalClosetWidth)} of {config.roomWidthDisplay} available
+                Back wall: using {formatInches(backWallWidth)} of {formatInches(Math.max(0, maxBack))} available
               </div>
               <div style={{ background: '#F0EBE4', height: 4, borderRadius: 9999, overflow: 'hidden' }}>
                 <div

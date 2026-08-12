@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Stray files accidentally saved at the repo root — never commit.
+# (A Resend key file was blocked here by GitHub push protection.)
+re_*.txt
+# leading-hash "pasted prompt" docs (escaped # so it's a pattern, not a comment)
+\#*.txt
