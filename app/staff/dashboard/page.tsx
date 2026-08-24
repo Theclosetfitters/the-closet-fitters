@@ -13,6 +13,7 @@ type JobRow = {
   customer_address: string | null;
   status: string | null;
   created_at: string | null;
+  quote_number: string | null;
 };
 type StageRow = { job_id: string; stage: string | null; completed: boolean | null };
 type ApptRow = {
@@ -41,7 +42,7 @@ export default async function StaffDashboardPage() {
 
   const { data: jobsRaw } = await supabase
     .from('jobs')
-    .select('id, customer_first_name, customer_last_name, customer_address, status, created_at')
+    .select('id, customer_first_name, customer_last_name, customer_address, status, created_at, quote_number')
     .order('created_at', { ascending: false });
   const { data: stagesRaw } = await supabase.from('job_stages').select('job_id, stage, completed');
   const { data: apptsRaw } = await supabase
@@ -84,6 +85,7 @@ export default async function StaffDashboardPage() {
     createdLabel: j.created_at ? fmt.format(new Date(j.created_at)) : '',
     completedStages: completedByJob.get(j.id) ?? 0,
     appointment: apptByJob.get(j.id) ?? null,
+    quoteNumber: j.quote_number ?? null,
   }));
   const today = fmt.format(new Date());
 

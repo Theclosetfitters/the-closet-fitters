@@ -15,6 +15,7 @@ export type DashJob = {
   createdLabel: string;
   completedStages: number;
   appointment: { startISO: string; staffName: string } | null;
+  quoteNumber?: string | null;
 };
 
 type StatusStyle = { label: string; bg: string; color: string; group: string };
@@ -56,6 +57,7 @@ export default function JobsDashboard({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState('all');
+  const [search, setSearch] = useState('');
   const [scheduleJob, setScheduleJob] = useState<ScheduleJob | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Local copy so a booking reflects immediately; re-synced whenever the server
@@ -66,7 +68,7 @@ export default function JobsDashboard({
   // Completed jobs (status 'complete') live only in the Completed tab; every
   // other tab (including All) excludes them.
   const isComplete = (j: DashJob) => j.status === 'complete';
-  const filtered =
+  const byTab =
     tab === 'completed'
       ? jobs.filter(isComplete)
       : tab === 'all'
@@ -78,6 +80,13 @@ export default function JobsDashboard({
                 ? cfg(j.status).group === 'scheduled' || j.appointment != null
                 : cfg(j.status).group === tab)
           );
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? byTab.filter(
+        (j) =>
+          (j.quoteNumber ?? '').toLowerCase().includes(q) || j.name.toLowerCase().includes(q)
+      )
+    : byTab;
 
   function showToast(msg: string) {
     setToast(msg);
@@ -107,7 +116,7 @@ export default function JobsDashboard({
     const [jobsRes, stagesRes, apptsRes] = await Promise.all([
       supabase
         .from('jobs')
-        .select('id, customer_first_name, customer_last_name, customer_address, status, created_at')
+        .select('id, customer_first_name, customer_last_name, customer_address, status, created_at, quote_number')
         .order('created_at', { ascending: false }),
       supabase.from('job_stages').select('job_id, stage, completed'),
       supabase
@@ -123,6 +132,7 @@ export default function JobsDashboard({
       customer_address: string | null;
       status: string | null;
       created_at: string | null;
+      quote_number: string | null;
     }[];
     const stagesRaw = (stagesRes.data ?? []) as {
       job_id: string;
@@ -161,6 +171,7 @@ export default function JobsDashboard({
         createdLabel: j.created_at ? fmt.format(new Date(j.created_at)) : '',
         completedStages: completedByJob.get(j.id) ?? 0,
         appointment: apptByJob.get(j.id) ?? null,
+        quoteNumber: j.quote_number ?? null,
       }))
     );
   }
@@ -175,19 +186,38 @@ export default function JobsDashboard({
           </h1>
           <p style={{ fontSize: 14, color: '#7A6E65', marginTop: 2 }}>{today}</p>
         </div>
-        <span
-          style={{
-            background: '#F0EBE4',
-            border: '0.5px solid #C7AC90',
-            borderRadius: 9999,
-            padding: '4px 14px',
-            fontSize: 12,
-            color: '#5E4F3E',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {jobs.length} job{jobs.length === 1 ? '' : 's'}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search quote # or name…"
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#C7AC90')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = '#E5DDD5')}
+            style={{
+              width: 200,
+              border: '1px solid #E5DDD5',
+              borderRadius: 9999,
+              padding: '6px 14px',
+              fontSize: 13,
+              color: '#1F333A',
+              outline: 'none',
+            }}
+          />
+          <span
+            style={{
+              background: '#F0EBE4',
+              border: '0.5px solid #C7AC90',
+              borderRadius: 9999,
+              padding: '4px 14px',
+              fontSize: 12,
+              color: '#5E4F3E',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {jobs.length} job{jobs.length === 1 ? '' : 's'}
+          </span>
+        </div>
       </div>
 
       {/* status filter tabs */}
@@ -248,7 +278,10 @@ export default function JobsDashboard({
                   {j.address && (
                     <div style={{ fontSize: 13, color: '#7A6E65', marginTop: 2 }}>{j.address}</div>
                   )}
-                  <div style={{ fontSize: 12, color: '#C7AC90', marginTop: 4 }}>{j.createdLabel}</div>
+                  <div style={{ fontSize: 12, color: '#C7AC90', marginTop: 4 }}>
+                    {j.createdLabel}
+                    {j.quoteNumber ? ` · ${j.quoteNumber}` : ''}
+                  </div>
                 </div>
                 <div style={{ minWidth: 160, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

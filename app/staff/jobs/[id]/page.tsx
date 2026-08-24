@@ -127,6 +127,7 @@ export default async function JobDetailPage({
     howHeard: job.how_heard ?? '',
     createdLabel: job.created_at ? fmt.format(new Date(job.created_at)) : '',
     notes: job.notes ?? '',
+    quoteNumber: job.quote_number ?? null,
   };
 
   // Travel time to/from adjacent appointments on the same day (server-side).

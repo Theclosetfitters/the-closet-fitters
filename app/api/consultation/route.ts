@@ -65,50 +65,10 @@ export async function POST(request: Request) {
   }
   const grandTotalCents = closets.reduce((a, c) => a + c.totalCents, 0);
 
-  let emailSent = false;
-  if (isEmailConfigured()) {
-    try {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ??
-        request.headers.get('origin') ??
-        new URL(request.url).origin;
-
-      // Generate the floor-plan PDF once and attach it to both emails.
-      // PDF failure must never block the email send.
-      let attachments: EmailAttachment[] | undefined;
-      if (closets.length > 0) {
-        try {
-          const pdf = await generateFloorPlanPdf(
-            body.items,
-            `${contact.firstName} ${contact.lastName}`
-          );
-          attachments = [{ filename: 'closet-floor-plan.pdf', content: pdf.toString('base64') }];
-        } catch (err) {
-          console.error('floor-plan PDF generation failed', err);
-        }
-      }
-
-      await sendQuoteEmail({
-        to: COMPANY_EMAIL,
-        subject: 'The Closet Fitters — New Consultation Request',
-        html: buildCompanyConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
-        attachments,
-      });
-      await sendQuoteEmail({
-        to: contact.email,
-        subject: 'The Closet Fitters — Your Consultation Request',
-        html: buildCustomerConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
-        attachments,
-      });
-      emailSent = true;
-    } catch (err) {
-      console.error('consultation email failed', err);
-    }
-  }
-
-  // Staff portal: record the submission as a job + its default stages.
-  // Best-effort — never blocks the customer response. Uses the service-role
-  // client because the submitter is anonymous (RLS would otherwise reject it).
+  // Record the submission as a job FIRST, so a quote number can be assigned
+  // before the PDF renders. Best-effort — never blocks the customer response.
+  // Uses the service-role client (the submitter is anonymous).
+  let quoteNumber: string | undefined;
   if (isSupabaseConfigured()) {
     try {
       const supabase = createServiceRoleClient();
@@ -137,6 +97,18 @@ export async function POST(request: Request) {
         .single();
       if (error) throw error;
 
+      // Assign a quote number AFTER the successful insert (a failed insert must
+      // never consume a sequence value).
+      try {
+        const { data: qn } = await supabase.rpc('next_quote_number');
+        if (typeof qn === 'string') {
+          quoteNumber = qn;
+          await supabase.from('jobs').update({ quote_number: qn }).eq('id', job.id);
+        }
+      } catch (e) {
+        console.error('quote number assignment failed', e);
+      }
+
       const stages = [
         'deposit_received',
         'cut_edge_banded',
@@ -149,6 +121,53 @@ export async function POST(request: Request) {
         .insert(stages.map((stage) => ({ job_id: job.id, stage, completed: false })));
     } catch (err) {
       console.error('job record failed', err);
+    }
+  }
+
+  let emailSent = false;
+  if (isEmailConfigured()) {
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        request.headers.get('origin') ??
+        new URL(request.url).origin;
+
+      // Generate the floor-plan PDF once and attach it to both emails.
+      // PDF failure must never block the email send.
+      let attachments: EmailAttachment[] | undefined;
+      if (closets.length > 0) {
+        try {
+          const pdf = await generateFloorPlanPdf(
+            body.items,
+            {
+              name: `${contact.firstName} ${contact.lastName}`,
+              address: contact.address,
+              phone: contact.phone,
+              email: contact.email,
+            },
+            quoteNumber
+          );
+          attachments = [{ filename: 'closet-floor-plan.pdf', content: pdf.toString('base64') }];
+        } catch (err) {
+          console.error('floor-plan PDF generation failed', err);
+        }
+      }
+
+      await sendQuoteEmail({
+        to: COMPANY_EMAIL,
+        subject: 'The Closet Fitters — New Consultation Request',
+        html: buildCompanyConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
+        attachments,
+      });
+      await sendQuoteEmail({
+        to: contact.email,
+        subject: 'The Closet Fitters — Your Consultation Request',
+        html: buildCustomerConsultationHtml(catalog, contact, flow, closets, grandTotalCents, baseUrl),
+        attachments,
+      });
+      emailSent = true;
+    } catch (err) {
+      console.error('consultation email failed', err);
     }
   }
 

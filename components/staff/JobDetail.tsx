@@ -31,6 +31,7 @@ export type JobInfo = {
   howHeard: string;
   createdLabel: string;
   notes: string;
+  quoteNumber?: string | null;
 };
 export type StageRow = {
   id: string;
@@ -463,7 +464,24 @@ export default function JobDetail({
 
         {/* RIGHT — client info + closet config (sticky) */}
         <div style={{ ...card, position: 'sticky', top: 24 }}>
-          <div style={sectionLabel}>Client</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={sectionLabel}>Client</div>
+            {info.quoteNumber && (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#5E4F3E',
+                  background: '#F0EBE4',
+                  border: '0.5px solid #C7AC90',
+                  borderRadius: 9999,
+                  padding: '2px 10px',
+                }}
+              >
+                {info.quoteNumber}
+              </span>
+            )}
+          </div>
           <div style={{ fontFamily: CORMORANT, fontSize: 24, color: '#1F333A', fontWeight: 400, marginTop: 4 }}>
             {info.name}
           </div>
