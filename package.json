@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "node --env-file=.env.local scripts/e2e-verify.mjs",
-    "test:ui": "node scripts/ui-verify.mjs"
+    "test:ui": "node scripts/ui-verify.mjs",
+    "test:geometry": "npx --yes tsx scripts/verify-closet-geometry.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

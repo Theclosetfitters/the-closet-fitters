@@ -45,19 +45,36 @@ export function elevationSvg(catalog: Catalog, config: ClosetConfig, maxWidth = 
       p.push(`<rect x="${x}" y="${yOf(0)}" width="${w}" height="${TOP_CAP * scale}" fill="${STYLE.topCapFill}" stroke="${STYLE.topCapStroke}" stroke-width="${STYLE.topCapStrokeW}"/>`);
       // Width label above.
       p.push(`<text x="${x + w / 2}" y="26" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="7" fill="${STYLE.widthLabel}">${esc(b.widthLabel)}</text>`);
+      // The bay code sits at TOP_CAP + 8". Split any interior line that would pass
+      // behind it (the SS topmost adjustable lands here) around a centred gap so the
+      // label stays legible — mirrors the PDF renderer.
+      const labelY = yOf(TOP_CAP + 8);
+      const gapHalf = b.code.length * 2.4 + 4; // ~label half-width + padding
+      const bandHalf = 6.5;
+      const cxb = x + w / 2;
+      const hseg = (yInch: number, inset: number, attrs: string) => {
+        const y = yOf(yInch);
+        const xa = x + inset;
+        const xb = x + w - inset;
+        const gL = cxb - gapHalf;
+        const gR = cxb + gapHalf;
+        if (Math.abs(y - labelY) <= bandHalf && gR > xa && gL < xb) {
+          if (gL > xa) p.push(`<line x1="${xa}" y1="${y}" x2="${gL}" y2="${y}" ${attrs}/>`);
+          if (gR < xb) p.push(`<line x1="${gR}" y1="${y}" x2="${xb}" y2="${y}" ${attrs}/>`);
+        } else {
+          p.push(`<line x1="${xa}" y1="${y}" x2="${xb}" y2="${y}" ${attrs}/>`);
+        }
+      };
       // Fixed shelves + case bottom.
-      const fixed = (yInch: number) =>
-        p.push(`<line x1="${x + STYLE.fixedShelfInset}" y1="${yOf(yInch)}" x2="${x + w - STYLE.fixedShelfInset}" y2="${yOf(yInch)}" stroke="${STYLE.fixedShelf}" stroke-width="${STYLE.fixedShelfW}"/>`);
-      gi.fixedShelves.forEach(fixed);
-      fixed(gi.floor); // case bottom
+      const fixedAttrs = `stroke="${STYLE.fixedShelf}" stroke-width="${STYLE.fixedShelfW}"`;
+      gi.fixedShelves.forEach((yInch) => hseg(yInch, STYLE.fixedShelfInset, fixedAttrs));
+      hseg(gi.floor, STYLE.fixedShelfInset, fixedAttrs); // case bottom
       // Adjustable shelves (dotted, round cap).
-      for (const yInch of gi.adjShelves) {
-        p.push(`<line x1="${x + STYLE.adjShelfInset}" y1="${yOf(yInch)}" x2="${x + w - STYLE.adjShelfInset}" y2="${yOf(yInch)}" stroke="${STYLE.adjShelf}" stroke-width="${STYLE.adjShelfW}" stroke-linecap="round" stroke-dasharray="${STYLE.adjShelfDash.join(' ')}"/>`);
-      }
+      const adjAttrs = `stroke="${STYLE.adjShelf}" stroke-width="${STYLE.adjShelfW}" stroke-linecap="round" stroke-dasharray="${STYLE.adjShelfDash.join(' ')}"`;
+      for (const yInch of gi.adjShelves) hseg(yInch, STYLE.adjShelfInset, adjAttrs);
       // Rods (thick, round cap).
-      for (const yInch of gi.rods) {
-        p.push(`<line x1="${x + STYLE.rodInset}" y1="${yOf(yInch)}" x2="${x + w - STYLE.rodInset}" y2="${yOf(yInch)}" stroke="${STYLE.rod}" stroke-width="${STYLE.rodW}" stroke-linecap="round"/>`);
-      }
+      const rodAttrs = `stroke="${STYLE.rod}" stroke-width="${STYLE.rodW}" stroke-linecap="round"`;
+      for (const yInch of gi.rods) hseg(yInch, STYLE.rodInset, rodAttrs);
       // Toe kick.
       p.push(`<rect x="${x + STYLE.toeKickInset}" y="${yOf(gi.toeKickTop)}" width="${w - STYLE.toeKickInset * 2}" height="${TOE_KICK * scale}" fill="${STYLE.toeKickFill}"/>`);
       // Drawer fronts (full overlay) + pulls.

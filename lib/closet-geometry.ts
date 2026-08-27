@@ -147,9 +147,19 @@ export function bayInterior(catalog: Catalog, interior: string, H: number): BayI
   };
 }
 
-// §3 — wall order (LEFT | BACK | RIGHT). Left wall reversed so its bay 0 (corner,
-// nearest the back) lands on the RIGHT edge, touching the back run. Right wall not
-// reversed — its bay 0 is already on the left edge at the seam.
+// §3 — wall order (LEFT | BACK | RIGHT). Stored section order is canonical and is
+// NEVER mutated here; both the elevation and the bird's-eye consume it directly.
+//
+// Ground truth from the 3D viewer (ClosetViewer.tsx): a side wall's bays run from
+// the OPEN FRONT (stored index 0) to the corner touching the back wall (last
+// index) for the LEFT wall, and mirror-imaged for the RIGHT wall (index 0 at the
+// corner). Because the elevation lays each group left-to-right and the back group
+// sits between the two side groups, the corner bay lands at the seam automatically
+// for BOTH side walls with no reversal:
+//   - LEFT group's seam is its RIGHT edge  → last index (corner) is drawn rightmost ✓
+//   - RIGHT group's seam is its LEFT edge → index 0 (corner) is drawn leftmost ✓
+// So the elevation needs no .reverse(). (The bird's-eye reverses the left column
+// once, in birdsEyePlan, so the corner sits at the top of both side columns.)
 export type WallGroup = { id: 'left' | 'back' | 'right'; label: string; bays: SectionConfig[] };
 
 export function elevationWallOrder(config: ClosetConfig): WallGroup[] {
@@ -158,9 +168,9 @@ export function elevationWallOrder(config: ClosetConfig): WallGroup[] {
     return [{ id: 'back', label: '', bays: byWall('A') }]; // straight: no wall label
   }
   const order: WallGroup[] = [];
-  const left = byWall('B'); // left side wall
-  const right = byWall('C'); // right side wall (U only)
-  if (left.length) order.push({ id: 'left', label: 'LEFT WALL', bays: [...left].reverse() });
+  const left = byWall('B'); // left side wall — stored order, corner at the last index
+  const right = byWall('C'); // right side wall (U only) — stored order, corner at index 0
+  if (left.length) order.push({ id: 'left', label: 'LEFT WALL', bays: left });
   order.push({ id: 'back', label: 'BACK WALL', bays: byWall('A') });
   if (right.length) order.push({ id: 'right', label: 'RIGHT WALL', bays: right });
   return order;
@@ -316,8 +326,13 @@ export function birdsEyePlan(catalog: Catalog, config: ClosetConfig): BirdsEyePl
     return { cells, labels, width: Math.max(1, back.length) * BE_BACK_W, height: BE_BACK_H };
   }
 
-  const left = byWall('B'); // bay 0 nearest back → top of the left column
-  const right = byWall('C');
+  // Stored order: LEFT wall bay 0 is at the open FRONT (corner is the last index),
+  // RIGHT wall bay 0 is at the corner. The bird's-eye puts the corner at the TOP of
+  // each side column (the end touching the back run), so the left column is reversed
+  // once here and the right column is drawn in stored order. This is the ONLY
+  // .reverse() in the drawing pipeline (§4).
+  const left = [...byWall('B')].reverse(); // corner (last stored index) → top
+  const right = byWall('C'); // corner (stored index 0) → top
   const back = byWall('A');
 
   const leftW = left.length ? BE_SIDE_W : 0;

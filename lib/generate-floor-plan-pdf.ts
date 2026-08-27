@@ -33,16 +33,83 @@ const MUTED = '#7A6E65';
 const M = 44;
 const CW = CONTENT_WIDTH; // 524
 
-// Standard-14 fonts don't carry ⅛⅜⅝⅞ — swap unicode fractions to ASCII.
-function ascii(s: string): string {
-  return s
-    .replace(/⅛/g, '1/8')
-    .replace(/¼/g, '1/4')
-    .replace(/⅜/g, '3/8')
-    .replace(/½/g, '1/2')
-    .replace(/⅝/g, '5/8')
-    .replace(/¾/g, '3/4')
-    .replace(/⅞/g, '7/8');
+// The Standard-14 Helvetica AFM carries ¼ ½ ¾ (WinAnsi) but NOT the four eighths
+// ⅛ ⅜ ⅝ ⅞, and PDFKit has no subscript digits to compose them from. So ¼ ½ ¾ pass
+// straight through as native glyphs (they render *and* extract correctly) and only
+// the eighths are drawn as a built fraction: a small numerator over a small
+// denominator split by a full-size slash. Route every dimension-bearing string
+// through drawDim/measureDim below — never emit ASCII "3/4".
+const EIGHTHS: Record<string, [number, number]> = {
+  '⅛': [1, 8],
+  '⅜': [3, 8],
+  '⅝': [5, 8],
+  '⅞': [7, 8],
+};
+type DimTok = { text: string } | { num: number; den: number };
+function tokenizeDim(s: string): DimTok[] {
+  const out: DimTok[] = [];
+  let buf = '';
+  for (const ch of s) {
+    const f = EIGHTHS[ch];
+    if (f) {
+      if (buf) {
+        out.push({ text: buf });
+        buf = '';
+      }
+      out.push({ num: f[0], den: f[1] });
+    } else buf += ch;
+  }
+  if (buf) out.push({ text: buf });
+  return out;
+}
+// Metrics for one built fraction at the given font/size (also the drawing plan).
+function fracMetrics(doc: Doc, num: number, den: number, font: string, size: number) {
+  const fs = size * 0.7; // numerator / denominator size
+  doc.font(font).fontSize(fs);
+  const numW = doc.widthOfString(String(num));
+  const denW = doc.widthOfString(String(den));
+  doc.fontSize(size);
+  const slashW = doc.widthOfString('/');
+  const kern = fs * 0.12; // tuck the slash slightly under each digit
+  return { fs, numW, denW, slashW, kern, advance: numW - kern + slashW - kern + denW };
+}
+function measureDim(doc: Doc, s: string, font: string, size: number): number {
+  let w = 0;
+  for (const tk of tokenizeDim(s)) {
+    if ('text' in tk) {
+      doc.font(font).fontSize(size);
+      w += doc.widthOfString(tk.text);
+    } else w += fracMetrics(doc, tk.num, tk.den, font, size).advance;
+  }
+  return w;
+}
+// Draw a dimension string at (x, yTop), honouring width+align, with built eighths.
+function drawDim(
+  doc: Doc,
+  s: string,
+  x: number,
+  yTop: number,
+  o: { width?: number; align?: 'left' | 'center' | 'right'; font: string; size: number; color: string }
+): number {
+  const width = o.width ?? 0;
+  const total = measureDim(doc, s, o.font, o.size);
+  let cx = x + (o.align === 'center' ? (width - total) / 2 : o.align === 'right' ? width - total : 0);
+  for (const tk of tokenizeDim(s)) {
+    if ('text' in tk) {
+      doc.font(o.font).fontSize(o.size).fillColor(o.color).text(tk.text, cx, yTop, { lineBreak: false });
+      cx += doc.widthOfString(tk.text);
+    } else {
+      const m = fracMetrics(doc, tk.num, tk.den, o.font, o.size);
+      doc.fillColor(o.color);
+      doc.font(o.font).fontSize(m.fs).text(String(tk.num), cx, yTop, { lineBreak: false });
+      const xS = cx + m.numW - m.kern;
+      doc.fontSize(o.size).text('/', xS, yTop, { lineBreak: false });
+      const xD = xS + m.slashW - m.kern;
+      doc.fontSize(m.fs).text(String(tk.den), xD, yTop + (o.size - m.fs), { lineBreak: false });
+      cx += m.advance;
+    }
+  }
+  return total;
 }
 
 function extractConfig(raw: unknown): unknown {
@@ -146,20 +213,20 @@ function drawCloset(doc: Doc, cfg: ClosetConfig, i: number, startY: number) {
   const name = closetLabel(cfg, i);
 
   doc.font('Times-Bold').fontSize(23).fillColor(COSMOS).text(name, M, startY, { width: CW });
-  doc.font('Helvetica').fontSize(9.2).fillColor(MUTED).text(ascii(subLine(catalog, cfg)), M, doc.y + 1, {
-    width: CW,
-  });
+  let yInfo = doc.y + 1;
+  drawDim(doc, subLine(catalog, cfg), M, yInfo, { width: CW, align: 'left', font: 'Helvetica', size: 9.2, color: MUTED });
+  yInfo += 12;
   if (cfg.roomWidthDisplay || cfg.roomLengthDisplay || cfg.roomHeightDisplay) {
-    doc.text(
-      ascii(
-        `Room Dimensions: ${cfg.roomWidthDisplay ?? '—'} × ${cfg.roomLengthDisplay ?? '—'} × ${
-          cfg.roomHeightDisplay ?? '—'
-        }`
-      )
-    );
+    // Labelled W / L / H so two equal dimensions aren't ambiguous.
+    const rd = `Room Dimensions: ${cfg.roomWidthDisplay ?? '—'} W × ${cfg.roomLengthDisplay ?? '—'} L × ${
+      cfg.roomHeightDisplay ?? '—'
+    } H`;
+    drawDim(doc, rd, M, yInfo, { width: CW, align: 'left', font: 'Helvetica', size: 9.2, color: MUTED });
+    yInfo += 12;
   }
+  doc.y = yInfo;
 
-  drawPills(doc, hardwarePills(catalog, cfg).map(ascii), M, doc.y + 6);
+  drawPills(doc, hardwarePills(catalog, cfg), M, doc.y + 6);
 
   // ELEVATION
   doc.font('Helvetica-Bold').fontSize(7.2).fillColor(TAN).text('ELEVATION', M, doc.y + 8, {
@@ -214,19 +281,16 @@ function drawPills(doc: Doc, pills: string[], x0: number, y0: number) {
   const padX = 9;
   const h = 15;
   const gap = 5;
-  doc.font('Helvetica').fontSize(7.8);
   let px = x0;
   let py = y0;
   for (const t of pills) {
-    const pw = doc.widthOfString(t) + padX * 2;
+    const pw = measureDim(doc, t, 'Helvetica', 7.8) + padX * 2;
     if (px + pw > x0 + CW) {
       px = x0;
       py += h + gap;
     }
     doc.roundedRect(px, py, pw, h, h / 2).lineWidth(0.7).fillAndStroke('#FDFBF9', TAN);
-    doc.fillColor(COSMOS).font('Helvetica').fontSize(7.8).text(t, px + padX, py + (h - 7.8) / 2 + 0.4, {
-      lineBreak: false,
-    });
+    drawDim(doc, t, px + padX, py + (h - 7.8) / 2 + 0.4, { font: 'Helvetica', size: 7.8, color: COSMOS });
     px += pw + gap;
   }
   doc.y = py + h;
@@ -273,19 +337,34 @@ function drawBay(
   const bh = H * scale;
 
   // width label above the bay
-  doc.font('Helvetica').fontSize(7).fillColor(STYLE.widthLabel).text(ascii(widthLabel), x, yTop - 10, {
-    width: w,
-    align: 'center',
-    lineBreak: false,
-  });
+  drawDim(doc, widthLabel, x, yTop - 10, { width: w, align: 'center', font: 'Helvetica', size: 7, color: STYLE.widthLabel });
   // body + top cap
   doc.lineWidth(STYLE.bodyStrokeW).rect(x, yOf(0), w, bh).fillAndStroke(STYLE.bodyFill, STYLE.bodyStroke);
   doc.lineWidth(STYLE.topCapStrokeW).rect(x, yOf(0), w, TOP_CAP * scale).fillAndStroke(STYLE.topCapFill, STYLE.topCapStroke);
 
+  // The bay code sits at TOP_CAP + 8". Any interior line passing behind it (the SS
+  // topmost adjustable shelf lands here; other types can at low scale) is drawn as
+  // two segments with a gap centred on the label so nothing crosses the letters.
+  const labelY = yOf(TOP_CAP + 8);
+  doc.font('Helvetica-Bold').fontSize(7.2);
+  const gapHalf = doc.widthOfString(code) / 2 + 4; // label half-width + 4pt padding
+  const bandHalf = 6.5; // vertical reach of the label band, in points
+  const labelCx = x + w / 2;
+
   const hline = (yInch: number, color: string, width: number, inset: number, cap: 'butt' | 'round', dash?: [number, number]) => {
+    const y = yOf(yInch);
+    const x1 = x + inset;
+    const x2 = x + w - inset;
     doc.lineWidth(width).lineCap(cap);
     if (dash) doc.dash(dash[0], { space: dash[1] });
-    doc.moveTo(x + inset, yOf(yInch)).lineTo(x + w - inset, yOf(yInch)).stroke(color);
+    const gL = labelCx - gapHalf;
+    const gR = labelCx + gapHalf;
+    if (Math.abs(y - labelY) <= bandHalf && gR > x1 && gL < x2) {
+      if (gL > x1) doc.moveTo(x1, y).lineTo(gL, y).stroke(color);
+      if (gR < x2) doc.moveTo(gR, y).lineTo(x2, y).stroke(color);
+    } else {
+      doc.moveTo(x1, y).lineTo(x2, y).stroke(color);
+    }
     if (dash) doc.undash();
     doc.lineCap('butt');
   };
