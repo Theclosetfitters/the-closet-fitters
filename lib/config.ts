@@ -207,30 +207,58 @@ export function totalWidthIn(config: ClosetConfig): number {
  * panel) so clothes can hang the full depth on the side walls. */
 export const CORNER_CLEARANCE_IN = 8.5;
 
-/** Bay id where drawers are NEVER allowed on each side wall: the bay physically
- * at the back-wall corner (its drawer would be blocked from opening by the back
- * wall cabinetry). Returns the corner bay of Wall B and Wall C on L/U closets;
- * straight closets have no side walls so the set is empty.
- *
- * IMPORTANT — the two side walls are MIRRORED in the 3D layout (ClosetViewer
- * `planWalls`): Wall B is rotated +90° and Wall C −90°, while each wall's bays
- * are laid out in the same array order. So the array→corner mapping is opposite:
- *   - Wall B (left):  corner bay = the LAST bay in the array
- *   - Wall C (right): corner bay = the FIRST bay in the array
- * Verified against the 3D render — a drawers bay appended to Wall B sits against
- * the back wall. New side bays are appended (end of array), so on Wall B the new
- * bay becomes the corner. Do NOT "symmetrize" this to index 0 for both — that is
- * the bug this rewrite fixes. Re-derived from `config` every call (no stored
- * index), so it always tracks the current corner bay as bay counts change. */
-export function restrictedDrawerBayIds(config: ClosetConfig): Set<string> {
+/** The interior a corner bay falls back to when a drawer is illegally placed
+ * there (matches the 3D viewer and the configurator's auto-reset). */
+export const CORNER_DRAWER_FALLBACK: InteriorType = 'long_hanging';
+
+/** Single source of truth for "is this the corner bay?" — POSITIONAL, never a
+ * literal `index === 0`. The two side walls are MIRRORED in the 3D layout
+ * (ClosetViewer `planWalls`): Wall B is rotated +90° and Wall C −90°, while each
+ * wall's bays are laid out in the same array order. So the array→corner mapping
+ * is opposite:
+ *   - Wall B (left):  index 0 is the OPEN FRONT → corner = the LAST index
+ *   - Wall C (right): index 0 IS the corner
+ * The back wall (A) and straight closets have no corner. `index`/`count` are the
+ * bay's position and total WITHIN its own wall. Every caller (configurator UI,
+ * quote validation, both 2D renderers) must go through this — never hardcode 0.
+ */
+export function isCornerBay(wall: WallId, index: number, count: number): boolean {
+  if (count <= 0) return false;
+  if (wall === 'B') return index === count - 1; // left: corner is the last bay
+  if (wall === 'C') return index === 0; // right: corner is the first bay
+  return false; // back wall / straight closets have no corner bay
+}
+
+/** Ids of the bays physically at a back-wall corner (Wall B + Wall C on L/U
+ * closets; empty for straight). A corner bay can never hold drawers — the back
+ * wall cabinetry would block them from opening. Re-derived from `config` every
+ * call (no stored index) via {@link isCornerBay}, so it always tracks the
+ * current corner as bay counts change. */
+export function cornerBayIds(config: ClosetConfig): Set<string> {
   const ids = new Set<string>();
   if (config.shape !== 'l_shaped' && config.shape !== 'u_shaped') return ids;
-  const bays = (wall: WallId) => config.sections.filter((s) => s.wall === wall);
-  const b = bays('B');
-  if (b.length) ids.add(b[b.length - 1].id); // Wall B corner = last bay
-  const c = bays('C');
-  if (c.length) ids.add(c[0].id); // Wall C corner = first bay
+  for (const wall of ['B', 'C'] as WallId[]) {
+    const bays = config.sections.filter((s) => s.wall === wall);
+    bays.forEach((s, i) => {
+      if (isCornerBay(wall, i, bays.length)) ids.add(s.id);
+    });
+  }
   return ids;
+}
+
+/** Back-compat alias — the set of bays whose "drawers" option must be blocked. */
+export const restrictedDrawerBayIds = cornerBayIds;
+
+/** Config sections with any corner-placed drawer coerced to the fallback
+ * interior. This is the enforcement point that stops a drawer in a corner from
+ * reaching the PDF, the cart, or the 2D geometry even if the UI is bypassed —
+ * every rendering path derives its bays from this, not from raw sections. */
+export function guardedSections(config: ClosetConfig): SectionConfig[] {
+  const ids = cornerBayIds(config);
+  if (ids.size === 0) return config.sections;
+  return config.sections.map((s) =>
+    ids.has(s.id) && s.interior === 'drawers' ? { ...s, interior: CORNER_DRAWER_FALLBACK } : s
+  );
 }
 
 export function heightInches(catalog: Catalog, config: ClosetConfig): number {

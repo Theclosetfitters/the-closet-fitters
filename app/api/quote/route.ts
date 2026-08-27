@@ -53,8 +53,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Your cart is empty.' }, { status: 400 });
   }
 
-  // Corner rule: the side-wall bay nearest the back-wall corner (Wall B[0] /
-  // Wall C[0]) can never have drawers — the back wall would block them opening.
+  // Corner rule: the side-wall bay nearest the back-wall corner can never have
+  // drawers — the back wall would block them opening. The corner is positional
+  // (Wall B = last bay, Wall C = first bay), resolved by restrictedDrawerBayIds.
   for (const it of items) {
     const blocked = restrictedDrawerBayIds(it.config);
     const conflictWalls = new Set(

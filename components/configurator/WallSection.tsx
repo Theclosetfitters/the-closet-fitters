@@ -87,6 +87,7 @@ export default function WallSection({
           index={b.index}
           label={`Wall ${wall} — Bay ${i + 1}`}
           drawersBlocked={blockedIds.has(b.section.id)}
+          isCorner={blockedIds.has(b.section.id)}
           onChange={onChange}
         />
       ))}

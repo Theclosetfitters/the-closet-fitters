@@ -42,9 +42,11 @@ interface Props {
   index: number;
   /** Display label within the wall, e.g. "Bay 1". */
   label: string;
-  /** True when this side-wall corner bay can't be drawers (back-wall corner
-   * bay at this corner already has a drawer bank). */
+  /** True when this bay sits at a back-wall corner (drawers disallowed — the
+   * back wall would block them from opening). Positional, via isCornerBay(). */
   drawersBlocked?: boolean;
+  /** True when this bay is the corner bay of its side wall (drives the badge). */
+  isCorner?: boolean;
   onChange: (id: string, patch: Partial<SectionConfig>) => void;
 }
 
@@ -54,6 +56,7 @@ export default function SectionRow({
   index,
   label,
   drawersBlocked = false,
+  isCorner = false,
   onChange,
 }: Props) {
   const interior = catalog.interiors.find((i) => i.id === section.interior)!;
@@ -109,7 +112,17 @@ export default function SectionRow({
       className="rounded-xl border border-line bg-card p-3"
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-base font-semibold text-brand">{label}</span>
+        <span className="flex items-center gap-2 text-base font-semibold text-brand">
+          {label}
+          {isCorner && (
+            <span
+              data-testid={`corner-badge-${index}`}
+              className="rounded-full border border-sand bg-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-walnut"
+            >
+              Corner
+            </span>
+          )}
+        </span>
         <span className="text-sm font-semibold text-walnut">
           {formatCents(sectionTotal)}
         </span>

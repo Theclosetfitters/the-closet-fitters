@@ -4,7 +4,11 @@
 // re-derive positions. All vertical positions are REAL INCHES scaled by the
 // drawing scale — never a percentage of bay height.
 import type { Catalog, ClosetConfig, SectionConfig, WallId } from '@/types';
-import { finishedHeightIn, wallsForShape } from '@/lib/config';
+import { finishedHeightIn, wallsForShape, guardedSections } from '@/lib/config';
+
+// Re-exported so the "geometry module" is the one place callers reach for the
+// corner rules (implemented in lib/config to avoid a circular import).
+export { isCornerBay, cornerBayIds, guardedSections, CORNER_DRAWER_FALLBACK } from '@/lib/config';
 
 // §1 — shared geometry constants (inches)
 export const TOP_CAP = 0.75; // tan cap across the top of every bay
@@ -163,7 +167,10 @@ export function bayInterior(catalog: Catalog, interior: string, H: number): BayI
 export type WallGroup = { id: 'left' | 'back' | 'right'; label: string; bays: SectionConfig[] };
 
 export function elevationWallOrder(config: ClosetConfig): WallGroup[] {
-  const byWall = (w: WallId) => config.sections.filter((s) => s.wall === w);
+  // guardedSections coerces any corner-placed drawer to the fallback interior,
+  // so a bypassed UI can never leak a corner drawer into the elevation.
+  const sections = guardedSections(config);
+  const byWall = (w: WallId) => sections.filter((s) => s.wall === w);
   if (config.shape === 'straight') {
     return [{ id: 'back', label: '', bays: byWall('A') }]; // straight: no wall label
   }
@@ -315,7 +322,8 @@ export type BeLabel = { text: string; x: number; y: number; rot: 0 | -90 | 90 };
 export type BirdsEyePlan = { cells: BeCell[]; labels: BeLabel[]; width: number; height: number };
 
 export function birdsEyePlan(catalog: Catalog, config: ClosetConfig): BirdsEyePlan {
-  const byWall = (w: WallId) => config.sections.filter((s) => s.wall === w);
+  const sections = guardedSections(config); // corner drawers coerced (see §2 guard)
+  const byWall = (w: WallId) => sections.filter((s) => s.wall === w);
   const code = (s: SectionConfig) => bayCode(catalog, s.interior);
   const cells: BeCell[] = [];
   const labels: BeLabel[] = [];
@@ -361,7 +369,7 @@ export function birdsEyePlan(catalog: Catalog, config: ClosetConfig): BirdsEyePl
 export function hardwarePills(catalog: Catalog, config: ClosetConfig): string[] {
   const label = (arr: { id: string; label: string }[], id: string) =>
     arr.find((x) => x.id === id)?.label ?? id;
-  const codes = config.sections.map((s) => bayCode(catalog, s.interior));
+  const codes = guardedSections(config).map((s) => bayCode(catalog, s.interior));
   const pills: string[] = [];
   if (codes.includes('DR')) {
     pills.push(label(catalog.hardwareStyles, config.hardwareStyleId));
