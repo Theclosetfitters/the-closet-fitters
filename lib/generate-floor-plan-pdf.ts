@@ -3,6 +3,7 @@
 // the PDF and the cart can't drift. Server-only; never import from a Client
 // Component. PDFKit's built-in fonts are WinAnsi and lack eighth-fraction glyphs,
 // so dimension text is ASCII-ized in the PDF only (the cart keeps the glyphs).
+import path from 'node:path';
 import PDFDocument from 'pdfkit';
 import { catalog } from '@/lib/catalog';
 import { computePrice } from '@/lib/pricing';
@@ -172,20 +173,23 @@ export async function generateFloorPlanPdf(
 // ---- Page-1 header bar + client / quote blocks ---------------------------
 function drawPageOneHeader(doc: Doc, client: PdfClient, quoteNumber?: string) {
   const PW = doc.page.width;
-  doc.rect(0, 0, PW, 84).fill(COSMOS);
-  doc.rect(0, 84, PW, 3).fill(TAN);
-  // TODO: replace with /public/images/logos/hanger-lockup.png (~200pt wide) once
-  // supplied. PDFKit cannot embed SVG; this transparent PNG does not exist yet.
-  doc.font('Times-Bold').fontSize(20).fillColor('#EAE0D5').text('The Closet Fitters', 0, 30, {
-    width: PW,
-    align: 'center',
-  });
-  doc.font('Helvetica').fontSize(6).fillColor(TAN).text('[ logo: hanger-lockup.png — TODO ]', 0, 60, {
-    width: PW,
-    align: 'center',
-  });
+  // Cosmos header bar with the tan rule under it. The hanger lockup already
+  // contains the "The Closet Fitters" wordmark and is pre-coloured for dark
+  // surfaces (cream text, tan hanger) — draw it as-is, no filter/tint. The bar is
+  // tall (158pt) so the stacked wordmark reads at print size.
+  const BAR_H = 158;
+  const LOGO_W = 173.4; // 120 × 1.4446 (the artwork's aspect ratio)
+  const LOGO_H = 120;
+  doc.rect(0, 0, PW, BAR_H).fill(COSMOS);
+  doc.rect(0, BAR_H, PW, 3).fill(TAN);
+  // Resolve from the project root so it works in dev and in the Vercel build; no
+  // network fetch — the PDF must render offline.
+  const logoPath = path.join(process.cwd(), 'public/images/logos/hanger-lockup.png');
+  doc.image(logoPath, (PW - LOGO_W) / 2, (BAR_H - LOGO_H) / 2, { width: LOGO_W, height: LOGO_H });
 
-  const topY = 102;
+  // Client / quote blocks sit the same distance below the rule as before: the bar
+  // grew by 74pt (84 → 158), so this baseline moves down by 74pt too (102 → 176).
+  const topY = 176;
   // Client block (left).
   doc.font('Times-Bold').fontSize(15).fillColor(COSMOS).text(client.name || '', M, topY, { width: 320 });
   doc.font('Helvetica').fontSize(8.6).fillColor(COSMOS);
