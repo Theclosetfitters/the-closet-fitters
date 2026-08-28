@@ -12,12 +12,12 @@ export { isCornerBay, cornerBayIds, guardedSections, CORNER_DRAWER_FALLBACK } fr
 
 // §1 — shared geometry constants (inches)
 export const TOP_CAP = 0.75; // tan cap across the top of every bay
-export const TOP_SHELF = 12; // fixed shelf, measured DOWN from underside of top cap
+export const LH_SHELF = 12.75; // Long Hanging fixed shelf, below underside of case top
 export const CASE_BOTTOM = 0.75;
 export const TOE_KICK = 2.5;
 export const DRAWER_H = 10;
 export const DRAWER_COUNT = 4;
-export const ROD_DROP = 3.4; // rod sits this far below the shelf above it
+export const ROD_DROP = 2.125; // rod centreline 2⅛" below the surface above it
 export const WALL_GAP = 18; // visual gap (inches) between wall groups in the elevation
 
 // scale bounds on a 524pt content width
@@ -98,10 +98,9 @@ export type BayInterior = {
 };
 
 export function bayInterior(catalog: Catalog, interior: string, H: number): BayInterior {
-  const interiorTop = TOP_CAP; // 0.75
-  const shelf12 = TOP_CAP + TOP_SHELF; // 12.75
+  const interiorTop = TOP_CAP; // 0.75 — underside of the case top
   const floor = H - TOE_KICK - CASE_BOTTOM; // top face of case bottom
-  const mid = (interiorTop + floor) / 2;
+  const mid = (interiorTop + floor) / 2; // interior midpoint
 
   const fixedShelves: number[] = [];
   const adjShelves: number[] = [];
@@ -109,32 +108,40 @@ export function bayInterior(catalog: Catalog, interior: string, H: number): BayI
   const drawerTops: number[] = [];
 
   switch (interior) {
-    case 'long_hanging': // LH
-      fixedShelves.push(shelf12);
-      rods.push(shelf12 + ROD_DROP);
+    case 'long_hanging': {
+      // LH — one fixed shelf near the top, rod below it, open below.
+      const shelf = interiorTop + LH_SHELF;
+      fixedShelves.push(shelf);
+      rods.push(shelf + ROD_DROP);
       break;
-    case 'double_hanging': // DH
-      fixedShelves.push(shelf12, mid);
-      rods.push(shelf12 + ROD_DROP, mid + ROD_DROP);
+    }
+    case 'double_hanging':
+      // DH — rod directly under the case top (no shelf above it), fixed shelf at
+      // mid, second rod below that.
+      rods.push(interiorTop + ROD_DROP);
+      fixedShelves.push(mid);
+      rods.push(mid + ROD_DROP);
       break;
-    case 'full_hanging': // FH
-      fixedShelves.push(shelf12, mid);
-      rods.push(shelf12 + ROD_DROP);
-      adjShelves.push(...evenly(mid, floor, 2));
+    case 'full_hanging':
+      // FH — rod directly under the case top, then three ADJUSTABLE shelves.
+      rods.push(interiorTop + ROD_DROP);
+      adjShelves.push(mid, ...evenly(mid, floor, 2));
       break;
-    case 'adjustable_shelves': // SH
-      fixedShelves.push(shelf12, mid);
-      adjShelves.push((shelf12 + mid) / 2, ...evenly(mid, floor, 2));
+    case 'adjustable_shelves':
+      // SH — one fixed shelf at mid, two adjustable above and two below.
+      fixedShelves.push(mid);
+      adjShelves.push(...evenly(interiorTop, mid, 2), ...evenly(mid, floor, 2));
       break;
-    case 'shoe_shelves': // SS — no top shelf
+    case 'shoe_shelves':
+      // SS — one fixed shelf at mid, four adjustable above and four below.
       fixedShelves.push(mid);
       adjShelves.push(...evenly(interiorTop, mid, 4), ...evenly(mid, floor, 4));
       break;
     case 'drawers': {
-      // DR
+      // DR — a 4-drawer stack sitting on the case bottom, two adjustable shelves
+      // spread across the opening above it (and nothing between them and the stack).
       const stackTop = floor - DRAWER_COUNT * DRAWER_H;
-      fixedShelves.push(shelf12);
-      adjShelves.push((shelf12 + stackTop) / 2);
+      adjShelves.push(...evenly(interiorTop, stackTop, 2));
       for (let i = 0; i < DRAWER_COUNT; i++) drawerTops.push(stackTop + i * DRAWER_H);
       break;
     }
