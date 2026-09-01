@@ -1,7 +1,7 @@
 {
   "pricing": {
     "backPerSectionCents": 20000,
-    "heightUpgradePerFootCents": 5000,
+    "heightUpgradePerBayCents": 10000,
     "currency": "usd"
   },
   "constraints": {

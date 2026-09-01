@@ -629,7 +629,7 @@ export default function Configurator({
               <span className="block text-base font-semibold text-ink">
                 Raise height to {upgradedHeightLabel}{' '}
                 <span className="font-normal text-muted">
-                  (+{formatCents(catalog.pricing.heightUpgradePerFootCents)}/ft)
+                  (+{formatCents(catalog.pricing.heightUpgradePerBayCents)}/bay)
                 </span>
               </span>
               <span className="mt-1 block text-xs text-sand">

@@ -65,7 +65,7 @@ export interface HardwareOption {
 
 export interface CatalogPricing {
   backPerSectionCents: number;
-  heightUpgradePerFootCents: number;
+  heightUpgradePerBayCents: number;
   currency: string;
 }
 

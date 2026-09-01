@@ -27,10 +27,12 @@ import type {
 } from '@/types';
 import {
   CORNER_CLEARANCE_IN,
+  finishedHeightIn,
   restrictedDrawerBayIds,
   wallDisplayLabel,
   wallsForShape,
 } from '@/lib/config';
+import { bayInterior } from '@/lib/closet-geometry';
 
 interface ClosetViewerProps {
   catalog: Catalog;
@@ -42,7 +44,6 @@ const T = 0.75 * IN; // 3/4" panel thickness
 const DRAWER_H = 10 * IN; // each drawer is 10" tall
 const TOE_H = 2 * IN; // 2" toe kick height
 const TOE_RECESS = 0.75 * IN; // toe kick set back 3/4"
-const TOP_CUBBY = 12 * IN; // fixed shelf sits 12" down from the top
 
 type Orient = 'v' | 'h';
 
@@ -200,13 +201,21 @@ function Pull({
 }
 
 // --- Per-section interior --------------------------------------------------
+// Shelf / rod / drawer positions come from the SHARED geometry module
+// (bayInterior) — the same helper the cart and PDF consume — so a bay layout is
+// computed once and drawn three ways. The module returns inch positions measured
+// DOWN from the finished bay top; we map them onto the viewer's drawn opening
+// (cap underside .. case-bottom top) so shelves land inside the actual cabinet.
+// Drawer boxes keep their exact 10" physical size on the case bottom; only their
+// count comes from the module.
 function Interior({
   section,
   cx,
   wM,
   D,
-  bottomY,
-  topY,
+  H,
+  Hin,
+  catalog,
   matH,
   rodMetal,
   pullMetal,
@@ -216,8 +225,9 @@ function Interior({
   cx: number;
   wM: number;
   D: number;
-  bottomY: number;
-  topY: number;
+  H: number; // drawn bay height in metres (base height, top cap included)
+  Hin: number; // finished bay height in inches — drives the shared geometry
+  catalog: Catalog;
   matH: THREE.Material;
   rodMetal: THREE.Material;
   pullMetal: THREE.Material;
@@ -226,113 +236,55 @@ function Interior({
   const uw = wM - 1.6 * T;
   const sd = D - 1.6 * T;
   const rodLen = uw * 0.94;
-  const rh = topY - bottomY;
 
-  const shelf = (key: string, y: number, rot?: [number, number, number]) => (
-    <Panel key={key} size={[uw, T, sd]} position={[cx, y, 0]} rotation={rot} material={matH} />
+  const gi = bayInterior(catalog, section.interior, Hin);
+
+  // Map a module inch (from the finished top) to viewer Y. Anchor the module's
+  // interior span (cap underside .. case-bottom top) onto the drawn opening so
+  // nothing shifts relative to the cap and case the viewer already draws.
+  const TOP_CAP_IN = 0.75;
+  const yTop = H - T; // cap underside
+  const yBot = TOE_H + T; // case-bottom top face
+  const denom = gi.floor - TOP_CAP_IN;
+  const yOf = (inch: number) => yTop - ((inch - TOP_CAP_IN) / denom) * (yTop - yBot);
+
+  const shelf = (key: string, inch: number, thick = false) => (
+    <Panel key={key} size={[uw, thick ? T * 1.8 : T, sd]} position={[cx, yOf(inch), 0]} material={matH} />
   );
+  // Shoe Section renders its centre fixed shelf thicker so it reads as non-adjustable.
+  const fixedThick = section.interior === 'shoe_shelves';
 
-  switch (section.interior) {
-    case 'long_hanging':
-      return <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={rodMetal} />;
+  // Overlay drawer fronts: the FRONT face protrudes 0.75" past the case face and
+  // overlaps 3/8" beyond the bay's case sides and over the dividers above and
+  // below. Boxes stay exactly DRAWER_H tall on the case bottom; the count is the
+  // module's drawer count (never a local literal).
+  const OVERLAY = 0.75 * IN;
+  const SIDE = 0.375 * IN;
+  const frontFaceZ = D / 2 + OVERLAY;
+  const drawers = gi.drawerTops.map((_, k) => {
+    const y = yBot + DRAWER_H * (k + 0.5);
+    return (
+      <group key={`dr-${k}`}>
+        <Panel
+          size={[wM + T, DRAWER_H - 0.01 + 2 * SIDE, OVERLAY]}
+          position={[cx, y, D / 2 + OVERLAY / 2]}
+          material={matH}
+        />
+        <Pull styleId={hardwareStyleId} cx={cx} y={y} zFront={frontFaceZ} width={uw} metal={pullMetal} />
+      </group>
+    );
+  });
 
-    case 'double_hanging': {
-      const midY = bottomY + rh * 0.5;
-      return (
-        <group>
-          <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={rodMetal} />
-          {shelf('ms', midY)}
-          <Rod cx={cx} y={midY - 0.07} length={rodLen} metal={rodMetal} />
-        </group>
-      );
-    }
-
-    case 'full_hanging': {
-      // Short rod at the top (no shelf above), one fixed shelf below it, then
-      // two adjustable shelves evenly spaced between the fixed shelf and floor.
-      const fixedY = bottomY + rh * 0.55;
-      const lower = fixedY - bottomY;
-      return (
-        <group>
-          <Rod cx={cx} y={topY - 0.05} length={rodLen} metal={rodMetal} />
-          {shelf('fh-fixed', fixedY)}
-          {shelf('fh-adj-0', bottomY + lower / 3)}
-          {shelf('fh-adj-1', bottomY + (2 * lower) / 3)}
-        </group>
-      );
-    }
-
-    case 'shoe_shelves': {
-      // 9 flat horizontal shelves -> 10 openings. A fixed shelf centred on the
-      // cabinet opening, with 4 evenly-spaced adjustable shelves above and 4
-      // below. The fixed shelf is rendered thicker so it reads as non-adjustable.
-      const fixedY = bottomY + rh / 2;
-      const spacing = rh / 10; // (interior/2) / 5, equal above and below
-      return (
-        <group>
-          {[1, 2, 3, 4].map((i) => shelf(`ss-up-${i}`, topY - spacing * i))}
-          <Panel key="ss-fixed" size={[uw, T * 1.8, sd]} position={[cx, fixedY, 0]} material={matH} />
-          {[1, 2, 3, 4].map((i) => shelf(`ss-dn-${i}`, fixedY - spacing * i))}
-        </group>
-      );
-    }
-
-    case 'adjustable_shelves': {
-      // 4 shelves: a fixed shelf in the center (2nd from the bottom) with
-      // 1 adjustable below it and 2 adjustable above it, evenly spaced.
-      const n = 4;
-      return (
-        <group>
-          {Array.from({ length: n }, (_, i) =>
-            shelf(`adj-${i}`, bottomY + (rh * (i + 1)) / (n + 1))
-          )}
-        </group>
-      );
-    }
-
-    case 'drawers': {
-      // Overlay drawer fronts: the FRONT face protrudes 0.75" past the case face
-      // and overlaps 3/8" beyond the bay's case sides and over the dividers above
-      // and below. Only the front face changes — the carcass/case are unchanged.
-      const OVERLAY = 0.75 * IN; // protrusion / front thickness
-      const SIDE = 0.375 * IN; // 3/8" overlap on each side, top, and bottom
-      const frontFaceZ = D / 2 + OVERLAY; // protruding front face
-      const drawers = Array.from({ length: 4 }, (_, k) => {
-        const y = bottomY + DRAWER_H * (k + 0.5);
-        return (
-          <group key={`dr-${k}`}>
-            <Panel
-              size={[wM + T, DRAWER_H - 0.01 + 2 * SIDE, OVERLAY]}
-              position={[cx, y, D / 2 + OVERLAY / 2]}
-              material={matH}
-            />
-            <Pull
-              styleId={hardwareStyleId}
-              cx={cx}
-              y={y}
-              zFront={frontFaceZ}
-              width={uw}
-              metal={pullMetal}
-            />
-          </group>
-        );
-      });
-      const counterY = bottomY + 4 * DRAWER_H + T / 2;
-      const shelves = Array.from({ length: 2 }, (_, i) =>
-        shelf(`drsh-${i}`, counterY + ((topY - counterY) * (i + 1)) / 3)
-      );
-      return (
-        <group>
-          {drawers}
-          {shelf('counter', counterY)}
-          {shelves}
-        </group>
-      );
-    }
-
-    default:
-      return null;
-  }
+  return (
+    <group>
+      {gi.rods.map((inch, i) => (
+        <Rod key={`rod-${i}`} cx={cx} y={yOf(inch)} length={rodLen} metal={rodMetal} />
+      ))}
+      {gi.fixedShelves.map((inch, i) => shelf(`fx-${i}`, inch, fixedThick))}
+      {gi.adjShelves.map((inch, i) => shelf(`aj-${i}`, inch))}
+      {drawers}
+    </group>
+  );
 }
 
 interface RunMaterials {
@@ -347,14 +299,18 @@ interface RunMaterials {
 function WallRun({
   sections,
   H,
+  Hin,
   D,
+  catalog,
   mats,
   blockedIds,
   backPanels,
 }: {
   sections: SectionConfig[];
-  H: number;
+  H: number; // drawn height in metres (base height, cap included)
+  Hin: number; // finished height in inches — drives the shared geometry
   D: number;
+  catalog: Catalog;
   mats: RunMaterials;
   /** Side-wall corner bay ids that must not render drawers. */
   blockedIds: Set<string>;
@@ -380,13 +336,6 @@ function WallRun({
     boundaries.push(bx);
   }
 
-  const bottomY = TOE_H + T;
-  const fixedShelfY = H - TOP_CUBBY;
-  const topY = fixedShelfY - T / 2;
-  // Double Hang and Full Hanging have no top shelf — their rod runs to the top,
-  // so they skip the 12" fixed cubby shelf and their interior reaches near H.
-  const fullHeightTopY = H - T - 0.02;
-
   return (
     <group>
       <Panel size={[W, T, D]} position={[0, H - T / 2, 0]} material={matH} />
@@ -405,10 +354,6 @@ function WallRun({
           blockedIds.has(s.id) && s.interior === 'drawers'
             ? { ...s, interior: 'long_hanging' }
             : s;
-        const noTopShelf =
-          eff.interior === 'double_hanging' ||
-          eff.interior === 'full_hanging' ||
-          eff.interior === 'shoe_shelves';
         return (
           <group key={`bay-${s.id}`}>
             <Panel
@@ -416,9 +361,6 @@ function WallRun({
               position={[cx, TOE_H / 2, D / 2 - TOE_RECESS - T / 2]}
               material={matH}
             />
-            {!noTopShelf && (
-              <Panel size={[uw, T, D - 1.6 * T]} position={[cx, fixedShelfY, 0]} material={matH} />
-            )}
             {backPanels && (
               <Panel
                 size={[wM - T, H - TOE_H - T, T]}
@@ -431,8 +373,9 @@ function WallRun({
               cx={cx}
               wM={wM}
               D={D}
-              bottomY={bottomY}
-              topY={noTopShelf ? fullHeightTopY : topY}
+              H={H}
+              Hin={Hin}
+              catalog={catalog}
               matH={matH}
               rodMetal={rodMetal}
               pullMetal={pullMetal}
@@ -546,6 +489,7 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
     (config.heightUpgrade
       ? catalog.constraints.upgradedHeightIn
       : catalog.constraints.standardHeightIn) * IN;
+  const Hin = finishedHeightIn(catalog, config); // finished inches (84.75 / 96.75)
   const D = catalog.constraints.depthIn * IN;
 
   const placements = useMemo(() => planWalls(config, D), [config, D]);
@@ -633,7 +577,7 @@ function ClosetModel({ catalog, config }: ClosetViewerProps) {
       {placements.map((p) =>
         p.sections.length === 0 ? null : (
           <group key={p.wall} position={p.position} rotation={[0, p.rotationY, 0]}>
-            <WallRun sections={p.sections} H={H} D={D} mats={mats} blockedIds={blockedIds} backPanels={config.backPanels} />
+            <WallRun sections={p.sections} H={H} Hin={Hin} D={D} catalog={catalog} mats={mats} blockedIds={blockedIds} backPanels={config.backPanels} />
             <Html
               position={[0, H + 0.16, 0]}
               center

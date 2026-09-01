@@ -4,16 +4,11 @@
 import type { Catalog, ClosetConfig, PriceBreakdown, PriceLineItem } from '@/types';
 import { formatInches, roundToEighth } from '@/lib/format';
 
-/** Total run width (inches) across all sections. */
-export function totalWidthIn(config: ClosetConfig): number {
-  return config.sections.reduce((sum, s) => sum + s.widthIn, 0);
-}
-
 /**
  * Compute the itemized price for a configuration.
  * - Each section costs its interior's price ($500, or $1,500 for drawers).
  * - A back panel adds a flat per-section amount.
- * - Raising the height adds a per-linear-foot amount over the whole run.
+ * - Raising the height adds a flat amount per bay (every wall counts).
  * Throws if the configuration references unknown catalog entries.
  */
 export function computePrice(
@@ -56,14 +51,12 @@ export function computePrice(
   }
 
   if (config.heightUpgrade) {
-    const widthIn = totalWidthIn(config);
-    const feet = widthIn / 12;
-    const amountCents = Math.round(
-      catalog.pricing.heightUpgradePerFootCents * feet
-    );
+    // Flat per-bay upgrade — the multiplier is the total bay count across every
+    // wall of the closet (a 9-bay U-shape adds 9 × $100).
+    const bays = config.sections.length;
     lineItems.push({
-      label: `Raise to 8' · over ${formatInches(widthIn)} of width`,
-      amountCents,
+      label: `Raise to 8' · ${bays} bay${bays === 1 ? '' : 's'}`,
+      amountCents: bays * catalog.pricing.heightUpgradePerBayCents,
     });
   }
 

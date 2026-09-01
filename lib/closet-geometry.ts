@@ -101,6 +101,9 @@ export function bayInterior(catalog: Catalog, interior: string, H: number): BayI
   const interiorTop = TOP_CAP; // 0.75 — underside of the case top
   const floor = H - TOE_KICK - CASE_BOTTOM; // top face of case bottom
   const mid = (interiorTop + floor) / 2; // interior midpoint
+  // Four bay types gain one adjustable shelf at 8' (keyed off the real height so
+  // a future height stays correct). DR/SH/SS add theirs ABOVE, FH adds its BELOW.
+  const isTall = H > 90;
 
   const fixedShelves: number[] = [];
   const adjShelves: number[] = [];
@@ -123,25 +126,28 @@ export function bayInterior(catalog: Catalog, interior: string, H: number): BayI
       rods.push(mid + ROD_DROP);
       break;
     case 'full_hanging':
-      // FH — rod directly under the case top, then three ADJUSTABLE shelves.
+      // FH — rod directly under the case top (no shelf above), an adjustable shelf
+      // at mid, then adjustable shelves below it (2 at 7', 3 at 8' — the extra one
+      // goes BELOW the midpoint, unlike DR/SH/SS).
       rods.push(interiorTop + ROD_DROP);
-      adjShelves.push(mid, ...evenly(mid, floor, 2));
+      adjShelves.push(mid, ...evenly(mid, floor, isTall ? 3 : 2));
       break;
     case 'adjustable_shelves':
-      // SH — one fixed shelf at mid, two adjustable above and two below.
+      // SH — one fixed shelf at mid, adjustable above (2 at 7', 3 at 8') and two below.
       fixedShelves.push(mid);
-      adjShelves.push(...evenly(interiorTop, mid, 2), ...evenly(mid, floor, 2));
+      adjShelves.push(...evenly(interiorTop, mid, isTall ? 3 : 2), ...evenly(mid, floor, 2));
       break;
     case 'shoe_shelves':
-      // SS — one fixed shelf at mid, four adjustable above and four below.
+      // SS — one fixed shelf at mid, adjustable above (4 at 7', 5 at 8') and four below.
       fixedShelves.push(mid);
-      adjShelves.push(...evenly(interiorTop, mid, 4), ...evenly(mid, floor, 4));
+      adjShelves.push(...evenly(interiorTop, mid, isTall ? 5 : 4), ...evenly(mid, floor, 4));
       break;
     case 'drawers': {
-      // DR — a 4-drawer stack sitting on the case bottom, two adjustable shelves
-      // spread across the opening above it (and nothing between them and the stack).
+      // DR — a 4-drawer stack sitting on the case bottom, adjustable shelves spread
+      // across the opening above it (nothing between them and the stack): 2 at 7',
+      // 3 at 8' so the openings stay ~13" rather than ballooning to ~17".
       const stackTop = floor - DRAWER_COUNT * DRAWER_H;
-      adjShelves.push(...evenly(interiorTop, stackTop, 2));
+      adjShelves.push(...evenly(interiorTop, stackTop, isTall ? 3 : 2));
       for (let i = 0; i < DRAWER_COUNT; i++) drawerTops.push(stackTop + i * DRAWER_H);
       break;
     }
